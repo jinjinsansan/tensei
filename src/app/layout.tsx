@@ -1,20 +1,50 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Orbitron, Noto_Sans_JP } from 'next/font/google';
+import './globals.css';
+import { getPublicEnv } from '@/lib/env';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-display',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const notoSans = Noto_Sans_JP({
+  subsets: ['latin'],
+  weight: ['400', '500', '700', '900'],
+  variable: '--font-body',
+  display: 'swap',
 });
+
+const publicEnv = getPublicEnv();
+const siteName = publicEnv.NEXT_PUBLIC_SITE_NAME ?? '転生ガチャ 〜来世ルーレット〜';
+const siteDescription = '尊師ホール級のネオン演出を転生テーマで楽しむ没入型ガチャ体験';
+const siteUrl = publicEnv.NEXT_PUBLIC_SITE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL;
 
 export const metadata: Metadata = {
-  title: "転生ガチャ 〜来世ルーレット〜",
-  description: "動画で物語が展開する新感覚ガチャ体験",
+  metadataBase: new URL(siteUrl ?? 'http://localhost:3000'),
+  title: {
+    default: siteName,
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: siteName,
+    description: siteDescription,
+    url: siteUrl,
+    siteName,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteName,
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({
@@ -24,9 +54,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${orbitron.variable} ${notoSans.variable} font-body antialiased bg-hall-background text-white`}>
         {children}
       </body>
     </html>
