@@ -6,10 +6,11 @@ import { MainAppProvider } from '@/components/providers/main-app-provider';
 import { getSessionWithSnapshot } from '@/lib/app/session';
 
 const tabs: TabBarItem[] = [
-  { label: '書庫入口', href: '/home', icon: 'entrance' },
-  { label: '閲覧室', href: '/gacha', icon: 'reading' },
+  { label: 'ホーム', href: '/home', icon: 'entrance' },
   { label: '書架', href: '/collection', icon: 'shelf' },
-  { label: '書斎', href: '/mypage', icon: 'study' },
+  { label: 'ガチャ', href: '/gacha', icon: 'gacha', primary: true },
+  { label: '招待', href: '/social', icon: 'social' },
+  { label: 'メニュー', href: '/mypage', icon: 'menu' },
 ];
 
 type MainLayoutProps = {
