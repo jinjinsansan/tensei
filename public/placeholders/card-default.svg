@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="700" viewBox="0 0 500 700">
+  <defs>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0ea5e9" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect width="500" height="700" rx="32" fill="#0f172a" />
+  <rect x="16" y="16" width="468" height="668" rx="28" fill="url(#cardGradient)" opacity="0.9" />
+  <text x="50%" y="45%" font-size="56" font-weight="700" font-family="'Noto Sans JP', sans-serif" fill="#fff" text-anchor="middle">
+    転生
+  </text>
+  <text x="50%" y="58%" font-size="32" font-family="'Noto Sans JP', sans-serif" fill="#e0f2fe" text-anchor="middle">
+    Placeholder Card
+  </text>
+</svg>
