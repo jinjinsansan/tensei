@@ -16,6 +16,11 @@ const cards = [
     description: "RTP・リバーサル率・キャラクター比率を編集します。",
     href: "/admin/settings",
   },
+  {
+    title: "統計ダッシュボード",
+    description: "星ごとの出現率や人気カードを確認します。",
+    href: "/admin/stats",
+  },
 ];
 
 export default function AdminHome() {

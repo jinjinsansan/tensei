@@ -8,6 +8,7 @@ const links = [
   { href: '/admin/characters', label: '登場人物管理' },
   { href: '/admin/cards', label: '物語の書' },
   { href: '/admin/scenarios', label: '物語管理' },
+  { href: '/admin/stats', label: '統計ダッシュボード' },
   { href: '/admin/settings', label: '隠された章 設定' },
 ];
 

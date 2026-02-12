@@ -1,13 +1,24 @@
 import Link from 'next/link';
-import { enterNeonHall } from '@/app/(auth)/actions';
+import type { Metadata } from 'next';
+import { loginLibraryMember } from '@/app/(auth)/actions';
 
-export default function LoginPage() {
+type LoginPageProps = {
+  searchParams?: { error?: string };
+};
+
+export const metadata: Metadata = {
+  title: '書庫への入館 - 来世ガチャ',
+};
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
+  const error = searchParams?.error;
+
   return (
-    <form action={enterNeonHall} className="space-y-8 text-library-text-primary">
+    <form action={loginLibraryMember} className="space-y-8 text-library-text-primary">
       <div className="space-y-2 text-center">
         <p className="font-accent text-xs uppercase tracking-[0.45em] text-library-accent">Entrance</p>
         <h1 className="font-serif text-3xl">書庫への入館</h1>
-        <p className="text-sm text-library-text-secondary">メール認証は準備中です。いまは仮の入館証で体験いただけます。</p>
+        <p className="text-sm text-library-text-secondary">登録済みの入館証を入力して書庫へお入りください。</p>
       </div>
 
       <div className="space-y-4">
@@ -16,8 +27,7 @@ export default function LoginPage() {
           <input
             type="email"
             name="email"
-            placeholder="coming soon"
-            disabled
+            required
             className="w-full rounded-2xl border border-library-accent/20 bg-library-primary/60 px-4 py-3 text-library-secondary placeholder:text-library-text-secondary"
           />
         </div>
@@ -26,12 +36,14 @@ export default function LoginPage() {
           <input
             type="password"
             name="password"
-            placeholder="coming soon"
-            disabled
+            minLength={8}
+            required
             className="w-full rounded-2xl border border-library-accent/20 bg-library-primary/60 px-4 py-3 text-library-secondary placeholder:text-library-text-secondary"
           />
         </div>
       </div>
+
+      {error && <p className="text-center text-sm text-library-warning">{error}</p>}
 
       <button type="submit" className="library-button w-full">
         書庫に入る

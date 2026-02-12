@@ -23,6 +23,83 @@ export async function fetchGachaConfig(client: DbClient, slug = 'default'): Prom
   return parseGachaConfig(data as Tables<'gacha_config'>);
 }
 
+export type GachaSummaryStats = {
+  totalPlays: number;
+  reversalCount: number;
+  lastPlay: string | null;
+  averageStar: number;
+};
+
+type SummaryRow = {
+  total_plays: number | null;
+  reversal_count: number | null;
+  last_play: string | null;
+  average_star: number | null;
+};
+
+export async function fetchGachaSummaryStats(client: DbClient): Promise<GachaSummaryStats> {
+  const { data, error } = await client.rpc('get_gacha_summary_stats');
+  handleError(error);
+  const rows = (data ?? []) as SummaryRow[];
+  const row = rows.length > 0 ? rows[0] : null;
+  return {
+    totalPlays: Number(row?.total_plays ?? 0),
+    reversalCount: Number(row?.reversal_count ?? 0),
+    lastPlay: row?.last_play ?? null,
+    averageStar: row?.average_star ? Number(row.average_star) : 0,
+  };
+}
+
+export type GachaStarCount = {
+  starLevel: number;
+  total: number;
+};
+
+type StarCountRow = {
+  star_level: number | null;
+  total: number | null;
+};
+
+export async function fetchGachaStarCounts(client: DbClient): Promise<GachaStarCount[]> {
+  const { data, error } = await client.rpc('get_gacha_star_counts');
+  handleError(error);
+  return ((data ?? []) as StarCountRow[]).map((row) => ({
+    starLevel: Number(row.star_level ?? 0),
+    total: Number(row.total ?? 0),
+  }));
+}
+
+export type GachaCardLeaderboardEntry = {
+  cardId: string;
+  cardName: string;
+  rarity: string;
+  starLevel: number;
+  total: number;
+};
+
+type LeaderboardRow = {
+  card_id: string;
+  card_name: string | null;
+  rarity: string | null;
+  star_level: number | null;
+  total: number | null;
+};
+
+export async function fetchGachaCardLeaderboard(
+  client: DbClient,
+  limit = 5,
+): Promise<GachaCardLeaderboardEntry[]> {
+  const { data, error } = await client.rpc('get_gacha_card_leaderboard', { limit_count: limit } as never);
+  handleError(error);
+  return ((data ?? []) as LeaderboardRow[]).map((row) => ({
+    cardId: String(row.card_id),
+    cardName: String(row.card_name ?? '---'),
+    rarity: String(row.rarity ?? 'N'),
+    starLevel: Number(row.star_level ?? 0),
+    total: Number(row.total ?? 0),
+  }));
+}
+
 export async function fetchActiveCharacters(client: DbClient): Promise<Tables<'characters'>[]> {
   const { data, error } = await client
     .from('characters')
@@ -131,6 +208,20 @@ export async function fetchAllScenarios(client: DbClient): Promise<Tables<'scena
   return (data ?? []) as Tables<'scenarios'>[];
 }
 
+export async function insertGachaHistory(
+  client: DbClient,
+  payload: TablesInsert<'gacha_history'>,
+): Promise<Tables<'gacha_history'>> {
+  const { data, error } = await client
+    .from('gacha_history')
+    .insert(payload)
+    .select('*')
+    .single();
+  handleError(error);
+  if (!data) throw new Error('Failed to record gacha history');
+  return data as Tables<'gacha_history'>;
+}
+
 export async function insertGachaResult(
   client: DbClient,
   payload: TablesInsert<'gacha_results'>,
@@ -174,9 +265,12 @@ export async function upsertCardCollection(
   client: DbClient,
   payload: TablesInsert<'card_collection'>,
 ): Promise<Tables<'card_collection'>> {
+  if (!payload.app_user_id) {
+    throw new Error('app_user_id is required when updating card collection');
+  }
   const { data, error } = await client
     .from('card_collection')
-    .upsert(payload, { onConflict: 'user_session_id,card_id' })
+    .upsert(payload, { onConflict: 'app_user_id,card_id' })
     .select('*')
     .single();
 
@@ -191,7 +285,7 @@ export async function upsertCardCollection(
   const { data: existing, error: fetchError } = await client
     .from('card_collection')
     .select('*')
-    .eq('user_session_id', payload.user_session_id)
+    .eq('app_user_id', payload.app_user_id)
     .eq('card_id', payload.card_id)
     .single();
   handleError(fetchError);
@@ -201,12 +295,26 @@ export async function upsertCardCollection(
 
 export async function fetchCardCollection(
   client: DbClient,
-  sessionId: string,
+  userId: string,
 ): Promise<Tables<'card_collection'>[]> {
   const { data, error } = await client
     .from('card_collection')
     .select('*')
-    .eq('user_session_id', sessionId);
+    .eq('app_user_id', userId);
   handleError(error);
   return (data ?? []) as Tables<'card_collection'>[];
+}
+
+export async function insertCardInventoryEntry(
+  client: DbClient,
+  payload: TablesInsert<'card_inventory'>,
+): Promise<Tables<'card_inventory'>> {
+  const { data, error } = await client
+    .from('card_inventory')
+    .insert(payload)
+    .select('*')
+    .single();
+  handleError(error);
+  if (!data) throw new Error('カードの登録に失敗しました。');
+  return data as Tables<'card_inventory'>;
 }

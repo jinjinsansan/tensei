@@ -1,6 +1,7 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { exitNeonHall } from '@/app/(auth)/actions';
-import { fetchExistingSession } from '@/lib/app/session';
+import { fetchAuthedContext } from '@/lib/app/session';
 
 const MENU_ITEMS = [
   { label: '物語の記録', description: '開いた本の履歴', href: '/mypage/tickets' },
@@ -9,9 +10,14 @@ const MENU_ITEMS = [
 ];
 
 export default async function MyPage() {
-  const session = await fetchExistingSession();
-  const joinedAt = session?.created_at ? new Date(session.created_at).toLocaleDateString('ja-JP') : '---';
-  const sessionCode = session?.id ? `#${session.id.slice(0, 8)}` : '---';
+  const context = await fetchAuthedContext();
+  if (!context) {
+    redirect('/login');
+  }
+  const { session, user } = context;
+  const joinedAt = user.created_at ? new Date(user.created_at).toLocaleDateString('ja-JP') : '---';
+  const sessionCode = session.id ? `#${session.id.slice(0, 8)}` : '---';
+  const displayName = user.display_name ?? user.email ?? '来世の旅人';
 
   return (
     <section className="space-y-6 text-library-text-primary">
@@ -23,7 +29,7 @@ export default async function MyPage() {
 
       <div className="library-card space-y-2">
         <p className="text-xs uppercase tracking-[0.35em] text-library-accent">入館証</p>
-        <p className="font-serif text-xl">匿名来訪者</p>
+        <p className="font-serif text-xl">{displayName}</p>
         <p className="text-sm text-library-text-secondary">登録日: {joinedAt}</p>
         <p className="text-xs text-library-text-secondary">Session ID: {sessionCode}</p>
       </div>

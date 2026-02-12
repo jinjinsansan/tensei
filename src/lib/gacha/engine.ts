@@ -8,6 +8,7 @@ import {
   fetchPreStories,
   fetchScenarios,
   insertGachaResult,
+  insertGachaHistory,
 } from '@/lib/data/gacha';
 import { drawStar } from '@/lib/gacha/rtp';
 import type { CharacterWeight } from '@/lib/gacha/config';
@@ -16,6 +17,7 @@ import type { Json, Tables } from '@/types/database';
 
 type GenerateOptions = {
   sessionId: string;
+  appUserId: string;
   configSlug?: string;
 };
 
@@ -25,6 +27,7 @@ type ScenarioRow = Tables<'scenarios'>;
 
 export async function generateGachaPlay({
   sessionId,
+  appUserId,
   configSlug = 'default',
 }: GenerateOptions): Promise<GachaEngineResult> {
   const supabase = getServiceSupabase();
@@ -67,14 +70,26 @@ export async function generateGachaPlay({
     scenarioRows,
   });
 
+  const historyRow = await insertGachaHistory(supabase, {
+    user_session_id: sessionId,
+    app_user_id: appUserId,
+    star_level: star,
+    scenario: story as Json,
+    had_reversal: hadReversal,
+    gacha_type: 'single',
+  });
+
   const resultRow = await insertGachaResult(supabase, {
     user_session_id: sessionId,
+    app_user_id: appUserId,
     character_id: character.id,
     card_id: selectedCard.id,
     star_level: star,
     had_reversal: hadReversal,
     scenario_snapshot: story as Json,
     card_awarded: false,
+    history_id: historyRow.id,
+    obtained_via: 'single_gacha',
   });
 
   return {

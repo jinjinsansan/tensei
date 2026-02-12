@@ -3,8 +3,7 @@ import { redirect } from 'next/navigation';
 import { Toaster } from 'sonner';
 import { TabBar, type TabBarItem } from '@/components/layout/tab-bar';
 import { MainAppProvider } from '@/components/providers/main-app-provider';
-import { fetchExistingSession } from '@/lib/app/session';
-import { loadMainAppSnapshot } from '@/lib/app/main-app';
+import { getSessionWithSnapshot } from '@/lib/app/session';
 
 const tabs: TabBarItem[] = [
   { label: '書庫入口', href: '/home', icon: 'entrance' },
@@ -18,11 +17,11 @@ type MainLayoutProps = {
 };
 
 export default async function MainLayout({ children }: MainLayoutProps) {
-  const session = await fetchExistingSession();
-  if (!session) {
+  const context = await getSessionWithSnapshot().catch(() => null);
+  if (!context) {
     redirect('/login');
   }
-  const snapshot = loadMainAppSnapshot(session);
+  const { snapshot } = context;
 
   return (
     <div className="fixed inset-0 text-library-text-primary">

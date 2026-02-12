@@ -1,29 +1,29 @@
 import { NextResponse } from 'next/server';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
-import { getOrCreateSession } from '@/lib/data/session';
 import { consumeTicket } from '@/lib/data/tickets';
-import { getOrCreateSessionToken } from '@/lib/session/cookie';
 import { generateGachaPlay } from '@/lib/gacha/engine';
-
-const INITIAL_TICKETS = 30;
+import { fetchAuthedContext } from '@/lib/app/session';
 
 type PlayRequest = {
   configSlug?: string;
+  ticketCode?: string;
 };
 
 export async function POST(request: Request) {
   try {
     const body = await readJsonBody(request);
-    const token = await getOrCreateSessionToken();
     const supabase = getServiceSupabase();
-    const sessionRow = await getOrCreateSession(supabase, token, { initialTickets: INITIAL_TICKETS });
-    const { session, remaining } = await consumeTicket(supabase, sessionRow, {
-      initialTickets: INITIAL_TICKETS,
-    });
+    const context = await fetchAuthedContext(supabase);
+    if (!context) {
+      return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
+    }
+    const { session, user } = context;
+    const { remaining } = await consumeTicket(supabase, user.id, { ticketCode: body?.ticketCode });
 
     const gacha = await generateGachaPlay({
       sessionId: session.id,
+      appUserId: user.id,
       configSlug: body?.configSlug,
     });
 

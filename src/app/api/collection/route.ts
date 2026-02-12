@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 
-import { getServiceSupabase } from "@/lib/supabase/service";
-import { getOrCreateSession } from "@/lib/data/session";
-import { fetchAllCards, fetchAllCharacters, fetchCardCollection } from "@/lib/data/gacha";
-import { getOrCreateSessionToken } from "@/lib/session/cookie";
+import { getServiceSupabase } from '@/lib/supabase/service';
+import { fetchAllCards, fetchAllCharacters, fetchCardCollection } from '@/lib/data/gacha';
+import { fetchAuthedContext } from '@/lib/app/session';
 
 export async function GET() {
   try {
-    const token = await getOrCreateSessionToken();
     const supabase = getServiceSupabase();
-    const session = await getOrCreateSession(supabase, token);
+    const context = await fetchAuthedContext(supabase);
+    if (!context) {
+      return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
+    }
 
     const [cards, characters, collection] = await Promise.all([
       fetchAllCards(supabase),
       fetchAllCharacters(supabase),
-      fetchCardCollection(supabase, session.id),
+      fetchCardCollection(supabase, context.user.id),
     ]);
 
     const ownedIds = new Set(collection.map((entry) => entry.card_id));
@@ -35,9 +36,10 @@ export async function GET() {
     return NextResponse.json({ success: true, cards: payload });
   } catch (error) {
     console.error("collection error", error);
+    const status = error instanceof Error && error.message.includes('ログイン') ? 401 : 500;
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "図鑑情報を取得できませんでした。" },
-      { status: 500 },
+      { success: false, error: error instanceof Error ? error.message : '図鑑情報を取得できませんでした。' },
+      { status },
     );
   }
 }

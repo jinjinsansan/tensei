@@ -1,14 +1,14 @@
 import { NextResponse } from 'next/server';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
-import { findSessionByToken } from '@/lib/data/session';
 import {
   completeGachaResult,
   fetchCardById,
   fetchGachaResultById,
   upsertCardCollection,
+  insertCardInventoryEntry,
 } from '@/lib/data/gacha';
-import { getSessionToken } from '@/lib/session/cookie';
+import { fetchAuthedContext } from '@/lib/app/session';
 import type { StoryPayload } from '@/lib/gacha/types';
 
 type ResultRequest = {
@@ -20,19 +20,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     validateBody(body);
 
-    const sessionToken = await getSessionToken();
-    if (!sessionToken) {
-      return NextResponse.json({ success: false, error: 'セッションが見つかりません。' }, { status: 401 });
-    }
-
     const supabase = getServiceSupabase();
-    const session = await findSessionByToken(supabase, sessionToken);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'セッションが有効ではありません。' }, { status: 401 });
+    const context = await fetchAuthedContext(supabase);
+    if (!context) {
+      return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
     }
+    const { session, user } = context;
 
     let resultRow = await fetchGachaResultById(supabase, body.resultId);
-    if (resultRow.user_session_id !== session.id) {
+    if (resultRow.user_session_id !== session.id || resultRow.app_user_id !== user.id) {
       return NextResponse.json({ success: false, error: '対象データへのアクセス権がありません。' }, { status: 403 });
     }
 
@@ -42,8 +38,21 @@ export async function POST(request: Request) {
     }
 
     if (!resultRow.card_awarded) {
+      const { data: serialData, error: serialError } = await supabase
+        .rpc('next_card_serial', { target_card_id: cardId });
+      if (serialError || typeof serialData !== 'number') {
+        throw serialError ?? new Error('シリアル番号の取得に失敗しました。');
+      }
+      await insertCardInventoryEntry(supabase, {
+        app_user_id: user.id,
+        card_id: cardId,
+        serial_number: serialData,
+        obtained_via: resultRow.obtained_via ?? 'single_gacha',
+        gacha_result_id: resultRow.id,
+      });
       await upsertCardCollection(supabase, {
         user_session_id: session.id,
+        app_user_id: user.id,
         card_id: cardId,
         gacha_result_id: resultRow.id,
       });
@@ -71,7 +80,8 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('gacha/result error', error);
     const message = error instanceof Error ? error.message : '結果の確定に失敗しました。';
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    const status = error instanceof Error && error.message.includes('ログイン') ? 401 : 500;
+    return NextResponse.json({ success: false, error: message }, { status });
   }
 }
 

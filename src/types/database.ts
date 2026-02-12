@@ -18,6 +18,8 @@ export type Database = {
           metadata: Json;
           created_at: string;
           expires_at: string | null;
+          app_user_id: string | null;
+          last_seen_at: string;
         };
         Insert: {
           id?: string;
@@ -25,8 +27,43 @@ export type Database = {
           metadata?: Json;
           created_at?: string;
           expires_at?: string | null;
+          app_user_id?: string | null;
+          last_seen_at?: string;
         };
         Update: Partial<Database['public']['Tables']['user_sessions']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'user_sessions_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      app_users: {
+        Row: {
+          id: string;
+          email: string;
+          password_hash: string;
+          display_name: string | null;
+          avatar_url: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+          last_login_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          password_hash: string;
+          display_name?: string | null;
+          avatar_url?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+          last_login_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['app_users']['Row']>;
         Relationships: [];
       };
       characters: {
@@ -55,6 +92,61 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['characters']['Row']>;
         Relationships: [];
       };
+      ticket_types: {
+        Row: {
+          id: string;
+          code: string;
+          name: string;
+          description: string | null;
+          color_token: string | null;
+          sort_order: number;
+          purchasable: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          name: string;
+          description?: string | null;
+          color_token?: string | null;
+          sort_order?: number;
+          purchasable?: boolean;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['ticket_types']['Row']>;
+        Relationships: [];
+      };
+      user_tickets: {
+        Row: {
+          id: string;
+          user_id: string;
+          ticket_type_id: string;
+          quantity: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          ticket_type_id: string;
+          quantity?: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['user_tickets']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'user_tickets_ticket_type_id_fkey';
+            columns: ['ticket_type_id'];
+            referencedRelation: 'ticket_types';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_tickets_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       cards: {
         Row: {
           id: string;
@@ -69,6 +161,8 @@ export type Database = {
           sort_order: number;
           created_at: string;
           updated_at: string;
+          max_supply: number | null;
+          current_supply: number;
         };
         Insert: {
           id?: string;
@@ -83,6 +177,8 @@ export type Database = {
           sort_order?: number;
           created_at?: string;
           updated_at?: string;
+          max_supply?: number | null;
+          current_supply?: number;
         };
         Update: Partial<Database['public']['Tables']['cards']['Row']>;
         Relationships: [
@@ -178,6 +274,52 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['video_assets']['Row']>;
         Relationships: [];
       };
+      rtp_settings: {
+        Row: {
+          star: number;
+          probability: number;
+          updated_at: string;
+        };
+        Insert: {
+          star: number;
+          probability: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['rtp_settings']['Row']>;
+        Relationships: [];
+      };
+      donden_rate_settings: {
+        Row: {
+          star: number;
+          rate: number;
+          updated_at: string;
+        };
+        Insert: {
+          star: number;
+          rate: number;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['donden_rate_settings']['Row']>;
+        Relationships: [];
+      };
+      tsuigeki_settings: {
+        Row: {
+          star: number;
+          success_rate: number;
+          card_count_on_success: number;
+          bonus_third_rate: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          star: number;
+          success_rate: number;
+          card_count_on_success?: number;
+          bonus_third_rate?: number | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['tsuigeki_settings']['Row']>;
+        Relationships: [];
+      };
       scenarios: {
         Row: {
           id: string;
@@ -245,6 +387,84 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['gacha_config']['Row']>;
         Relationships: [];
       };
+      gacha_history: {
+        Row: {
+          id: string;
+          user_session_id: string | null;
+          app_user_id: string | null;
+          multi_session_id: string | null;
+          star_level: number;
+          scenario: Json;
+          result: string | null;
+          had_reversal: boolean;
+          gacha_type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_session_id?: string | null;
+          app_user_id?: string | null;
+          multi_session_id?: string | null;
+          star_level: number;
+          scenario: Json;
+          result?: string | null;
+          had_reversal?: boolean;
+          gacha_type?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['gacha_history']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'gacha_history_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'gacha_history_multi_session_id_fkey';
+            columns: ['multi_session_id'];
+            referencedRelation: 'multi_gacha_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'gacha_history_user_session_id_fkey';
+            columns: ['user_session_id'];
+            referencedRelation: 'user_sessions';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      multi_gacha_sessions: {
+        Row: {
+          id: string;
+          app_user_id: string;
+          total_pulls: number;
+          pulls_completed: number;
+          status: 'pending' | 'running' | 'completed' | 'error';
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          app_user_id: string;
+          total_pulls: number;
+          pulls_completed?: number;
+          status?: 'pending' | 'running' | 'completed' | 'error';
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['multi_gacha_sessions']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'multi_gacha_sessions_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       gacha_results: {
         Row: {
           id: string;
@@ -258,6 +478,9 @@ export type Database = {
           metadata: Json;
           created_at: string;
           completed_at: string | null;
+          app_user_id: string | null;
+          history_id: string | null;
+          obtained_via: string;
         };
         Insert: {
           id?: string;
@@ -271,6 +494,9 @@ export type Database = {
           metadata?: Json;
           created_at?: string;
           completed_at?: string | null;
+          app_user_id?: string | null;
+          history_id?: string | null;
+          obtained_via?: string;
         };
         Update: Partial<Database['public']['Tables']['gacha_results']['Row']>;
         Relationships: [
@@ -291,6 +517,18 @@ export type Database = {
             columns: ['card_id'];
             referencedRelation: 'cards';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'gacha_results_history_id_fkey';
+            columns: ['history_id'];
+            referencedRelation: 'gacha_history';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'gacha_results_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
           }
         ];
       };
@@ -301,6 +539,7 @@ export type Database = {
           card_id: string;
           obtained_at: string;
           gacha_result_id: string | null;
+          app_user_id: string | null;
         };
         Insert: {
           id?: string;
@@ -308,6 +547,7 @@ export type Database = {
           card_id: string;
           obtained_at?: string;
           gacha_result_id?: string | null;
+          app_user_id?: string | null;
         };
         Update: Partial<Database['public']['Tables']['card_collection']['Row']>;
         Relationships: [
@@ -328,12 +568,181 @@ export type Database = {
             columns: ['gacha_result_id'];
             referencedRelation: 'gacha_results';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_collection_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      card_inventory: {
+        Row: {
+          id: string;
+          app_user_id: string;
+          card_id: string;
+          serial_number: number;
+          obtained_at: string;
+          obtained_via: string;
+          gacha_result_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          app_user_id: string;
+          card_id: string;
+          serial_number: number;
+          obtained_at?: string;
+          obtained_via?: string;
+          gacha_result_id?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['card_inventory']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'card_inventory_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_inventory_card_id_fkey';
+            columns: ['card_id'];
+            referencedRelation: 'cards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_inventory_gacha_result_id_fkey';
+            columns: ['gacha_result_id'];
+            referencedRelation: 'gacha_results';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      referral_codes: {
+        Row: {
+          id: string;
+          app_user_id: string;
+          code: string;
+          usage_limit: number | null;
+          uses: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          app_user_id: string;
+          code: string;
+          usage_limit?: number | null;
+          uses?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['referral_codes']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'referral_codes_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      referral_claims: {
+        Row: {
+          id: string;
+          referral_code_id: string;
+          invited_user_id: string;
+          reward_tickets: number;
+          status: 'pending' | 'granted' | 'cancelled';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          referral_code_id: string;
+          invited_user_id: string;
+          reward_tickets?: number;
+          status?: 'pending' | 'granted' | 'cancelled';
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['referral_claims']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'referral_claims_invited_user_id_fkey';
+            columns: ['invited_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'referral_claims_referral_code_id_fkey';
+            columns: ['referral_code_id'];
+            referencedRelation: 'referral_codes';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      line_link_requests: {
+        Row: {
+          id: string;
+          app_user_id: string;
+          state_token: string;
+          linked: boolean;
+          created_at: string;
+          linked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          app_user_id: string;
+          state_token: string;
+          linked?: boolean;
+          created_at?: string;
+          linked_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['line_link_requests']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'line_link_requests_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
           }
         ];
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_gacha_summary_stats: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          total_plays: number | null;
+          reversal_count: number | null;
+          last_play: string | null;
+          average_star: number | null;
+        }[];
+      };
+      get_gacha_star_counts: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          star_level: number | null;
+          total: number | null;
+        }[];
+      };
+      get_gacha_card_leaderboard: {
+        Args: {
+          limit_count?: number | null;
+        };
+        Returns: {
+          card_id: string | null;
+          card_name: string | null;
+          rarity: string | null;
+          star_level: number | null;
+          total: number | null;
+        }[];
+      };
+      next_card_serial: {
+        Args: {
+          target_card_id: string;
+        };
+        Returns: number;
+      };
+    };
     Enums: {
       scenario_phase: ScenarioPhase;
     };
