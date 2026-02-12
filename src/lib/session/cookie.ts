@@ -25,3 +25,14 @@ export async function getSessionToken(): Promise<string | null> {
   const store = await cookies();
   return store.get(SESSION_COOKIE_NAME)?.value ?? null;
 }
+
+export async function clearSessionToken() {
+  const store = await cookies();
+  store.set(SESSION_COOKIE_NAME, '', {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    maxAge: 0,
+  });
+}

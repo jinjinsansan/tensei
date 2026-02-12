@@ -1,3 +1,5 @@
+import { exitNeonHall } from '@/app/(auth)/actions';
+
 const MENU_ITEMS = [
   { label: 'アカウント', description: 'プロフィールや通知設定（近日）' },
   { label: 'ヘルプ', description: '演出ガイドや提供割合を見る' },
@@ -21,6 +23,14 @@ export default function MenuPage() {
             <span className="text-xs uppercase tracking-[0.4em] text-white/50">MORE</span>
           </div>
         ))}
+        <form action={exitNeonHall}>
+          <button
+            type="submit"
+            className="w-full rounded-3xl border border-white/15 bg-gradient-to-r from-[#ff2d95] to-[#fff65c] px-6 py-4 text-sm font-semibold uppercase tracking-[0.35em] text-[#120714] shadow-neon"
+          >
+            ログアウト
+          </button>
+        </form>
       </div>
     </section>
   );
