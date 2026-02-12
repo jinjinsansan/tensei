@@ -1,27 +1,20 @@
 import type { Metadata } from 'next';
-import { Noto_Serif_JP, Noto_Sans_JP, Playfair_Display } from 'next/font/google';
+import { Inter, Noto_Sans_JP } from 'next/font/google';
 import './globals.css';
 import { getPublicEnv } from '@/lib/env';
 import { BackgroundParticles } from '@/components/layout/background-particles';
 
-const notoSerif = Noto_Serif_JP({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '600', '700', '900'],
-  variable: '--font-serif',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
   display: 'swap',
 });
 
 const notoSans = Noto_Sans_JP({
   subsets: ['latin'],
   weight: ['400', '500', '700'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  variable: '--font-accent',
+  variable: '--font-noto-sans',
   display: 'swap',
 });
 
@@ -63,7 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className="dark">
-      <body className={`${notoSerif.variable} ${notoSans.variable} ${playfair.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${notoSans.variable} font-sans antialiased`}>
         <BackgroundParticles />
         {children}
       </body>
