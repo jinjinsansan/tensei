@@ -42,10 +42,10 @@ export function TabBar({ items }: TabBarProps) {
               className={cn('library-tabbar__item', isActive && 'library-tabbar__item--active')}
             >
               <Icon
-                className={cn('h-5 w-5', isActive ? 'text-library-accent' : 'text-library-text-secondary')}
+                className={cn('h-5 w-5', isActive ? 'text-accent' : 'text-secondary')}
                 strokeWidth={isActive ? 2.2 : 2.5}
               />
-              <span className="font-serif text-[0.55rem] tracking-[0.3em]">{item.label}</span>
+              <span className="text-[0.55rem] tracking-[0.3em]">{item.label}</span>
             </Link>
           );
         })}

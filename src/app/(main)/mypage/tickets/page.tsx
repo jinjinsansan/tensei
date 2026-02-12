@@ -5,22 +5,22 @@ export default function TicketHistoryPage() {
   ];
 
   return (
-    <section className="space-y-6 text-library-text-primary">
+    <section className="space-y-6 text-primary">
       <div className="space-y-2 text-center">
-        <p className="font-accent text-xs uppercase tracking-[0.4em] text-library-accent">Bookmarks</p>
-        <h1 className="font-serif text-3xl">栞の記録</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-accent">Bookmarks</p>
+        <h1 className="text-3xl font-bold">栞の記録</h1>
       </div>
       <div className="space-y-3">
         {history.map((entry) => (
           <div
             key={`${entry.label}-${entry.date}`}
-            className="flex items-center justify-between rounded-3xl border border-library-accent/20 bg-library-primary/60 px-4 py-3"
+            className="flex items-center justify-between rounded-3xl border border-accent/20 bg-card/60 px-4 py-3"
           >
             <div>
-              <p className="font-serif text-base">{entry.label}</p>
-              <p className="text-xs text-library-text-secondary">{entry.date}</p>
+              <p className="text-base font-medium">{entry.label}</p>
+              <p className="text-xs text-secondary">{entry.date}</p>
             </div>
-            <span className={`font-accent text-lg ${entry.amount.startsWith('+') ? 'text-library-accent' : 'text-library-text-secondary'}`}>
+            <span className={`text-lg font-semibold ${entry.amount.startsWith('+') ? 'text-accent' : 'text-secondary'}`}>
               {entry.amount}
             </span>
           </div>

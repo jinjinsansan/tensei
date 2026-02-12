@@ -7,11 +7,10 @@ export function SplashGateway() {
   const router = useRouter();
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-6 py-14 text-library-text-primary">
+    <div className="relative min-h-screen overflow-hidden px-6 py-14 text-primary">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%)]" />
-        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/5 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-[linear-gradient(180deg,rgba(44,24,16,0.85),rgba(26,15,10,0.95))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.05),transparent_55%)]" />
+        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/3 to-transparent" />
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-lg flex-col items-center justify-center text-center">
@@ -29,13 +28,13 @@ export function SplashGateway() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
               />
-              <p className="font-accent text-[0.85rem] uppercase tracking-[0.4em] text-library-accent">輪廻の書庫</p>
+              <p className="text-[0.85rem] font-semibold uppercase tracking-[0.4em] text-accent">輪廻の書庫</p>
               <div className="space-y-2">
-                <h1 className="font-serif text-4xl font-bold tracking-widest text-library-text-primary">来世ガチャ</h1>
-                <p className="font-serif text-lg text-library-text-secondary">～もしも生まれ変わったら～</p>
+                <h1 className="text-4xl font-bold tracking-widest text-primary">来世ガチャ</h1>
+                <p className="text-lg font-medium text-secondary">～もしも生まれ変わったら～</p>
               </div>
             </div>
-            <p className="text-sm leading-relaxed text-library-text-secondary">
+            <p className="text-sm leading-relaxed text-secondary">
               雲の上に浮かぶ、果てしない書庫。
               <br />
               一冊の光る本を開けば、あなたの新しい人生が始まります。

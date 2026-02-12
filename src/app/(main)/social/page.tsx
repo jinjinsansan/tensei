@@ -5,22 +5,22 @@ const ITEMS = [
 
 export default function SocialPage() {
   return (
-    <section className="space-y-6 text-library-text-primary">
+    <section className="space-y-6 text-primary">
       <div className="space-y-2 text-center">
-        <p className="font-accent text-xs uppercase tracking-[0.4em] text-library-accent">Invitations</p>
-        <h1 className="font-serif text-3xl">招待状</h1>
-        <p className="text-sm text-library-text-secondary">書庫を友人と共有する機能を順次解放していきます。</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-accent">Invitations</p>
+        <h1 className="text-3xl font-bold">招待状</h1>
+        <p className="text-sm text-secondary">書庫を友人と共有する機能を順次解放していきます。</p>
       </div>
       <div className="space-y-4">
         {ITEMS.map((item) => (
-          <article key={item.title} className="rounded-3xl border border-library-accent/20 bg-library-primary/70 p-5">
+          <article key={item.title} className="rounded-3xl border border-accent/20 bg-card/70 p-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-serif text-2xl">{item.title}</h2>
-              <span className="rounded-full border border-library-accent/30 px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] text-library-accent">
+              <h2 className="text-2xl font-bold">{item.title}</h2>
+              <span className="rounded-full border border-accent/30 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.35em] text-accent">
                 {item.badge}
               </span>
             </div>
-            <p className="mt-2 text-sm text-library-text-secondary">{item.description}</p>
+            <p className="mt-2 text-sm text-secondary">{item.description}</p>
           </article>
         ))}
       </div>

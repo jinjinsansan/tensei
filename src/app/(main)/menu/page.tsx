@@ -6,19 +6,19 @@ const MENU_ITEMS = [
 
 export default function MenuPage() {
   return (
-    <section className="space-y-6 text-library-text-primary">
+    <section className="space-y-6 text-primary">
       <div className="space-y-2 text-center">
-        <p className="font-accent text-xs uppercase tracking-[0.4em] text-library-accent">Archive Menu</p>
-        <h1 className="font-serif text-3xl">書庫メニュー</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-accent">Archive Menu</p>
+        <h1 className="text-3xl font-bold">書庫メニュー</h1>
       </div>
       <div className="space-y-3">
         {MENU_ITEMS.map((item) => (
-          <div key={item.label} className="flex items-center justify-between rounded-3xl border border-library-accent/15 bg-library-primary/60 px-5 py-4">
+          <div key={item.label} className="flex items-center justify-between rounded-3xl border border-accent/15 bg-card/60 px-5 py-4">
             <div>
-              <p className="font-serif text-lg">{item.label}</p>
-              <p className="text-sm text-library-text-secondary">{item.description}</p>
+              <p className="text-lg font-medium">{item.label}</p>
+              <p className="text-sm text-secondary">{item.description}</p>
             </div>
-            <span className="text-xs uppercase tracking-[0.4em] text-library-text-secondary">Soon</span>
+            <span className="text-xs font-medium uppercase tracking-[0.4em] text-secondary">Soon</span>
           </div>
         ))}
       </div>

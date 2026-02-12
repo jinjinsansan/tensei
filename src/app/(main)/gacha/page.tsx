@@ -32,45 +32,45 @@ export default async function GachaPage() {
   const tickets = snapshot.tickets.length > 0 ? snapshot.tickets : FALLBACK_TICKETS;
 
   return (
-    <section className="space-y-9 text-library-text-primary">
+    <section className="space-y-9 text-primary">
       <div className="space-y-3 text-center">
-        <p className="font-accent text-xs uppercase tracking-[0.45em] text-library-accent">Reading Room</p>
-        <h1 className="font-serif text-3xl">閲覧室</h1>
-        <p className="text-sm text-library-text-secondary">読み継がれる来世の本が、ここであなたを待ち続けています。</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.45em] text-accent">Reading Room</p>
+        <h1 className="text-3xl font-bold">閲覧室</h1>
+        <p className="text-sm text-secondary">読み継がれる来世の本が、ここであなたを待ち続けています。</p>
       </div>
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs uppercase tracking-[0.35em] text-library-accent">栞の残高</span>
-          <Link href="/mypage/tickets" className="text-xs font-accent tracking-[0.3em] text-library-accent">
+          <span className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">栞の残高</span>
+          <Link href="/mypage/tickets" className="text-xs font-semibold tracking-[0.3em] text-accent">
             記録を開く
           </Link>
         </div>
         <TicketBalanceCarousel tickets={tickets} />
       </section>
 
-      <article className="space-y-5 rounded-[28px] border border-library-accent/25 bg-library-primary/70 p-6 shadow-library-card">
+      <article className="space-y-5 rounded-[28px] border border-accent/25 bg-card/70 p-6 shadow-library-card">
         <div className="space-y-2">
-          <p className="text-xs tracking-[0.35em] text-library-accent">健太の物語</p>
-          <h2 className="font-serif text-2xl">健太 来世アーカイブ</h2>
-          <p className="text-sm text-library-text-secondary">栞を1枚差し込み、光る本を開いてください。隠された章が現れるかもしれません。</p>
+          <p className="text-xs font-semibold tracking-[0.35em] text-accent">健太の物語</p>
+          <h2 className="text-2xl font-bold">健太 来世アーカイブ</h2>
+          <p className="text-sm text-secondary">栞を1枚差し込み、光る本を開いてください。隠された章が現れるかもしれません。</p>
         </div>
-        <div className="rounded-[22px] border border-library-accent/30 bg-[#120a05]/60 p-4">
+        <div className="rounded-[22px] border border-accent/30 bg-[#120a05]/60 p-4">
           <GachaExperience />
         </div>
-        <p className="text-xs text-library-text-secondary">必要な栞: 銅の栞 ×1</p>
+        <p className="text-xs text-secondary">必要な栞: 銅の栞 ×1</p>
       </article>
 
       <section className="space-y-3">
-        <p className="font-serif text-lg text-library-text-primary">封印された本</p>
+        <p className="text-lg font-bold text-primary">封印された本</p>
         <div className="grid gap-3">
           {UPCOMING_BOOKS.map((book) => (
-            <div key={book.id} className="flex items-center justify-between rounded-2xl border border-library-accent/15 bg-library-primary/60 px-4 py-3">
+            <div key={book.id} className="flex items-center justify-between rounded-2xl border border-accent/15 bg-card/60 px-4 py-3">
               <div>
-                <p className="font-serif text-base">{book.title}</p>
-                <p className="text-xs text-library-text-secondary">{book.description}</p>
+                <p className="text-base font-medium">{book.title}</p>
+                <p className="text-xs text-secondary">{book.description}</p>
               </div>
-              <span className="font-accent text-sm text-library-accent">{book.status}</span>
+              <span className="text-sm font-semibold text-accent">{book.status}</span>
             </div>
           ))}
         </div>

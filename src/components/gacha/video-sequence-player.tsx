@@ -57,10 +57,10 @@ export function VideoSequencePlayer({ segments, status, onComplete, isFetchingRe
   const showPlaceholder = !segments.length || status === "idle";
 
   return (
-    <div className="relative aspect-[9/16] w-full overflow-hidden rounded-[28px] border border-library-accent/20 bg-gradient-to-b from-[#1b1020] via-[#25121f] to-[#2c1810] shadow-[0_25px_65px_rgba(0,0,0,0.55)]">
+    <div className="relative aspect-[9/16] w-full overflow-hidden rounded-[28px] border border-accent/20 bg-gradient-to-b from-[#111111] via-[#0D0D0D] to-[#0A0A0A] shadow-[0_25px_65px_rgba(0,0,0,0.55)]">
       {showPlaceholder ? (
-        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-library-text-secondary">
-          <p className="font-serif text-2xl text-library-text-primary">閲覧室シアター</p>
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-secondary">
+          <p className="text-2xl font-bold text-primary">閲覧室シアター</p>
           <p className="text-sm">栞を差し込むと、本が光りはじめ新しい章が開きます。</p>
         </div>
       ) : (
@@ -86,18 +86,18 @@ export function VideoSequencePlayer({ segments, status, onComplete, isFetchingRe
 
       {!showPlaceholder && (
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="flex items-center justify-between text-xs text-library-text-secondary">
+          <div className="flex items-center justify-between text-xs font-medium text-secondary">
             <span>進行 {progress}%</span>
             <span>{currentSegment ? phaseLabelMap[currentSegment.phase] : '本編'}</span>
           </div>
           <div className="mt-2 h-2 w-full rounded-full bg-white/10">
-            <div className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] via-[#DFC06A] to-[#FFE4A0]" style={{ width: `${progress}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-[#F5A623] via-[#FFB83D] to-[#FFD700]" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
 
       {status === 'revealing' && isFetchingResult && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-library-secondary">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-primary">
           <p className="text-base font-semibold">物語を記録中...</p>
         </div>
       )}

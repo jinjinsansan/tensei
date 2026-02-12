@@ -89,9 +89,9 @@ export function GachaExperience() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-library-accent/25 bg-library-primary/70 p-4 text-center text-sm text-library-text-primary">
+      <div className="rounded-2xl border border-accent/25 bg-card/70 p-4 text-center text-sm text-primary">
         {ticketBalance !== null && (
-          <p className="mb-1 text-xs text-library-accent">栞の残り {ticketBalance}</p>
+          <p className="mb-1 text-xs font-semibold text-accent">栞の残り {ticketBalance}</p>
         )}
         <p>{statusText}</p>
       </div>
@@ -117,7 +117,7 @@ export function GachaExperience() {
         </button>
       </div>
 
-      {error && <p className="text-center text-sm text-library-warning">{error}</p>}
+      {error && <p className="text-center text-sm text-accent">{error}</p>}
 
       <CardReveal open={Boolean(card)} card={card} story={story} onClose={handleReset} />
     </div>

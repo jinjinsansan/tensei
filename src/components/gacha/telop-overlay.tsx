@@ -35,12 +35,12 @@ export function TelopOverlay({ telopType, text, order }: Props) {
   const displayText = text ?? telopCopy[telopType ?? 'default'];
   return (
     <div className="pointer-events-none absolute inset-x-4 top-4">
-      <div className="relative overflow-hidden rounded-2xl border border-library-accent/30 bg-gradient-to-r from-[#3b2617]/90 to-[#2c1810]/90 px-4 py-3 text-library-secondary shadow-library-card">
+      <div className="relative overflow-hidden rounded-2xl border border-accent/30 bg-gradient-to-r from-[#1A1A1A]/90 to-[#111111]/90 px-4 py-3 text-primary shadow-library-card">
         <div className="absolute inset-0 opacity-40">
           {particles.map((particle) => (
             <span
               key={particle.id}
-              className="absolute h-1 w-1 rounded-full bg-library-accent"
+              className="absolute h-1 w-1 rounded-full bg-accent"
               style={{
                 left: particle.left,
                 animation: `particle-float ${particle.duration} linear infinite`,
@@ -49,10 +49,10 @@ export function TelopOverlay({ telopType, text, order }: Props) {
             />
           ))}
         </div>
-        <p className="text-[0.65rem] uppercase tracking-[0.35em] text-library-accent">
+        <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-accent">
           {order ? `Page ${order}` : 'Library Story'}
         </p>
-        <p className="font-serif text-lg text-library-secondary">{displayText}</p>
+        <p className="text-lg font-medium text-primary">{displayText}</p>
       </div>
     </div>
   );

@@ -17,19 +17,19 @@ export function LoginBonusCard({ state, claiming, onClaim }: LoginBonusCardProps
   return (
     <div className="library-card flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-library-accent/15 text-library-accent">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-dim text-accent">
           <Bookmark className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-[0.6rem] uppercase tracking-[0.45em] text-library-accent">日替わりの栞</p>
-          <h3 className="font-serif text-lg text-library-secondary">無料の栞 ×{state.quantity}</h3>
+          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.45em] text-accent">日替わりの栞</p>
+          <h3 className="text-lg font-medium text-primary">無料の栞 ×{state.quantity}</h3>
         </div>
       </div>
 
       <div className="flex items-end justify-between">
         <div className="space-y-1">
-          <p className="text-3xl font-accent text-library-secondary">+{state.quantity}</p>
-          <p className="text-xs text-library-text-secondary">今日だけの贈り物</p>
+          <p className="text-3xl font-semibold text-primary">+{state.quantity}</p>
+          <p className="text-xs text-secondary">今日だけの贈り物</p>
         </div>
         <button
           type="button"
@@ -44,11 +44,11 @@ export function LoginBonusCard({ state, claiming, onClaim }: LoginBonusCardProps
       </div>
 
       {state.nextResetAt && (
-        <p className="text-[0.7rem] text-library-text-secondary">次回受取: {new Date(state.nextResetAt).toLocaleString('ja-JP')}</p>
+        <p className="text-[0.7rem] text-secondary">次回受取: {new Date(state.nextResetAt).toLocaleString('ja-JP')}</p>
       )}
 
       {state.status === 'success' && (
-        <p className="text-sm text-library-accent">{state.message ?? '本日の栞をお渡ししました。'}</p>
+        <p className="text-sm text-accent">{state.message ?? '本日の栞をお渡ししました。'}</p>
       )}
     </div>
   );

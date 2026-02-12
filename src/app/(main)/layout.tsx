@@ -24,7 +24,7 @@ export default async function MainLayout({ children }: MainLayoutProps) {
   const { snapshot } = context;
 
   return (
-    <div className="fixed inset-0 text-library-text-primary">
+    <div className="fixed inset-0 text-primary">
       <Toaster position="top-center" theme="dark" richColors />
       <MainAppProvider initialSnapshot={snapshot}>
         <div

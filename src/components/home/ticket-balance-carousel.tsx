@@ -105,17 +105,17 @@ export function TicketBalanceCarousel({ tickets }: TicketBalanceCarouselProps) {
           return (
             <div
               key={ticket.code}
-              className={`relative min-h-[110px] min-w-[200px] snap-start rounded-2xl border border-library-accent/25 bg-gradient-to-r ${meta.gradient} px-5 py-4 shadow-library-card`}
+              className={`relative min-h-[110px] min-w-[200px] snap-start rounded-2xl border border-accent/25 bg-gradient-to-r ${meta.gradient} px-5 py-4 shadow-library-card`}
             >
-              <div className="absolute right-4 top-2 h-16 w-1.5 rounded-full bg-library-accent/40" />
+              <div className="absolute right-4 top-2 h-16 w-1.5 rounded-full bg-accent/40" />
               <div className={`absolute right-8 top-0 w-8 rounded-b-md ${meta.ribbon}`} aria-hidden />
               <div className="space-y-2">
-                <p className="text-[0.55rem] font-accent uppercase tracking-[0.35em] text-library-accent">{meta.subtitle}</p>
-                <p className="font-serif text-xl text-library-secondary">{meta.title}</p>
+                <p className="text-[0.55rem] font-semibold uppercase tracking-[0.35em] text-accent">{meta.subtitle}</p>
+                <p className="text-xl font-medium text-primary">{meta.title}</p>
               </div>
               <div className="mt-4 text-right">
-                <p className="font-accent text-3xl text-library-secondary">{ticket.quantity}</p>
-                <p className="text-xs text-library-text-secondary">枚の栞</p>
+                <p className="text-3xl font-semibold text-primary">{ticket.quantity}</p>
+                <p className="text-xs text-secondary">枚の栞</p>
               </div>
             </div>
           );
@@ -126,7 +126,7 @@ export function TicketBalanceCarousel({ tickets }: TicketBalanceCarouselProps) {
         <button
           type="button"
           aria-label="前の栞"
-          className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full border border-library-accent/30 bg-library-primary/80 p-1.5 text-library-secondary shadow-library-card"
+          className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full border border-accent/30 bg-card/80 p-1.5 text-primary shadow-library-card"
           onClick={() => scrollByAmount('left')}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -137,7 +137,7 @@ export function TicketBalanceCarousel({ tickets }: TicketBalanceCarouselProps) {
         <button
           type="button"
           aria-label="次の栞"
-          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full border border-library-accent/30 bg-library-primary/80 p-1.5 text-library-secondary shadow-library-card"
+          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full border border-accent/30 bg-card/80 p-1.5 text-primary shadow-library-card"
           onClick={() => scrollByAmount('right')}
         >
           <ChevronRight className="h-4 w-4" />

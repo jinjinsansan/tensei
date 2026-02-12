@@ -30,21 +30,21 @@ export function CardReveal({ open, card, story, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 py-10">
-      <div className="w-full max-w-md space-y-4 rounded-[32px] border border-library-accent/30 bg-library-primary/95 p-6 text-library-text-primary shadow-library-card">
-        <p className="text-center text-sm text-library-accent">✦ 物語が完結しました ✦</p>
+      <div className="w-full max-w-md space-y-4 rounded-[32px] border border-accent/30 bg-card/95 p-6 text-primary shadow-library-card">
+        <p className="text-center text-sm text-accent">✦ 物語が完結しました ✦</p>
         <div className={`library-book-frame ${rarityClass}`}>
           <div className="relative mx-auto h-72 w-48 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-b from-[#3b2a1f] to-[#1f130c]">
             <Image src={card.imageUrl} alt={card.name} fill className="object-cover" sizes="192px" />
           </div>
           <div className="mt-4 flex items-center justify-between text-sm">
-            <span className="rounded-full border border-white/20 px-3 py-1 text-library-secondary">{card.rarity}</span>
-            <span className="font-accent text-lg text-library-secondary">★{card.starLevel}</span>
+            <span className="rounded-full border border-white/20 px-3 py-1 text-primary">{card.rarity}</span>
+            <span className="text-lg font-semibold text-primary">★{card.starLevel}</span>
           </div>
           {story?.hadReversal && (
-            <p className="mt-3 text-center text-sm text-library-accent">隠された章が現れ、物語が書き換わりました。</p>
+            <p className="mt-3 text-center text-sm text-accent">隠された章が現れ、物語が書き換わりました。</p>
           )}
         </div>
-        <p className="text-center text-sm text-library-text-secondary">{description}</p>
+        <p className="text-center text-sm text-secondary">{description}</p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <button className="library-button secondary flex-1" onClick={() => router.push('/collection')}>
             書架を見る

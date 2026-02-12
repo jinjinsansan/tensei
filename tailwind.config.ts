@@ -46,6 +46,12 @@ const config: Config = {
           hover: '#FFB83D',
           dim: 'rgba(245,166,35,0.15)',
         },
+        border: {
+          DEFAULT: 'rgba(255, 255, 255, 0.08)',
+          light: 'rgba(255, 255, 255, 0.12)',
+          accent: 'rgba(245, 166, 35, 0.4)',
+          'accent-strong': 'rgba(245, 166, 35, 0.7)',
+        },
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'var(--font-noto-sans)', 'sans-serif'],

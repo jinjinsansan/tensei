@@ -54,24 +54,24 @@ export function CollectionGallery() {
   }, [cards, keyword, ownedFilter]);
 
   if (loading) {
-    return <p className="text-sm text-library-text-secondary">書架を整えております...</p>;
+    return <p className="text-sm text-secondary">書架を整えております...</p>;
   }
 
   if (error) {
-    return <p className="text-sm text-library-warning">{error}</p>;
+    return <p className="text-sm text-accent">{error}</p>;
   }
 
   const ownedCount = cards.filter((card) => card.owned).length;
   const totalCount = cards.length;
 
   return (
-    <div className="space-y-5 text-library-text-primary">
+    <div className="space-y-5 text-primary">
       <div className="library-card space-y-1">
-        <p className="text-xs uppercase tracking-[0.35em] text-library-accent">蔵書数</p>
-        <p className="text-sm text-library-text-secondary">所持 {ownedCount} / {totalCount} 冊</p>
-        <div className="h-2 w-full rounded-full bg-library-primary-light/60">
+        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">蔵書数</p>
+        <p className="text-sm text-secondary">所持 {ownedCount} / {totalCount} 冊</p>
+        <div className="h-2 w-full rounded-full bg-[#222222]/60">
           <div
-            className="h-full rounded-full bg-library-accent"
+            className="h-full rounded-full bg-accent"
             style={{ width: totalCount ? `${(ownedCount / Math.max(totalCount, 1)) * 100}%` : '0%' }}
           />
         </div>
@@ -79,7 +79,7 @@ export function CollectionGallery() {
 
       <div className="flex flex-wrap gap-3">
         <input
-          className="min-w-[200px] flex-1 rounded-2xl border border-library-accent/25 bg-library-primary/50 px-4 py-2 text-sm text-library-secondary placeholder:text-library-text-secondary focus:border-library-accent focus:outline-none"
+          className="min-w-[200px] flex-1 rounded-2xl border border-accent/25 bg-card/50 px-4 py-2 text-sm text-primary placeholder:text-secondary focus:border-accent focus:outline-none"
           placeholder="物語の書名で検索"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
@@ -87,7 +87,7 @@ export function CollectionGallery() {
         <select
           value={ownedFilter}
           onChange={(e) => setOwnedFilter(e.target.value as 'all' | 'owned' | 'unowned')}
-          className="rounded-2xl border border-library-accent/25 bg-library-primary/50 px-3 py-2 text-sm text-library-secondary"
+          className="rounded-2xl border border-accent/25 bg-card/50 px-3 py-2 text-sm text-primary"
         >
           <option value="all">すべて</option>
           <option value="owned">収蔵済</option>
@@ -97,23 +97,23 @@ export function CollectionGallery() {
 
       <div className="grid gap-3 sm:grid-cols-2">
         {filtered.length === 0 ? (
-          <p className="text-sm text-library-text-secondary">該当する書物は見つかりませんでした。</p>
+          <p className="text-sm text-secondary">該当する書物は見つかりませんでした。</p>
         ) : (
           filtered.map((card) => {
             const rarityClass = getRarityClass(card.rarity);
             return (
               <div
                 key={card.id}
-                className={`flex items-center gap-4 rounded-2xl border border-library-accent/15 bg-library-primary/60 px-4 py-3 transition ${card.owned ? 'opacity-100' : 'opacity-60'}`}
+                className={`flex items-center gap-4 rounded-2xl border border-accent/15 bg-card/60 px-4 py-3 transition ${card.owned ? 'opacity-100' : 'opacity-60'}`}
               >
                 <div className={`flex h-20 w-14 flex-col items-center justify-center rounded-xl bg-gradient-to-b ${rarityClass} text-center text-white`}>
-                  <span className="font-accent text-lg">{card.starLevel}</span>
+                  <span className="text-lg font-semibold">{card.starLevel}</span>
                   <span className="text-[0.65rem] tracking-[0.2em]">★</span>
                 </div>
                 <div className="flex-1 space-y-1">
-                  <p className="font-serif text-base">{card.name}</p>
-                  <p className="text-xs text-library-text-secondary">{card.characterName}</p>
-                  <p className="text-[0.65rem] uppercase tracking-[0.4em] text-library-text-secondary">
+                  <p className="text-base font-medium">{card.name}</p>
+                  <p className="text-xs text-secondary">{card.characterName}</p>
+                  <p className="text-[0.65rem] font-medium uppercase tracking-[0.4em] text-secondary">
                     {card.owned ? '開架済' : '未収蔵'}
                   </p>
                 </div>
