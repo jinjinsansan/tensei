@@ -3,26 +3,51 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { TicketBalanceItem } from '@/lib/utils/tickets';
-import { cn } from '@/lib/utils/cn';
 
 type TicketBalanceCarouselProps = {
   tickets: TicketBalanceItem[];
 };
 
-const META: Record<string, { title: string; subtitle: string; accent: string }> = {
-  free: { title: 'フリーチケット', subtitle: 'FREE TICKET', accent: 'text-neon-blue' },
-  basic: { title: 'ベーシックチケット', subtitle: 'BASIC TICKET', accent: 'text-amber-200' },
-  epic: { title: 'エピックチケット', subtitle: 'EPIC TICKET', accent: 'text-rose-200' },
-  premium: { title: 'プレミアムチケット', subtitle: 'PREMIUM TICKET', accent: 'text-purple-200' },
-  ex: { title: 'EXチケット', subtitle: 'EX TICKET', accent: 'text-emerald-200' },
+const META: Record<string, { title: string; subtitle: string; gradient: string; ribbon: string }> = {
+  free: {
+    title: '無料の栞',
+    subtitle: 'FREE BOOKMARK',
+    gradient: 'from-[#4a3228] via-[#3a251b] to-[#2c1810]',
+    ribbon: 'bg-[#b77a4b]',
+  },
+  basic: {
+    title: '銅の栞',
+    subtitle: 'BRONZE BOOKMARK',
+    gradient: 'from-[#5b2f16] via-[#4a2210] to-[#2c1810]',
+    ribbon: 'bg-[#b4632b]',
+  },
+  epic: {
+    title: '銀の栞',
+    subtitle: 'SILVER BOOKMARK',
+    gradient: 'from-[#4a525f] via-[#3a3f4a] to-[#1e1f26]',
+    ribbon: 'bg-[#b9c0c9]',
+  },
+  premium: {
+    title: '金の栞',
+    subtitle: 'GOLD BOOKMARK',
+    gradient: 'from-[#6e4a12] via-[#5b390c] to-[#2c1810]',
+    ribbon: 'bg-[#d7b153]',
+  },
+  ex: {
+    title: '白金の栞',
+    subtitle: 'PLATINUM BOOKMARK',
+    gradient: 'from-[#5d3c7b] via-[#3a224f] to-[#1e142c]',
+    ribbon: 'bg-[#c5a9ff]',
+  },
 };
 
 function getMeta(code: string) {
   return (
     META[code] ?? {
-      title: 'TICKET',
-      subtitle: 'FLOOR',
-      accent: 'text-white',
+      title: '栞',
+      subtitle: 'BOOKMARK',
+      gradient: 'from-[#4a3228] to-[#2c1810]',
+      ribbon: 'bg-[#c9a84c]',
     }
   );
 }
@@ -80,17 +105,17 @@ export function TicketBalanceCarousel({ tickets }: TicketBalanceCarouselProps) {
           return (
             <div
               key={ticket.code}
-              className="flex min-h-[72px] min-w-[180px] snap-start items-center justify-between rounded-2xl border border-white/10 bg-black/60 px-4 py-3"
+              className={`relative min-h-[110px] min-w-[200px] snap-start rounded-2xl border border-library-accent/25 bg-gradient-to-r ${meta.gradient} px-5 py-4 shadow-library-card`}
             >
-              <div className="space-y-1">
-                <p className={cn('text-[0.55rem] uppercase tracking-[0.45em] text-white/50', meta.accent)}>
-                  {meta.subtitle}
-                </p>
-                <p className="text-base font-display text-white">{meta.title}</p>
+              <div className="absolute right-4 top-2 h-16 w-1.5 rounded-full bg-library-accent/40" />
+              <div className={`absolute right-8 top-0 w-8 rounded-b-md ${meta.ribbon}`} aria-hidden />
+              <div className="space-y-2">
+                <p className="text-[0.55rem] font-accent uppercase tracking-[0.35em] text-library-accent">{meta.subtitle}</p>
+                <p className="font-serif text-xl text-library-secondary">{meta.title}</p>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-display text-white">{ticket.quantity}</p>
-                <p className="text-[0.65rem] text-white/60">枚</p>
+              <div className="mt-4 text-right">
+                <p className="font-accent text-3xl text-library-secondary">{ticket.quantity}</p>
+                <p className="text-xs text-library-text-secondary">枚の栞</p>
               </div>
             </div>
           );
@@ -100,8 +125,8 @@ export function TicketBalanceCarousel({ tickets }: TicketBalanceCarouselProps) {
       {canScrollLeft && (
         <button
           type="button"
-          aria-label="前のチケット"
-          className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-1.5 text-white shadow-lg"
+          aria-label="前の栞"
+          className="absolute left-1 top-1/2 -translate-y-1/2 rounded-full border border-library-accent/30 bg-library-primary/80 p-1.5 text-library-secondary shadow-library-card"
           onClick={() => scrollByAmount('left')}
         >
           <ChevronLeft className="h-4 w-4" />
@@ -111,8 +136,8 @@ export function TicketBalanceCarousel({ tickets }: TicketBalanceCarouselProps) {
       {canScrollRight && (
         <button
           type="button"
-          aria-label="次のチケット"
-          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-1.5 text-white shadow-lg"
+          aria-label="次の栞"
+          className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full border border-library-accent/30 bg-library-primary/80 p-1.5 text-library-secondary shadow-library-card"
           onClick={() => scrollByAmount('right')}
         >
           <ChevronRight className="h-4 w-4" />

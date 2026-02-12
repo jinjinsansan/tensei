@@ -2,13 +2,13 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   return (
-    <div className="space-y-6 text-center">
-      <p className="text-[11px] uppercase tracking-[0.55em] text-neon-yellow">Register</p>
-      <h1 className="font-display text-4xl">新規登録 (準備中)</h1>
-      <p className="text-sm text-white/70">
-        尊師ガチャと同様のメール登録フローは現在構築中です。完成まではログインページから「入場する」で体験できます。
+    <div className="space-y-6 text-center text-library-text-primary">
+      <p className="font-accent text-xs uppercase tracking-[0.45em] text-library-accent">Admission</p>
+      <h1 className="font-serif text-3xl">入館証の発行</h1>
+      <p className="text-sm text-library-text-secondary">
+        正式な登録システムを準備中です。完成までは仮入館証で書庫を探索できます。
       </p>
-      <Link href="/login" className="inline-flex h-12 items-center justify-center rounded-full border border-white/20 px-8 text-sm uppercase tracking-[0.35em] text-white/80">
+      <Link href="/login" className="library-button secondary inline-flex justify-center">
         ログインへ戻る
       </Link>
     </div>

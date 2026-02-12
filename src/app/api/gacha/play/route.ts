@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('gacha/play error', error);
     const message = error instanceof Error ? error.message : 'ガチャの生成に失敗しました。';
-    const status = message.includes('チケット') ? 400 : 500;
+    const status = message.includes('栞') ? 400 : 500;
     return NextResponse.json(
       {
         success: false,

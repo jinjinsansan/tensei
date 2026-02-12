@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-import type { VideoSegment } from "@/lib/gacha/types";
-import { TelopOverlay } from "./telop-overlay";
+import type { VideoSegment } from '@/lib/gacha/types';
+import { TelopOverlay } from './telop-overlay';
 
-type PlayerStatus = "idle" | "loading" | "playing" | "revealing";
+type PlayerStatus = 'idle' | 'loading' | 'playing' | 'revealing';
 
 type Props = {
   segments: VideoSegment[];
@@ -14,13 +14,20 @@ type Props = {
   isFetchingResult?: boolean;
 };
 
+const phaseLabelMap: Record<VideoSegment['phase'], string> = {
+  pre_story: '序章',
+  chance: '前兆',
+  main_story: '本編',
+  reversal: '隠された章',
+};
+
 export function VideoSequencePlayer({ segments, status, onComplete, isFetchingResult }: Props) {
   const [index, setIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const currentSegment = segments[index];
 
   useEffect(() => {
-    if (status !== "playing") return;
+    if (status !== 'playing') return;
     const video = videoRef.current;
     if (!video) return;
     const playVideo = async () => {
@@ -50,13 +57,11 @@ export function VideoSequencePlayer({ segments, status, onComplete, isFetchingRe
   const showPlaceholder = !segments.length || status === "idle";
 
   return (
-    <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-gradient-to-br from-slate-800 to-slate-900 shadow-2xl">
+    <div className="relative aspect-[9/16] w-full overflow-hidden rounded-[28px] border border-library-accent/20 bg-gradient-to-b from-[#1b1020] via-[#25121f] to-[#2c1810] shadow-[0_25px_65px_rgba(0,0,0,0.55)]">
       {showPlaceholder ? (
-        <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-          <p className="text-lg font-semibold text-white">転生シアター</p>
-          <p className="text-sm text-slate-300">
-            ガチャボタンを押して、健太の新しい人生が始まる瞬間を見届けましょう。
-          </p>
+        <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-library-text-secondary">
+          <p className="font-serif text-2xl text-library-text-primary">閲覧室シアター</p>
+          <p className="text-sm">栞を差し込むと、本が光りはじめ新しい章が開きます。</p>
         </div>
       ) : (
         <video
@@ -81,19 +86,19 @@ export function VideoSequencePlayer({ segments, status, onComplete, isFetchingRe
 
       {!showPlaceholder && (
         <div className="absolute bottom-4 left-4 right-4">
-          <div className="flex items-center justify-between text-xs text-slate-200">
+          <div className="flex items-center justify-between text-xs text-library-text-secondary">
             <span>進行 {progress}%</span>
-            <span>{currentSegment?.phase === "reversal" ? "どんでん返し" : currentSegment?.phase === "chance" ? "チャンス" : "ストーリー"}</span>
+            <span>{currentSegment ? phaseLabelMap[currentSegment.phase] : '本編'}</span>
           </div>
-          <div className="mt-1 h-1 w-full rounded-full bg-white/20">
-            <div className="h-full rounded-full bg-gradient-to-r from-amber-300 to-pink-500" style={{ width: `${progress}%` }} />
+          <div className="mt-2 h-2 w-full rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-gradient-to-r from-[#C9A84C] via-[#DFC06A] to-[#FFE4A0]" style={{ width: `${progress}%` }} />
           </div>
         </div>
       )}
 
-      {status === "revealing" && isFetchingResult && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white">
-          <p className="text-base font-semibold">カードを確認中...</p>
+      {status === 'revealing' && isFetchingResult && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-library-secondary">
+          <p className="text-base font-semibold">物語を記録中...</p>
         </div>
       )}
     </div>

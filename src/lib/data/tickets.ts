@@ -26,7 +26,7 @@ export async function consumeTicket(
   const metadata = parseMetadata(session.metadata);
   const balance = typeof metadata.tickets === 'number' ? metadata.tickets : initialTickets;
   if (balance <= 0) {
-    throw new Error('チケットが足りません。');
+    throw new Error('栞が足りません。');
   }
   const updatedMetadata: SessionMetadata = {
     ...metadata,
@@ -39,7 +39,7 @@ export async function consumeTicket(
     .select('*')
     .single();
   if (error || !data) {
-    throw error ?? new Error('チケット更新に失敗しました。');
+    throw error ?? new Error('栞の更新に失敗しました。');
   }
   return {
     remaining: updatedMetadata.tickets ?? 0,

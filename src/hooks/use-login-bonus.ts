@@ -29,7 +29,7 @@ export function useLoginBonus() {
         ...prev,
         status: 'success',
         claimed: true,
-        message: 'フリーチケットを付与しました',
+        message: '無料の栞をお届けしました',
       }));
       setClaiming(false);
     }, 600);

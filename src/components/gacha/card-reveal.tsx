@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
-import type { CardSummary } from "@/lib/api/gacha";
-import type { StoryPayload } from "@/lib/gacha/types";
+import type { CardSummary } from '@/lib/api/gacha';
+import type { StoryPayload } from '@/lib/gacha/types';
 
 type Props = {
   open: boolean;
@@ -13,51 +13,44 @@ type Props = {
   onClose: () => void;
 };
 
-const rarityColors: Record<string, string> = {
-  N: "from-slate-200 to-slate-400",
-  R: "from-sky-200 to-sky-400",
-  SR: "from-green-200 to-emerald-400",
-  SSR: "from-amber-200 to-amber-500",
-  UR: "from-pink-200 to-pink-500",
-  LR: "from-purple-200 to-purple-500",
+const rarityFrame: Record<string, string> = {
+  N: 'rarity-n',
+  R: 'rarity-r',
+  SR: 'rarity-sr',
+  SSR: 'rarity-ssr',
+  UR: 'rarity-ur',
+  LR: 'rarity-lr',
 };
 
 export function CardReveal({ open, card, story, onClose }: Props) {
   const router = useRouter();
   if (!open || !card) return null;
-  const gradient = rarityColors[card.rarity] ?? "from-slate-200 to-slate-500";
+  const rarityClass = rarityFrame[card.rarity] ?? 'rarity-n';
+  const description = `あなたの来世は「${card.name}」の章でした。`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl bg-slate-900 p-6 text-white shadow-2xl">
-        <p className="text-center text-sm uppercase tracking-[0.3em] text-slate-300">Reincarnation Result</p>
-        <h2 className="mt-2 text-center text-2xl font-bold">{card.name}</h2>
-        <div className={`mt-6 rounded-3xl bg-gradient-to-br ${gradient} p-[2px]`}>
-          <div className="rounded-[28px] bg-slate-950 p-6">
-            <div className="relative mx-auto h-72 w-48">
-              <Image src={card.imageUrl} alt={card.name} fill className="rounded-2xl object-cover" sizes="192px" />
-            </div>
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <span className="rounded-full bg-white/10 px-3 py-1 uppercase tracking-wide">{card.rarity}</span>
-              <span className="font-semibold">★{card.starLevel}</span>
-            </div>
-            {story?.hadReversal && (
-              <p className="mt-3 text-center text-sm text-rose-200">どんでん返しが発動し、伝説級の転生を達成!</p>
-            )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 py-10">
+      <div className="w-full max-w-md space-y-4 rounded-[32px] border border-library-accent/30 bg-library-primary/95 p-6 text-library-text-primary shadow-library-card">
+        <p className="text-center text-sm text-library-accent">✦ 物語が完結しました ✦</p>
+        <div className={`library-book-frame ${rarityClass}`}>
+          <div className="relative mx-auto h-72 w-48 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-b from-[#3b2a1f] to-[#1f130c]">
+            <Image src={card.imageUrl} alt={card.name} fill className="object-cover" sizes="192px" />
           </div>
+          <div className="mt-4 flex items-center justify-between text-sm">
+            <span className="rounded-full border border-white/20 px-3 py-1 text-library-secondary">{card.rarity}</span>
+            <span className="font-accent text-lg text-library-secondary">★{card.starLevel}</span>
+          </div>
+          {story?.hadReversal && (
+            <p className="mt-3 text-center text-sm text-library-accent">隠された章が現れ、物語が書き換わりました。</p>
+          )}
         </div>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button
-            className="flex-1 rounded-2xl border border-white/30 px-4 py-3 text-sm font-semibold backdrop-blur"
-            onClick={onClose}
-          >
-            もう一度転生
+        <p className="text-center text-sm text-library-text-secondary">{description}</p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <button className="library-button secondary flex-1" onClick={() => router.push('/collection')}>
+            書架を見る
           </button>
-          <button
-            className="flex-1 rounded-2xl bg-white/15 px-4 py-3 text-sm font-semibold text-white"
-            onClick={() => router.push("/collection")}
-          >
-            カード図鑑へ
+          <button className="library-button flex-1" onClick={onClose}>
+            もう1冊
           </button>
         </div>
       </div>

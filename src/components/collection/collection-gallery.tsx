@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
 
 type ApiCard = {
   id: string;
@@ -55,79 +54,93 @@ export function CollectionGallery() {
   }, [cards, keyword, ownedFilter]);
 
   if (loading) {
-    return <p className="text-sm text-zinc-400">ロード中...</p>;
+    return <p className="text-sm text-library-text-secondary">書架を整えております...</p>;
   }
 
   if (error) {
-    return <p className="text-sm text-red-400">{error}</p>;
+    return <p className="text-sm text-library-warning">{error}</p>;
   }
 
+  const ownedCount = cards.filter((card) => card.owned).length;
+  const totalCount = cards.length;
+
   return (
-    <div className="space-y-5">
-      <div className="rounded-3xl border border-white/10 bg-hall-panel/80 p-4 shadow-panel-inset">
-        <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">Progress</p>
-        <p className="mt-2 text-sm text-zinc-300">
-          所持 {cards.filter((card) => card.owned).length} / {cards.length}
-        </p>
+    <div className="space-y-5 text-library-text-primary">
+      <div className="library-card space-y-1">
+        <p className="text-xs uppercase tracking-[0.35em] text-library-accent">蔵書数</p>
+        <p className="text-sm text-library-text-secondary">所持 {ownedCount} / {totalCount} 冊</p>
+        <div className="h-2 w-full rounded-full bg-library-primary-light/60">
+          <div
+            className="h-full rounded-full bg-library-accent"
+            style={{ width: totalCount ? `${(ownedCount / Math.max(totalCount, 1)) * 100}%` : '0%' }}
+          />
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
         <input
-          className="min-w-[200px] flex-1 rounded-2xl border border-white/10 bg-black/20 px-4 py-2 text-sm text-white outline-none focus:border-neon-blue"
-          placeholder="カード名で検索"
+          className="min-w-[200px] flex-1 rounded-2xl border border-library-accent/25 bg-library-primary/50 px-4 py-2 text-sm text-library-secondary placeholder:text-library-text-secondary focus:border-library-accent focus:outline-none"
+          placeholder="物語の書名で検索"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
         <select
           value={ownedFilter}
           onChange={(e) => setOwnedFilter(e.target.value as 'all' | 'owned' | 'unowned')}
-          className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white"
+          className="rounded-2xl border border-library-accent/25 bg-library-primary/50 px-3 py-2 text-sm text-library-secondary"
         >
           <option value="all">すべて</option>
-          <option value="owned">取得済</option>
-          <option value="unowned">未取得</option>
+          <option value="owned">収蔵済</option>
+          <option value="unowned">未収蔵</option>
         </select>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         {filtered.length === 0 ? (
-          <p className="text-sm text-zinc-400">該当するカードがありません</p>
+          <p className="text-sm text-library-text-secondary">該当する書物は見つかりませんでした。</p>
         ) : (
-          filtered.map((card) => (
-            <div
-              key={card.id}
-              className={`flex items-center gap-3 rounded-2xl border border-white/10 p-3 shadow-panel-inset transition ${
-                card.owned ? 'bg-hall-panel/80 hover:border-neon-blue' : 'bg-black/30 opacity-70'
-              }`}
-            >
-              {card.imageUrl ? (
-                <Image
-                  src={card.imageUrl}
-                  alt={card.name}
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="h-16 w-16 rounded-xl object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-black/30 text-[0.6rem] text-zinc-400">
-                  NO IMAGE
+          filtered.map((card) => {
+            const rarityClass = getRarityClass(card.rarity);
+            return (
+              <div
+                key={card.id}
+                className={`flex items-center gap-4 rounded-2xl border border-library-accent/15 bg-library-primary/60 px-4 py-3 transition ${card.owned ? 'opacity-100' : 'opacity-60'}`}
+              >
+                <div className={`flex h-20 w-14 flex-col items-center justify-center rounded-xl bg-gradient-to-b ${rarityClass} text-center text-white`}>
+                  <span className="font-accent text-lg">{card.starLevel}</span>
+                  <span className="text-[0.65rem] tracking-[0.2em]">★</span>
                 </div>
-              )}
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <p className="font-display text-base text-white">{card.name}</p>
-                  <span className="text-xs text-neon-yellow">{card.rarity}</span>
+                <div className="flex-1 space-y-1">
+                  <p className="font-serif text-base">{card.name}</p>
+                  <p className="text-xs text-library-text-secondary">{card.characterName}</p>
+                  <p className="text-[0.65rem] uppercase tracking-[0.4em] text-library-text-secondary">
+                    {card.owned ? '開架済' : '未収蔵'}
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-zinc-400">{card.characterName}</p>
-                <p className="text-[0.65rem] uppercase tracking-[0.35em] text-zinc-500">
-                  {card.owned ? 'OWNED' : 'LOCKED'}
-                </p>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
   );
+}
+
+function getRarityClass(rarity: string) {
+  switch (rarity) {
+    case 'N':
+      return 'from-[#8B7355] to-[#5a4125]';
+    case 'R':
+      return 'from-[#6B8E5A] to-[#31502a]';
+    case 'SR':
+      return 'from-[#5B7FA5] to-[#22354d]';
+    case 'SSR':
+      return 'from-[#C9A84C] to-[#7a5a12]';
+    case 'UR':
+      return 'from-[#9B59B6] to-[#44204f]';
+    case 'LR':
+      return 'from-[#FFD700] to-[#8a6b10]';
+    default:
+      return 'from-[#3f2a1b] to-[#2c1810]';
+  }
 }

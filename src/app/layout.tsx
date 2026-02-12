@@ -1,24 +1,33 @@
 import type { Metadata } from 'next';
-import { Orbitron, Noto_Sans_JP } from 'next/font/google';
+import { Noto_Serif_JP, Noto_Sans_JP, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { getPublicEnv } from '@/lib/env';
+import { BackgroundParticles } from '@/components/layout/background-particles';
 
-const orbitron = Orbitron({
+const notoSerif = Noto_Serif_JP({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-display',
+  weight: ['400', '600', '700', '900'],
+  variable: '--font-serif',
+  display: 'swap',
 });
 
 const notoSans = Noto_Sans_JP({
   subsets: ['latin'],
-  weight: ['400', '500', '700', '900'],
-  variable: '--font-body',
+  weight: ['400', '500', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-accent',
   display: 'swap',
 });
 
 const publicEnv = getPublicEnv();
-const siteName = publicEnv.NEXT_PUBLIC_SITE_NAME ?? '転生ガチャ 〜来世ルーレット〜';
-const siteDescription = '尊師ホール級のネオン演出を転生テーマで楽しむ没入型ガチャ体験';
+const siteName = publicEnv.NEXT_PUBLIC_SITE_NAME ?? '来世ガチャ ～もしも生まれ変わったら～';
+const siteDescription = '輪廻の書庫で来世の物語をめくる、書物テーマの没入型ガチャ体験';
 const siteUrl = publicEnv.NEXT_PUBLIC_SITE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL;
 
 export const metadata: Metadata = {
@@ -53,8 +62,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja">
-      <body className={`${orbitron.variable} ${notoSans.variable} font-body antialiased bg-hall-background text-white`}>
+    <html lang="ja" className="dark">
+      <body className={`${notoSerif.variable} ${notoSans.variable} ${playfair.variable} font-sans antialiased`}>
+        <BackgroundParticles />
         {children}
       </body>
     </html>

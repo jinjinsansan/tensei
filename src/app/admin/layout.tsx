@@ -4,33 +4,33 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 const links = [
-  { href: "/admin", label: "ダッシュボード" },
-  { href: "/admin/characters", label: "キャラクター" },
-  { href: "/admin/cards", label: "カード" },
-  { href: "/admin/scenarios", label: "シナリオ" },
-  { href: "/admin/settings", label: "ガチャ設定" },
+  { href: '/admin', label: '蔵書ダッシュボード' },
+  { href: '/admin/characters', label: '登場人物管理' },
+  { href: '/admin/cards', label: '物語の書' },
+  { href: '/admin/scenarios', label: '物語管理' },
+  { href: '/admin/settings', label: '隠された章 設定' },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-library-primary text-library-text-primary">
       <div className="mx-auto flex max-w-6xl gap-6 px-4 py-10">
-        <aside className="w-56 rounded-3xl bg-white/5 p-5">
-          <p className="text-sm uppercase tracking-[0.3em] text-slate-300">Admin</p>
-          <h2 className="mt-2 text-xl font-semibold">転生ガチャ管理</h2>
+        <aside className="w-56 rounded-3xl border border-library-accent/30 bg-library-primary/80 p-5 shadow-library-card">
+          <p className="text-sm uppercase tracking-[0.3em] text-library-accent">Admin</p>
+          <h2 className="mt-2 text-xl font-semibold">来世ガチャ管理</h2>
           <nav className="mt-6 flex flex-col gap-2">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-2xl px-3 py-2 text-sm text-white/80 transition hover:bg-white/10"
+                className="rounded-2xl px-3 py-2 text-sm text-library-text-primary transition hover:bg-library-primary-light/50"
               >
                 {link.label}
               </Link>
             ))}
           </nav>
         </aside>
-        <main className="flex-1 rounded-3xl bg-white/5 p-6 shadow-2xl">{children}</main>
+        <main className="flex-1 rounded-3xl border border-library-accent/25 bg-library-primary/70 p-6 shadow-library-card">{children}</main>
       </div>
     </div>
   );
