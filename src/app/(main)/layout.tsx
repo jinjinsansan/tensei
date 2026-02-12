@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
 import { Toaster } from 'sonner';
 import { TabBar, type TabBarItem } from '@/components/layout/tab-bar';
 import { MainAppProvider } from '@/components/providers/main-app-provider';
-import { getServiceSupabase } from '@/lib/supabase/service';
-import { getOrCreateSession } from '@/lib/data/session';
-import { getOrCreateSessionToken } from '@/lib/session/cookie';
+import { fetchExistingSession } from '@/lib/app/session';
 import { loadMainAppSnapshot } from '@/lib/app/main-app';
 
 const tabs: TabBarItem[] = [
@@ -20,9 +19,10 @@ type MainLayoutProps = {
 };
 
 export default async function MainLayout({ children }: MainLayoutProps) {
-  const token = await getOrCreateSessionToken();
-  const supabase = getServiceSupabase();
-  const session = await getOrCreateSession(supabase, token);
+  const session = await fetchExistingSession();
+  if (!session) {
+    redirect('/login');
+  }
   const snapshot = loadMainAppSnapshot(session);
 
   return (

@@ -105,14 +105,14 @@ export function SplashGateway() {
             <div className="flex flex-col gap-4">
               <button
                 type="button"
-                onClick={() => router.push('/home')}
+                onClick={() => router.push('/login')}
                 className="h-14 w-full rounded-full bg-gradient-to-r from-[#ff2d95] via-[#ff8c3a] to-[#fff65c] font-display text-sm uppercase tracking-[0.4em] text-[#120714] shadow-[0_0_32px_rgba(255,246,92,0.6)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fff65c]/70"
               >
                 タップして入場
               </button>
               <button
                 type="button"
-                onClick={() => router.push('/home')}
+                onClick={() => router.push('/register')}
                 className="h-12 w-full rounded-full border border-white/20 text-[11px] uppercase tracking-[0.45em] text-white/80 transition hover:border-neon-blue hover:text-white"
               >
                 新規登録はこちら
