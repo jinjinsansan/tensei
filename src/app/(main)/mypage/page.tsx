@@ -48,7 +48,7 @@ export default async function MyPage() {
       .maybeSingle(),
     supabase
       .from("referral_claims")
-      .select("id, status, created_at, referral_codes!inner(app_user_id)")
+      .select("id, status, created_at, referral_codes!inner()")
       .eq("referral_codes.app_user_id", user.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -60,6 +60,7 @@ export default async function MyPage() {
       .maybeSingle(),
   ]);
 
+  const hasDataError = inventoryResult.error || cardsResult.error;
   const inventory = inventoryResult.data ?? [];
   const totalOwned = inventory.length;
   const distinctOwned = new Set(inventory.map((item) => item.card_id)).size;
@@ -124,6 +125,12 @@ export default async function MyPage() {
           チケット残高、カードコレクション、招待状況、特典連携をここでまとめて確認できます。
         </p>
       </div>
+
+      {hasDataError && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          一部のデータの読み込みに失敗しました。ページを再読み込みしてください。
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-3xl border border-white/10 bg-black/25 p-5 shadow-panel-inset">

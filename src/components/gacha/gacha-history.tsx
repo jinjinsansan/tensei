@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Clock } from "lucide-react";
 
 type HistoryEntry = {
@@ -28,14 +28,21 @@ export function GachaHistory({ title = "最近の結果", limit = 10 }: Props) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/gacha/history");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error ?? "取得に失敗しました");
+      return data.history as HistoryEntry[];
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
-    fetch("/api/gacha/history")
-      .then(async (res) => {
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error ?? "取得に失敗しました");
-        return data.history as HistoryEntry[];
-      })
+    
+    fetchHistory()
       .then((items) => {
         if (mounted) setHistory(items.slice(0, limit));
       })
@@ -46,7 +53,7 @@ export function GachaHistory({ title = "最近の結果", limit = 10 }: Props) {
     return () => {
       mounted = false;
     };
-  }, [limit]);
+  }, [fetchHistory, limit]);
 
   return (
     <div className="rounded-3xl border border-white/10 bg-hall-panel/80 shadow-panel-inset">
