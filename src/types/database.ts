@@ -163,6 +163,8 @@ export type Database = {
           updated_at: string;
           max_supply: number | null;
           current_supply: number;
+          person_name: string | null;
+          card_style: string | null;
         };
         Insert: {
           id?: string;
@@ -179,6 +181,8 @@ export type Database = {
           updated_at?: string;
           max_supply?: number | null;
           current_supply?: number;
+          person_name?: string | null;
+          card_style?: string | null;
         };
         Update: Partial<Database['public']['Tables']['cards']['Row']>;
         Relationships: [
