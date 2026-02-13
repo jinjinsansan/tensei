@@ -53,6 +53,14 @@ export function SplashGateway() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-hall-background text-white">
+      {/* Preload shuffle cards */}
+      <div className="hidden">
+        {SHUFFLE_CARDS.map((card) => (
+          <Image key={card} src={card} alt="preload" width={1} height={1} priority />
+        ))}
+        <Image src="/kenta_cards/card12_hero.png" alt="preload" width={1} height={1} priority />
+      </div>
+      
       <div className="pointer-events-none absolute inset-0 opacity-50">
         <div className="absolute inset-0 bg-hall-grid opacity-35" />
         <div className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-neon-pink/30 blur-[220px]" />
@@ -88,6 +96,7 @@ export function SplashGateway() {
                 src={currentShuffleCard}
                 alt="シャッフル中"
                 fill
+                priority
                 className="object-cover"
               />
             </motion.div>
@@ -103,6 +112,7 @@ export function SplashGateway() {
                 src="/kenta_cards/card12_hero.png"
                 alt="来世ガチャ"
                 fill
+                priority
                 className="object-cover"
               />
             </motion.div>
