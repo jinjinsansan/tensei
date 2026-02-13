@@ -5,20 +5,50 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-type AnimationPhase = "shock" | "logo" | "complete";
+type AnimationPhase = "first" | "shuffle" | "last" | "logo" | "complete";
+
+const SHUFFLE_CARDS = [
+  "/kenta_cards/card02_warehouse.png",
+  "/kenta_cards/card03_youtuber.png",
+  "/kenta_cards/card04_civil_servant.png",
+  "/kenta_cards/card05_ramen.png",
+  "/kenta_cards/card06_boxer.png",
+  "/kenta_cards/card07_surgeon.png",
+  "/kenta_cards/card08_business_owner.png",
+  "/kenta_cards/card09_mercenary.png",
+  "/kenta_cards/card10_rockstar.png",
+  "/kenta_cards/card11_demon_king.png",
+];
 
 export function SplashGateway() {
   const router = useRouter();
-  const [phase, setPhase] = useState<AnimationPhase>("shock");
+  const [phase, setPhase] = useState<AnimationPhase>("first");
+  const [currentShuffleCard, setCurrentShuffleCard] = useState(SHUFFLE_CARDS[0]);
 
   useEffect(() => {
-    const timers = [setTimeout(() => setPhase("logo"), 1200), setTimeout(() => setPhase("complete"), 2800)];
+    const timers = [
+      setTimeout(() => setPhase("shuffle"), 500),
+      setTimeout(() => setPhase("last"), 2500),
+      setTimeout(() => setPhase("logo"), 3000),
+      setTimeout(() => setPhase("complete"), 4500),
+    ];
     return () => timers.forEach(clearTimeout);
   }, []);
 
+  useEffect(() => {
+    if (phase !== "shuffle") return;
+    const interval = setInterval(() => {
+      const randomIndex = Math.floor(Math.random() * SHUFFLE_CARDS.length);
+      setCurrentShuffleCard(SHUFFLE_CARDS[randomIndex]);
+    }, 50);
+    return () => clearInterval(interval);
+  }, [phase]);
+
   const heroLines = useMemo(() => ["来世", "GACHA"], []);
 
-  const showShock = phase === "shock";
+  const showFirst = phase === "first";
+  const showShuffle = phase === "shuffle";
+  const showLast = phase === "last";
   const showLogo = phase === "logo";
 
   return (
@@ -31,38 +61,58 @@ export function SplashGateway() {
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 py-10">
         {phase !== "complete" && (
           <div className="relative flex h-[62vh] w-full items-center justify-center overflow-hidden rounded-[32px] border border-white/10 bg-black/30 shadow-[0_0_45px_rgba(0,0,0,0.5)]">
+            {/* First Card */}
             <motion.div
               className="absolute inset-0"
-              initial={{ opacity: 0, scale: 2.4 }}
-              animate={showShock ? { opacity: 1, scale: 1.35 } : { opacity: 0, scale: 1.05 }}
-              transition={{ duration: 0.9, ease: [0.2, 0.75, 0.2, 1] }}
+              initial={{ opacity: 0 }}
+              animate={showFirst ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.3 }}
             >
               <Image
-                src="/opensonshi.png"
+                src="/kenta_cards/card01_convenience.png"
                 alt="来世ガチャ"
                 fill
                 priority
-                className="object-cover object-top"
+                className="object-cover"
               />
             </motion.div>
+
+            {/* Shuffle Cards */}
             <motion.div
-              className="absolute inset-0 mix-blend-screen"
-              style={{
-                background:
-                  "radial-gradient(circle at 50% 40%, rgba(255,255,255,0.95), rgba(0,200,255,0.55) 45%, rgba(0,0,0,0.1) 75%)",
-              }}
+              className="absolute inset-0"
               initial={{ opacity: 0 }}
-              animate={
-                showShock
-                  ? { opacity: [0, 0.9, 0.35, 0], transition: { duration: 0.7, times: [0, 0.2, 0.6, 1] } }
-                  : { opacity: 0 }
-              }
-            />
+              animate={showShuffle ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.1 }}
+            >
+              <Image
+                src={currentShuffleCard}
+                alt="シャッフル中"
+                fill
+                className="object-cover"
+              />
+            </motion.div>
+
+            {/* Last Card */}
+            <motion.div
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={showLast ? { opacity: 1 } : { opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Image
+                src="/kenta_cards/card12_hero.png"
+                alt="来世ガチャ"
+                fill
+                className="object-cover"
+              />
+            </motion.div>
+
+            {/* Logo Overlay */}
             <motion.div
               className="absolute flex items-center justify-center"
               initial={{ opacity: 0, scale: 0.6 }}
               animate={showLogo ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             >
               <div className="relative">
                 <div className="absolute inset-0 -z-10 rounded-[36px] bg-neon-pink/30 blur-3xl" />
