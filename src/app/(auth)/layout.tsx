@@ -1,19 +1,34 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
+import Image from "next/image";
 
-type AuthLayoutProps = {
+export default function AuthLayout({
+  children,
+}: {
   children: ReactNode;
-};
-
-export default function AuthLayout({ children }: AuthLayoutProps) {
+}) {
   return (
-    <div className="relative min-h-screen bg-primary text-primary">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/05 to-transparent" />
-      </div>
-      <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 py-14">
-        <div className="w-full rounded-[32px] border border-accent/25 bg-card/80 p-8 shadow-library-card">
-          {children}
+    <div className="relative flex min-h-screen items-center justify-center bg-hall-background px-4 py-10">
+      <div className="absolute inset-0 bg-hall-grid opacity-35" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,45,149,0.25),transparent_50%)] opacity-70" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,rgba(48,240,255,0.2),transparent_60%)] opacity-70" />
+      <div className="glass-panel w-full max-w-md space-y-6 p-8">
+        <div className="flex items-center gap-4">
+          <div className="neon-crest">
+            <Image
+              src="/icon.png"
+              alt="SONSHI GACHA"
+              width={64}
+              height={64}
+              priority
+              className="h-16 w-16 rounded-2xl object-cover"
+            />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-blue">SONSHI GACHA</p>
+            <p className="text-sm text-zinc-400">尊師ガチャへようこそ</p>
+          </div>
         </div>
+        {children}
       </div>
     </div>
   );
