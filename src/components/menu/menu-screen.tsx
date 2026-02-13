@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { useFormStatus } from "react-dom";
-
 import { exitNeonHall } from "@/app/(auth)/actions";
 import { useMainApp } from "@/components/providers/main-app-provider";
 
@@ -38,7 +37,7 @@ const sections = [
 
 function formatDate(value?: string | null) {
   if (!value) return "-";
-  return new Date(value).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+  return new Date(value).toLocaleString("ja-JP", { month: "short", day: "numeric" });
 }
 
 export function MenuScreen() {
@@ -49,20 +48,17 @@ export function MenuScreen() {
     return { totalTickets, freeTicket };
   }, [snapshot.tickets]);
 
-  const email = snapshot.user?.email ?? "unknown";
-  const lastLogin = formatDate(snapshot.user?.lastLoginAt);
-
   return (
     <section className="space-y-8">
       <div className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-6 py-7 shadow-[0_20px_45px_rgba(0,0,0,0.35)]">
         <p className="text-xs uppercase tracking-[0.5em] text-neon-yellow">MENU</p>
         <div className="space-y-1">
           <h1 className="font-display text-3xl text-white">プレイヤー設定</h1>
-          <p className="text-sm text-zinc-300">{email}</p>
+          <p className="text-sm text-zinc-300">{snapshot.user?.email ?? "unknown"}</p>
         </div>
         <div className="flex flex-wrap gap-6 text-sm text-zinc-400">
           <p>Tickets: {stats.totalTickets}枚 (FREE {stats.freeTicket})</p>
-          <p>Last Login: {lastLogin}</p>
+          <p>Last Login: {formatDate(snapshot.user?.lastLoginAt)}</p>
         </div>
       </div>
 
@@ -70,35 +66,23 @@ export function MenuScreen() {
         <div key={section.title} className="space-y-3">
           <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">{section.title}</p>
           <div className="space-y-3">
-            {section.links.map((link) => {
-              const content = (
-                <div className="flex items-center justify-between rounded-3xl border border-white/10 bg-black/25 px-5 py-4 shadow-panel-inset transition hover:border-neon-blue">
-                  <div>
-                    <p className="font-display text-lg text-white">{link.title}</p>
-                    <p className="text-sm text-zinc-400">{link.description}</p>
-                  </div>
-                  {link.badge && (
-                    <span className="rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-neon-yellow">
-                      {link.badge}
-                    </span>
-                  )}
+            {section.links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center justify-between rounded-3xl border border-white/10 bg-black/25 px-5 py-4 shadow-panel-inset transition hover:border-neon-blue"
+              >
+                <div>
+                  <p className="font-display text-lg text-white">{link.title}</p>
+                  <p className="text-sm text-zinc-400">{link.description}</p>
                 </div>
-              );
-
-              if (link.href.startsWith("mailto:")) {
-                return (
-                  <a key={link.href} href={link.href} className="block" target="_blank" rel="noreferrer">
-                    {content}
-                  </a>
-                );
-              }
-
-              return (
-                <Link key={link.href} href={link.href} className="block">
-                  {content}
-                </Link>
-              );
-            })}
+                {link.badge && (
+                  <span className="rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-neon-yellow">
+                    {link.badge}
+                  </span>
+                )}
+              </Link>
+            ))}
           </div>
         </div>
       ))}
