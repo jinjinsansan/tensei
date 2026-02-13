@@ -1,120 +1,158 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import type { Metadata } from 'next';
+"use client";
 
-import { loginLibraryMember, resendVerificationEmail } from '@/app/(auth)/actions';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useFormState, useFormStatus } from "react-dom";
+import { loginLibraryMember, resendVerificationEmail } from "../actions";
 
-type LoginPageProps = {
-  searchParams?: { error?: string; resend?: string };
-};
+type AuthActionState = { status: "idle" | "error" | "success"; message?: string };
+type ResendVerificationState = { status: "idle" | "error" | "success"; message?: string };
 
-export const metadata: Metadata = {
-  title: 'ホール入場 - 尊師ガチャ',
-};
+const initialState: AuthActionState = { status: "idle" };
+const resendInitialState: ResendVerificationState = { status: "idle" };
+const primaryButtonClass =
+  "mt-4 w-full rounded-full bg-gradient-to-r from-[#ff2d95] via-[#ff8c3a] to-[#fff65c] py-3 font-display text-sm tracking-[0.35em] text-[#120714] shadow-[0_0_28px_rgba(255,246,92,0.6)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fff65c]/70 disabled:opacity-60";
 
-const inputClassName =
-  'mt-2 w-full rounded-2xl border border-white/15 bg-[rgba(7,5,20,0.65)] px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-neon-blue focus:outline-none';
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className={primaryButtonClass}>
+      {pending ? "SIGNING IN" : "SIGN IN"}
+    </button>
+  );
+}
 
-const resendMessages: Record<string, { text: string; variant: 'error' | 'success' }> = {
-  invalid: { text: 'メールアドレスをご確認ください。', variant: 'error' },
-  missing: { text: '登録済みのメールアドレスを入力してください。', variant: 'error' },
-  sent: { text: '認証メールを送信しました。', variant: 'success' },
-};
-
-export default function LoginPage({ searchParams }: LoginPageProps) {
-  const error = searchParams?.error;
-  const resend = searchParams?.resend ? resendMessages[searchParams.resend] : null;
+function LoginForm() {
+  const [state, action] = useFormState(async (prev: AuthActionState, formData: FormData) => {
+    try {
+      await loginLibraryMember(formData);
+      return { status: "success" as const };
+    } catch (error) {
+      return { status: "error" as const, message: error instanceof Error ? error.message : "ログインに失敗しました" };
+    }
+  }, initialState);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#050014]">
-      <div className="pointer-events-none absolute inset-0 opacity-80">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,45,149,0.4),transparent_55%),radial-gradient(circle_at_85%_20%,rgba(48,240,255,0.45),transparent_55%),radial-gradient(circle_at_50%_90%,rgba(255,246,92,0.25),transparent_60%),linear-gradient(135deg,#050014,#130532,#03010f)]" />
-        <div className="absolute inset-0 bg-hall-grid opacity-25" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.04) 1px,transparent 1px)] opacity-20" />
+    <form action={action} className="space-y-4">
+      <div>
+        <label className="text-xs uppercase tracking-[0.3em] text-zinc-400">Email</label>
+        <input
+          name="email"
+          type="email"
+          required
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none focus:border-neon-blue"
+          placeholder="user@example.com"
+        />
+      </div>
+      <div>
+        <label className="text-xs uppercase tracking-[0.3em] text-zinc-400">Password</label>
+        <input
+          name="password"
+          type="password"
+          required
+          minLength={6}
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none focus:border-neon-blue"
+          placeholder="••••••••"
+        />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-6 py-16">
-        <div className="w-full max-w-xl space-y-6 rounded-[36px] border border-white/12 bg-[rgba(6,4,18,0.92)] p-8 shadow-[0_35px_120px_rgba(0,0,0,0.8)] backdrop-blur-[22px]">
-          <div className="space-y-3 text-center">
-            <p className="text-[11px] uppercase tracking-[0.55em] text-neon-blue">SONSHI GACHA</p>
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/5">
-              <Image src="/raise-gacha-logo.png" alt="来世ガチャ ロゴ" width={48} height={48} className="h-12 w-12 object-contain" />
-            </div>
-            <h1 className="font-display text-4xl text-white">尊師ガチャへようこそ</h1>
-            <p className="text-sm text-zinc-400">ホール入場</p>
-          </div>
+      {state.status === "error" && (
+        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
+          {state.message ?? "ログインに失敗しました"}
+        </p>
+      )}
 
-          <div className="space-y-5 rounded-[28px] border border-white/10 bg-gradient-to-b from-white/4 to-white/0 px-6 py-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-            <p className="text-[11px] uppercase tracking-[0.45em] text-neon-yellow">Entrance</p>
-            <form action={loginLibraryMember} className="space-y-4">
-              <div>
-                <label className="text-xs uppercase tracking-[0.35em] text-zinc-400">Email</label>
-                <input type="email" name="email" required className={inputClassName} placeholder="user@example.com" />
-              </div>
-              <div>
-                <label className="text-xs uppercase tracking-[0.35em] text-zinc-400">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  minLength={8}
-                  required
-                  className={inputClassName}
-                  placeholder="••••••••"
-                />
-              </div>
+      <SubmitButton />
+    </form>
+  );
+}
 
-              {error && (
-                <p className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">{error}</p>
-              )}
+function ResendButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full rounded-full border border-white/20 py-3 text-[11px] uppercase tracking-[0.35em] text-white transition hover:border-neon-blue disabled:opacity-60"
+    >
+      {pending ? "SENDING" : "認証メールを再送"}
+    </button>
+  );
+}
 
-              <button
-                type="submit"
-                className="w-full rounded-full bg-gradient-to-r from-[#ff2d95] via-[#ff8c3a] to-[#fff65c] py-3 font-display text-sm tracking-[0.35em] text-[#120714] shadow-[0_0_32px_rgba(255,246,92,0.65)] transition hover:brightness-105"
-              >
-                SIGN IN
-              </button>
-            </form>
-          </div>
+function ResendVerificationForm() {
+  const [state, action] = useFormState(async (prev: ResendVerificationState, formData: FormData) => {
+    try {
+      await resendVerificationEmail(formData);
+      return { status: "success" as const, message: "送信しました" };
+    } catch (error) {
+      return { status: "error" as const, message: error instanceof Error ? error.message : "送信に失敗しました" };
+    }
+  }, resendInitialState);
 
-          <div className="space-y-3 rounded-[28px] border border-white/10 bg-[rgba(4,3,15,0.85)] px-6 py-6 shadow-[0_12px_30px_rgba(0,0,0,0.4)]">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.35em] text-neon-blue">メールが届いていませんか？</p>
-              <p className="mt-1 text-xs text-zinc-400">登録済みアドレスへ認証メールを再送します。</p>
-            </div>
-            <form action={resendVerificationEmail} className="space-y-3">
-              <div>
-                <label className="text-[11px] uppercase tracking-[0.3em] text-zinc-400">Email</label>
-                <input type="email" name="email" required className={inputClassName} placeholder="user@example.com" />
-              </div>
-              {resend && (
-                <p
-                  className={`rounded-2xl border px-4 py-2 text-xs ${
-                    resend.variant === 'success'
-                      ? 'border-neon-blue/30 bg-neon-blue/10 text-neon-blue'
-                      : 'border-red-500/30 bg-red-500/10 text-red-200'
-                  }`}
-                >
-                  {resend.text}
-                </p>
-              )}
-              <button
-                type="submit"
-                className="w-full rounded-full border border-white/20 py-3 text-[11px] uppercase tracking-[0.35em] text-white transition hover:border-neon-blue"
-              >
-                認証メールを再送
-              </button>
-            </form>
-          </div>
+  return (
+    <form action={action} className="space-y-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-left">
+      <div>
+        <p className="text-xs uppercase tracking-[0.3em] text-neon-blue">メールが届いていませんか？</p>
+        <p className="mt-1 text-xs text-zinc-400">登録済みアドレスへ認証メールを再送します。</p>
+      </div>
+      <div>
+        <label className="text-[11px] uppercase tracking-[0.3em] text-zinc-400">Email</label>
+        <input
+          name="email"
+          type="email"
+          required
+          className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm outline-none focus:border-neon-blue"
+          placeholder="user@example.com"
+        />
+      </div>
+      {state.status === "error" && (
+        <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs text-red-200">
+          {state.message ?? "送信に失敗しました"}
+        </p>
+      )}
+      {state.status === "success" && (
+        <p className="rounded-xl border border-neon-blue/30 bg-neon-blue/10 px-4 py-2 text-xs text-neon-blue">
+          {state.message ?? "送信しました"}
+        </p>
+      )}
+      <ResendButton />
+    </form>
+  );
+}
 
-          <div className="flex flex-col gap-2 text-center text-xs text-zinc-400">
-            <Link href="/register" className="text-neon-yellow">
-              アカウントを作成
-            </Link>
-            <Link href="/reset" className="text-neon-blue">
-              パスワードをお忘れの方はこちら
-            </Link>
-          </div>
-        </div>
+export default function LoginPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const prefetch = async () => {
+      try {
+        await router.prefetch("/home");
+      } catch (error) {
+        console.error("Failed to prefetch /home", error);
+      }
+    };
+
+    void prefetch();
+  }, [router]);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs uppercase tracking-[0.5em] text-neon-blue">Entrance</p>
+        <h1 className="mt-2 font-display text-3xl text-white">ホール入場</h1>
+        <p className="text-sm text-zinc-400">登録メールアドレスでログインしてください。</p>
+      </div>
+      <LoginForm />
+      <ResendVerificationForm />
+      <div className="flex flex-col gap-2 text-center text-xs text-zinc-400">
+        <Link href="/register" className="text-neon-yellow">
+          アカウントを作成
+        </Link>
+        <Link href="/reset" className="text-neon-blue">
+          パスワードをお忘れの方はこちら
+        </Link>
       </div>
     </div>
   );
