@@ -16,7 +16,7 @@ export function SplashGateway() {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  const heroLines = useMemo(() => ["SONSHI", "GACHA"], []);
+  const heroLines = useMemo(() => ["来世", "GACHA"], []);
 
   const showShock = phase === "shock";
   const showLogo = phase === "logo";
@@ -39,7 +39,7 @@ export function SplashGateway() {
             >
               <Image
                 src="/opensonshi.png"
-                alt="SONSHI"
+                alt="来世ガチャ"
                 fill
                 priority
                 className="object-cover object-top"
@@ -69,7 +69,7 @@ export function SplashGateway() {
                 <div className="neon-crest">
                   <Image
                     src="/icon-large.png"
-                    alt="SONSHI GACHA"
+                    alt="RAISE GACHA"
                     width={260}
                     height={260}
                     priority
@@ -101,7 +101,7 @@ export function SplashGateway() {
                 <div className="neon-crest">
                   <Image
                     src="/icon.png"
-                    alt="SONSHI GACHA"
+                    alt="RAISE GACHA"
                     width={128}
                     height={128}
                     className="h-28 w-28 rounded-3xl object-cover shadow-[0_0_35px_rgba(255,255,255,0.25)]"
@@ -115,7 +115,7 @@ export function SplashGateway() {
                     <div key={line}>{line}</div>
                   ))}
                 </div>
-                <p className="text-sm text-white/80">尊師と仲間たちのガチャカードをコレクションしよう</p>
+                <p className="text-sm text-white/80">もしも生まれ変わったら～輪廻の書庫へようこそ</p>
               </div>
             </div>
             <div className="flex flex-col gap-4">

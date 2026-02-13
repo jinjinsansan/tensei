@@ -15,9 +15,9 @@ export default function RegisterPage({ searchParams }: RegisterPageProps) {
   return (
     <section className="space-y-8">
       <div className="space-y-2 text-center">
-        <p className="text-[11px] uppercase tracking-[0.55em] text-neon-blue">SONSHI GACHA</p>
-        <h1 className="font-display text-4xl text-white">SONSHI GACHA</h1>
-        <p className="text-sm text-zinc-300">尊師ガチャへようこそ</p>
+        <p className="text-[11px] uppercase tracking-[0.55em] text-neon-blue">RAISE GACHA</p>
+        <h1 className="font-display text-4xl text-white">RAISE GACHA</h1>
+        <p className="text-sm text-zinc-300">来世ガチャへようこそ</p>
       </div>
 
       <div className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 shadow-[0_25px_45px_rgba(0,0,0,0.45)]">

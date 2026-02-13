@@ -67,7 +67,7 @@ export default async function GachaPage() {
             ガチャホール
           </h1>
         </div>
-        <p className="text-sm text-white/70">尊師と仲間たちのカードをコレクションしよう</p>
+        <p className="text-sm text-white/70">もしも生まれ変わったら～未来の自分を探そう</p>
       </div>
 
       <section className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-5 py-5">

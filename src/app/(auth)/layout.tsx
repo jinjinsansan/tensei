@@ -16,7 +16,7 @@ export default function AuthLayout({
           <div className="neon-crest">
             <Image
               src="/icon.png"
-              alt="SONSHI GACHA"
+              alt="来世ガチャ"
               width={64}
               height={64}
               priority
@@ -24,8 +24,8 @@ export default function AuthLayout({
             />
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-neon-blue">SONSHI GACHA</p>
-            <p className="text-sm text-zinc-400">尊師ガチャへようこそ</p>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-blue">RAISE GACHA</p>
+            <p className="text-sm text-zinc-400">来世ガチャへようこそ</p>
           </div>
         </div>
         {children}
