@@ -22,6 +22,7 @@ const publicEnv = getPublicEnv();
 const siteName = publicEnv.NEXT_PUBLIC_SITE_NAME ?? '来世ガチャ ～もしも生まれ変わったら～';
 const siteDescription = '輪廻の書庫で来世の物語をめくる、書物テーマの没入型ガチャ体験';
 const siteUrl = publicEnv.NEXT_PUBLIC_SITE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL;
+const siteLogo = '/raise-gacha-logo.png';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl ?? 'http://localhost:3000'),
@@ -34,6 +35,10 @@ export const metadata: Metadata = {
     icon: '/icon.png',
     shortcut: '/icon.png',
     apple: '/apple-touch-icon.png',
+    other: {
+      rel: 'mask-icon',
+      url: siteLogo,
+    },
   },
   openGraph: {
     title: siteName,
@@ -41,11 +46,13 @@ export const metadata: Metadata = {
     url: siteUrl,
     siteName,
     type: 'website',
+    images: [{ url: siteLogo, width: 2048, height: 2048 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: siteName,
     description: siteDescription,
+    images: [siteLogo],
   },
 };
 
