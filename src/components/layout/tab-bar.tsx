@@ -7,9 +7,7 @@ import { cn } from '@/lib/utils/cn';
 
 const iconMap = {
   entrance: Home,
-  reading: BookOpen,
   shelf: BookOpen,
-  study: Menu,
   gacha: Sparkles,
   social: Users,
   menu: Menu,

@@ -32,8 +32,8 @@ export default async function MainLayout({ children }: MainLayoutProps) {
           className="relative h-full overflow-y-auto overflow-x-hidden"
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
         >
-          <div className="mx-auto flex min-h-full w-full max-w-5xl justify-center px-0 pb-32 pt-6 sm:px-4 sm:pt-10">
-            <div className="relative flex w-full flex-col px-4 pb-28 pt-4 sm:max-w-[430px] sm:px-6">
+          <div className="mx-auto flex min-h-full w-full max-w-5xl justify-center px-0 pb-24 pt-6 sm:px-4 sm:pt-10">
+            <div className="relative flex w-full flex-col px-4 pb-20 pt-4 sm:max-w-[430px] sm:px-6">
               <div className="relative flex-1">
                 <div className="page-transition mx-auto w-full max-w-md space-y-8">
                   {children}
