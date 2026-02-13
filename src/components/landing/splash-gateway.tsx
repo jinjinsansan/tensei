@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -19,10 +20,9 @@ export function SplashGateway() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-hall-background text-white">
-      <div className="pointer-events-none absolute inset-0 opacity-50">
-        <div className="absolute inset-0 bg-hall-grid opacity-35" />
-        <div className="absolute -top-32 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-neon-pink/30 blur-[220px]" />
-        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-neon-blue/30 blur-[200px]" />
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_55%),radial-gradient(circle_at_15%_25%,rgba(255,45,149,0.35),transparent_60%),radial-gradient(circle_at_85%_20%,rgba(52,220,255,0.4),transparent_60%),linear-gradient(135deg,#03010a,#0d0220)]" />
+        <div className="absolute inset-0 bg-hall-grid opacity-30" />
       </div>
       <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 py-10">
         {phase !== "complete" ? (
@@ -39,12 +39,17 @@ export function SplashGateway() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="flex flex-col items-center gap-4">
-                <div className="neon-crest flex h-28 w-28 items-center justify-center rounded-3xl">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-neon-pink to-neon-blue text-4xl font-bold">
-                    来世
-                  </div>
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-[1.5rem] border border-white/12 bg-white/5 shadow-[0_25px_45px_rgba(0,0,0,0.55)]">
+                  <Image
+                    src="/raise-gacha-logo.png"
+                    alt="来世ガチャ ロゴ"
+                    width={88}
+                    height={88}
+                    className="h-20 w-20 object-contain"
+                    priority
+                  />
                 </div>
                 <p className="text-[11px] uppercase tracking-[0.55em] text-neon-blue/80">TAP TO ENTER</p>
               </div>
