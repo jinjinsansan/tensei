@@ -1,86 +1,43 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/features/**/*.{js,ts,jsx,tsx,mdx}',
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/features/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        library: {
-          primary: '#1A1A1A',
-          'primary-light': '#222222',
-          secondary: '#E5E5E5',
-          'secondary-dark': '#999999',
-          accent: '#F5A623',
-          'accent-light': '#FFB83D',
-          'accent-glow': '#FFD700',
-          'text-primary': '#E5E5E5',
-          'text-secondary': '#999999',
-          'text-dark': '#0A0A0A',
-          success: '#4ADE80',
-          error: '#FF4D4D',
-          warning: '#F5A623',
-          'rarity-n': '#666666',
-          'rarity-r': '#4ADE80',
-          'rarity-sr': '#60A5FA',
-          'rarity-ssr': '#F5A623',
-          'rarity-ur': '#C084FC',
-          'rarity-lr': '#FFD700',
-        },
-        bg: {
-          primary: '#0A0A0A',
-          secondary: '#111111',
-          card: '#1A1A1A',
-          elevated: '#1E1E1E',
-        },
-        text: {
-          primary: '#E5E5E5',
-          secondary: '#999999',
-          tertiary: '#666666',
-        },
-        accent: {
-          DEFAULT: '#F5A623',
-          hover: '#FFB83D',
-          dim: 'rgba(245,166,35,0.15)',
-        },
-        border: {
-          DEFAULT: 'rgba(255, 255, 255, 0.08)',
-          light: 'rgba(255, 255, 255, 0.12)',
-          accent: 'rgba(245, 166, 35, 0.4)',
-          'accent-strong': 'rgba(245, 166, 35, 0.7)',
-        },
+        "hall-background": "#05010d",
+        "hall-panel": "#130a28",
+        "hall-surface": "#1d0f3d",
+        "hall-border": "rgba(255,255,255,0.08)",
+        "neon-pink": "#ff2d95",
+        "neon-blue": "#30f0ff",
+        "neon-yellow": "#fff65c",
+        "neon-purple": "#a855f7",
+        "glow-green": "#76ffcb",
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'var(--font-noto-sans)', 'sans-serif'],
-        serif: ['var(--font-inter)', 'var(--font-noto-sans)', 'sans-serif'],
-        display: ['var(--font-inter)', 'var(--font-noto-sans)', 'sans-serif'],
-        accent: ['var(--font-inter)', 'var(--font-noto-sans)', 'sans-serif'],
+        display: ["var(--font-display)", "Orbitron", "sans-serif"],
+        body: ["var(--font-body)", "Noto Sans JP", "sans-serif"],
       },
       backgroundImage: {
-        'library-gradient': 'linear-gradient(180deg, #111111 0%, #0A0A0A 100%)',
-        'library-paper': 'linear-gradient(135deg, #1F1F1F 0%, #111111 100%)',
+        "hall-grid":
+          "radial-gradient(circle at top, rgba(255,45,149,0.25), transparent 55%), linear-gradient(120deg, rgba(48,240,255,0.18), rgba(5,1,13,0) 60%), repeating-linear-gradient(0deg, rgba(255,255,255,0.05) 0, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 12px)",
       },
       boxShadow: {
-        'library-gold': '0 8px 30px rgba(245,166,35,0.12)',
-        'library-card': '0 12px 35px rgba(0,0,0,0.45)',
+        neon: "0 0 18px rgba(255,45,149,0.55), 0 0 36px rgba(48,240,255,0.45), 0 0 60px rgba(255,246,92,0.35)",
+        "panel-inset": "inset 0 1px 6px rgba(255,255,255,0.12), inset 0 0 18px rgba(48,240,255,0.18)",
       },
       animation: {
-        'library-pulse': 'library-pulse 3s ease-in-out infinite',
-        'particle-float': 'particle-float var(--particle-duration,8s) linear infinite',
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
       },
       keyframes: {
-        'library-pulse': {
-          '0%, 100%': { opacity: 0.9, transform: 'translateY(0px)' },
-          '50%': { opacity: 1, transform: 'translateY(-4px)' },
-        },
-        'particle-float': {
-          '0%': { transform: 'translateY(100vh) translateX(0)', opacity: 0 },
-          '10%': { opacity: 0.6 },
-          '90%': { opacity: 0.6 },
-          '100%': { transform: 'translateY(-10vh) translateX(20px)', opacity: 0 },
+        "pulse-glow": {
+          "0%, 100%": { opacity: "0.7", transform: "scale(0.98)" },
+          "50%": { opacity: "1", transform: "scale(1.02)" },
         },
       },
     },
