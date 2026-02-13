@@ -4,8 +4,8 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
-import { attachSessionToUser, findSessionByToken, updateSession } from '@/lib/data/session';
-import { findUserByEmail, createUser, touchLastLogin } from '@/lib/data/users';
+import { attachSessionToUser, detachSessionByToken } from '@/lib/data/session';
+import { findUserByEmail, createUser } from '@/lib/data/users';
 import { ensureInitialTickets } from '@/lib/data/tickets';
 import { hashPassword, verifyPassword } from '@/lib/auth/password';
 import { clearSessionToken, getOrCreateSessionToken, getSessionToken } from '@/lib/session/cookie';
@@ -95,7 +95,6 @@ export async function loginLibraryMember(formData: FormData) {
     buildErrorRedirect('/login', 'メールアドレスまたはパスワードが正しくありません。');
     return;
   }
-  await touchLastLogin(supabase, user.id);
   const token = await getOrCreateSessionToken();
   await attachSessionToUser(supabase, token, user.id);
   redirect('/home');
@@ -105,10 +104,7 @@ export async function exitNeonHall() {
   const supabase = getServiceSupabase();
   const token = await getSessionToken();
   if (token) {
-    const session = await findSessionByToken(supabase, token);
-    if (session) {
-      await updateSession(supabase, session.id, { app_user_id: null });
-    }
+    await detachSessionByToken(supabase, token);
   }
   await clearSessionToken();
   redirect('/login');

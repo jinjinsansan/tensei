@@ -87,5 +87,36 @@ export async function attachSessionToUser(
   appUserId: string,
   metadata?: Json,
 ): Promise<Tables<'user_sessions'>> {
-  return getOrCreateSession(client, sessionToken, { appUserId, metadata });
+  // Use upsert to combine findSessionByToken + updateSession into 1 query
+  const payload: TablesInsert<'user_sessions'> = {
+    session_token: sessionToken,
+    metadata: metadata ?? {},
+    app_user_id: appUserId,
+    last_seen_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await client
+    .from('user_sessions')
+    .upsert(payload, {
+      onConflict: 'session_token',
+      ignoreDuplicates: false,
+    })
+    .select('*')
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error('Failed to attach session to user');
+  }
+
+  return data as Tables<'user_sessions'>;
+}
+
+export async function detachSessionByToken(
+  client: DbClient,
+  sessionToken: string,
+): Promise<void> {
+  await client
+    .from('user_sessions')
+    .update({ app_user_id: null, last_seen_at: new Date().toISOString() })
+    .eq('session_token', sessionToken);
 }
