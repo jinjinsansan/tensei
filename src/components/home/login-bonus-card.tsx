@@ -1,5 +1,5 @@
-import { Bookmark } from 'lucide-react';
-import type { LoginBonusState } from '@/hooks/use-login-bonus';
+import { Ticket } from "lucide-react";
+import type { LoginBonusState } from "@/hooks/use-login-bonus";
 
 type LoginBonusCardProps = {
   state: LoginBonusState;
@@ -8,28 +8,28 @@ type LoginBonusCardProps = {
 };
 
 export function LoginBonusCard({ state, claiming, onClaim }: LoginBonusCardProps) {
-  const buttonLabel = state.claimed || state.status === 'success'
-    ? '受取済み'
+  const buttonLabel = state.claimed || state.status === "success"
+    ? "受取済"
     : claiming
-      ? '付与中...'
-      : '栞を受け取る';
+      ? "付与中..."
+      : "ログインボーナスを受け取る";
 
   return (
-    <div className="library-card flex flex-col gap-4">
+    <div className="slot-panel flex flex-col gap-3 px-4 py-3">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-dim text-accent">
-          <Bookmark className="h-5 w-5" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neon-yellow/20 text-neon-yellow">
+          <Ticket className="h-4 w-4" />
         </div>
         <div>
-          <p className="text-[0.6rem] font-semibold uppercase tracking-[0.45em] text-accent">日替わりの栞</p>
-          <h3 className="text-lg font-medium text-primary">無料の栞 ×{state.quantity}</h3>
+          <p className="text-[0.55rem] uppercase tracking-[0.5em] text-neon-yellow">LOGIN BONUS</p>
+          <h3 className="font-display text-base text-white">本日のフリーチケット</h3>
         </div>
       </div>
 
       <div className="flex items-end justify-between">
-        <div className="space-y-1">
-          <p className="text-3xl font-semibold text-primary">+{state.quantity}</p>
-          <p className="text-xs text-secondary">今日だけの贈り物</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-display text-white">+1</p>
+          <p className="text-[0.7rem] text-zinc-400">FREE TICKET</p>
         </div>
         <button
           type="button"
@@ -37,18 +37,16 @@ export function LoginBonusCard({ state, claiming, onClaim }: LoginBonusCardProps
             void onClaim();
           }}
           disabled={claiming || state.claimed}
-          className="library-button secondary px-6 disabled:opacity-60"
+          className="rounded-full border border-white/20 px-4 py-1.5 text-[0.6rem] uppercase tracking-[0.4em] text-white transition hover:border-neon-yellow disabled:opacity-50"
         >
           {buttonLabel}
         </button>
       </div>
 
       {state.nextResetAt && (
-        <p className="text-[0.7rem] text-secondary">次回受取: {new Date(state.nextResetAt).toLocaleString('ja-JP')}</p>
-      )}
-
-      {state.status === 'success' && (
-        <p className="text-sm text-accent">{state.message ?? '本日の栞をお渡ししました。'}</p>
+        <p className="text-[0.6rem] text-zinc-500">
+          次回受取: {new Date(state.nextResetAt).toLocaleString("ja-JP")}
+        </p>
       )}
     </div>
   );

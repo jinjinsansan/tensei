@@ -1,86 +1,287 @@
 "use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { LoginBonusCard } from '@/components/home/login-bonus-card';
-import { TicketBalanceCarousel } from '@/components/home/ticket-balance-carousel';
-import { useMainApp } from '@/components/providers/main-app-provider';
-import { GACHA_DEFINITIONS } from '@/constants/gacha';
-import { useLoginBonus } from '@/hooks/use-login-bonus';
+import Image from "next/image";
+import Link from "next/link";
+import { LoginBonusCard } from "@/components/home/login-bonus-card";
+import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
+import { useMainApp } from "@/components/providers/main-app-provider";
+import { GACHA_DEFINITIONS } from "@/constants/gacha";
+import { useLoginBonus } from "@/hooks/use-login-bonus";
+import { canonicalizeGachaId } from "@/lib/utils/gacha";
+import type { TicketBalanceItem } from "@/lib/utils/tickets";
+
+const FALLBACK_TICKETS: TicketBalanceItem[] = [
+  { code: "free", name: "フリーチケット", quantity: 0, colorToken: "neon-blue", sortOrder: 0 },
+  { code: "basic", name: "ベーシックチケット", quantity: 0, colorToken: "neon-yellow", sortOrder: 1 },
+  { code: "epic", name: "エピックチケット", quantity: 0, colorToken: "neon-pink", sortOrder: 2 },
+  { code: "premium", name: "プレミアムチケット", quantity: 0, colorToken: "neon-purple", sortOrder: 3 },
+  { code: "ex", name: "EXチケット", quantity: 0, colorToken: "glow-green", sortOrder: 4 },
+];
+
+const RARITY_LABELS = ["N", "R", "SR", "SSR", "UR"];
+
+function formatRarity(range: [number, number]) {
+  const label = (value: number) => RARITY_LABELS[value - 1] ?? `★${value}`;
+  return `${label(range[0])}〜${label(range[1])}`;
+}
 
 export function HomeDashboard() {
   const { snapshot } = useMainApp();
-  const router = useRouter();
-  const tickets = snapshot.tickets.length > 0 ? snapshot.tickets : [];
+  const tickets = snapshot.tickets.length > 0 ? snapshot.tickets : FALLBACK_TICKETS;
   const tiers = snapshot.gachaCatalog.length > 0 ? snapshot.gachaCatalog : GACHA_DEFINITIONS;
   const loginBonus = useLoginBonus();
 
-  const featuredStories = tiers.slice(0, 3).map((tier) => ({
-    id: tier.id,
-    title: `${tier.name}の物語`,
-    rarity: `★${tier.rarityRange[0]}〜★${tier.rarityRange[1]}`,
-  }));
-
   return (
-    <section className="space-y-10 text-primary">
-      <div className="space-y-3 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.45em] text-accent">Archives</p>
-        <h1 className="text-3xl font-bold text-primary">書庫入口</h1>
-        <p className="text-sm text-secondary">ここから輪廻の書庫へ。栞を揃え、物語の扉を開いてください。</p>
+    <section className="mx-auto w-full max-w-md space-y-10">
+      <div className="space-y-2 text-center">
+        <div className="relative inline-block">
+          <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 blur-2xl" />
+          <h1 className="relative font-display text-5xl font-bold tracking-[0.05em] text-transparent bg-gradient-to-r from-[#fff65c] via-[#ff9b3d] to-[#ff2d95] bg-clip-text drop-shadow-[0_0_50px_rgba(255,246,92,0.8)] drop-shadow-[0_0_90px_rgba(255,157,61,0.6)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+            チケットホール
+          </h1>
+        </div>
+        <p className="text-sm text-white/75">チケットを購入してガチャを回そう</p>
       </div>
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between text-sm text-secondary">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.35em] text-accent">日替わりの栞</p>
-            <p>今日はどんな栞が届くでしょう？</p>
+        <div className="flex items-center justify-between text-xs text-zinc-400">
+          <div className="space-y-1">
+            <p className="uppercase tracking-[0.4em] text-neon-yellow">Tickets</p>
+            <p>本日のチケット残高</p>
           </div>
-          <span className="text-xs font-semibold tracking-[0.3em] text-accent">Daily</span>
-        </div>
-        <LoginBonusCard state={loginBonus.state} claiming={loginBonus.claiming} onClaim={loginBonus.claim} />
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">栞の残高</p>
-            <p className="text-sm text-secondary">手元の栞を確認しましょう</p>
-          </div>
-          <Link href="/mypage/tickets" className="text-xs font-semibold tracking-[0.3em] text-accent">
-            栞の記録
+          <Link href="/mypage/tickets" className="text-xs uppercase tracking-[0.35em] text-neon-blue">
+            履歴を見る
           </Link>
         </div>
         <TicketBalanceCarousel tickets={tickets} />
       </section>
 
-      <section className="library-card space-y-4">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold tracking-[0.35em] text-accent">閲覧室</p>
-          <h2 className="text-2xl font-bold text-primary">「次の物語を開きましょう」</h2>
-          <p className="text-sm text-secondary">栞を差し込み、本を開けばあなたの来世が流れ込んできます。</p>
-        </div>
-        <button type="button" className="library-button w-full" onClick={() => router.push('/gacha')}>
-          閲覧室へ進む
-        </button>
+      <section className="space-y-3">
+        <p className="text-xs uppercase tracking-[0.4em] text-neon-yellow">Login Bonus</p>
+        <LoginBonusCard state={loginBonus.state} claiming={loginBonus.claiming} onClaim={loginBonus.claim} />
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between text-secondary">
-          <p className="text-lg font-bold text-primary">最近の物語</p>
-          <span className="text-xs font-semibold tracking-[0.3em] text-accent">NEW</span>
+      <section className="space-y-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.4em] text-neon-yellow">Ticket Inventory</p>
+          <h2 className="font-display text-2xl text-white">保有チケット</h2>
         </div>
-        <div className="space-y-2">
-          {featuredStories.map((story) => (
-            <div key={story.id} className="flex items-center justify-between rounded-xl border border-accent/20 bg-card/40 px-4 py-3">
-              <div>
-                <p className="text-base font-medium text-primary">{story.title}</p>
-                <p className="text-xs text-secondary">{story.rarity}</p>
-              </div>
-              <span className="text-sm font-semibold text-accent">開架中</span>
-            </div>
-          ))}
+        <div className="space-y-4">
+          {tiers.map((tier) => {
+            const slug = canonicalizeGachaId(tier.id) ?? tier.id;
+            const ticketKey = canonicalizeGachaId(tier.ticketLabel ?? "");
+            const isFreeGacha = slug === "free" || ticketKey === "free" || tier.name.includes("フリー");
+
+            if (isFreeGacha) {
+              return (
+                <article
+                  key={tier.id}
+                  className="flex items-center justify-between gap-4 rounded-3xl border border-white/10 bg-gradient-to-br from-[#0b0416] via-[#1a0a22] to-[#050006] px-5 py-4 shadow-panel-inset"
+                >
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-neon-yellow">FREE TICKET</p>
+                    <h3 className="font-display text-xl text-white">フリーチケット</h3>
+                    <p className="text-[0.75rem] text-white/70">ログインボーナスのチケットで挑戦できます。</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-4xl font-display text-white">{loginBonus.state.quantity ?? 0}</p>
+                      <span className="text-[0.7rem] text-zinc-300">LOGIN BONUS TICKETS</span>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-[0.55rem] uppercase tracking-[0.4em] ${
+                        loginBonus.state.claimed ? "bg-lime-300/20 text-lime-200" : "bg-amber-300/20 text-amber-200"
+                      }`}
+                    >
+                      {loginBonus.state.claimed ? "CLAIMED" : "READY"}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative h-16 w-28">
+                      <Image
+                        src="/ticket-illustration.svg"
+                        alt="Free ticket"
+                        fill
+                        sizes="112px"
+                        className="object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.35)]"
+                      />
+                    </div>
+                    <Link
+                      href="/gacha"
+                      className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.35em] text-white/80 transition hover:border-neon-blue hover:text-white"
+                    >
+                      ガチャへ
+                    </Link>
+                  </div>
+                </article>
+              );
+            }
+
+            if (slug === "basic") {
+              return (
+                <article
+                  key={tier.id}
+                  className="flex items-center justify-between gap-4 rounded-3xl border border-white/12 bg-gradient-to-br from-[#2a1a02] via-[#3f2607] to-[#0b0502] px-5 py-4 shadow-panel-inset"
+                >
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-amber-300">BASIC TICKET</p>
+                    <h3 className="font-display text-xl text-white">ベーシックチケット</h3>
+                    <p className="text-[0.75rem] text-white/70">スタンダードなネオン演出がお楽しみいただけます。</p>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-3xl font-display text-white">BASIC</p>
+                      <span className="text-[0.7rem] text-amber-200/80">TICKET</span>
+                    </div>
+                    <div className="flex gap-2 text-[0.65rem] text-amber-100/90">
+                      <span className="rounded-full border border-white/20 px-3 py-1 uppercase tracking-[0.35em]">
+                        {formatRarity(tier.rarityRange)}
+                      </span>
+                      <span className="rounded-full border border-white/10 px-3 py-1 uppercase tracking-[0.35em]">BASIC</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative h-16 w-32">
+                      <Image
+                        src="/ticket-illustration-basic.svg"
+                        alt="Basic ticket"
+                        fill
+                        sizes="128px"
+                        className="object-contain drop-shadow-[0_20px_30px_rgba(0,0,0,0.4)]"
+                      />
+                    </div>
+                    <Link
+                      href="/gacha"
+                      className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.35em] text-white/85 transition hover:border-neon-yellow hover:text-white"
+                    >
+                      ガチャへ
+                    </Link>
+                  </div>
+                </article>
+              );
+            }
+
+            if (slug === "epic") {
+              return (
+                <article
+                  key={tier.id}
+                  className="flex items-center gap-5 rounded-3xl border border-white/12 bg-gradient-to-br from-[#2b0014] via-[#430029] to-[#070008] px-5 py-4 shadow-panel-inset"
+                >
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-rose-200">EPIC TICKET</p>
+                    <h3 className="font-display text-xl text-white">エピックチケット</h3>
+                    <p className="text-[0.75rem] text-white/75">熱量が一気に上がるエピック演出。ライティングが濃い贅沢空間を再現。</p>
+                    <div className="flex items-center gap-3 text-[0.65rem] text-white/80">
+                      <span className="rounded-full border border-white/20 px-3 py-1 uppercase tracking-[0.35em]">
+                        {formatRarity(tier.rarityRange)}
+                      </span>
+                      <span className="rounded-full border border-white/10 px-3 py-1 uppercase tracking-[0.35em] text-rose-200">EPIC</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative h-20 w-32">
+                      <Image
+                        src="/ticket-illustration-epic.svg"
+                        alt="Epic ticket"
+                        fill
+                        sizes="128px"
+                        className="object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.45)]"
+                      />
+                    </div>
+                    <Link
+                      href="/gacha"
+                      className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.35em] text-white/85 transition hover:border-neon-pink hover:text-white"
+                    >
+                      ガチャへ
+                    </Link>
+                  </div>
+                </article>
+              );
+            }
+
+            if (slug === "premium") {
+              return (
+                <article
+                  key={tier.id}
+                  className="flex items-center gap-5 rounded-3xl border border-white/12 bg-gradient-to-br from-[#1c0030] via-[#2f0150] to-[#05000a] px-5 py-4 shadow-panel-inset"
+                >
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-purple-200">PREMIUM TICKET</p>
+                    <h3 className="font-display text-xl text-white">プレミアムチケット</h3>
+                    <p className="text-[0.75rem] text-white/75">光と霧が交差するプレミアム演出。重厚な演出と希少カードが待っています。</p>
+                    <div className="flex items-center gap-3 text-[0.65rem] text-white/80">
+                      <span className="rounded-full border border-white/20 px-3 py-1 uppercase tracking-[0.35em]">
+                        {formatRarity(tier.rarityRange)}
+                      </span>
+                      <span className="rounded-full border border-white/10 px-3 py-1 uppercase tracking-[0.35em] text-purple-200">PREMIUM</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative h-20 w-32">
+                      <Image
+                        src="/ticket-illustration-premium.svg"
+                        alt="Premium ticket"
+                        fill
+                        sizes="136px"
+                        className="object-contain drop-shadow-[0_28px_38px_rgba(0,0,0,0.5)]"
+                      />
+                    </div>
+                    <Link
+                      href="/gacha"
+                      className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.35em] text-white/85 transition hover:border-neon-purple hover:text-white"
+                    >
+                      ガチャへ
+                    </Link>
+                  </div>
+                </article>
+              );
+            }
+
+            if (slug === "ex") {
+              return (
+                <article
+                  key={tier.id}
+                  className="flex items-center gap-5 rounded-3xl border border-white/12 bg-gradient-to-br from-[#032415] via-[#064030] to-[#010b06] px-5 py-4 shadow-panel-inset"
+                >
+                  <div className="flex-1 space-y-2">
+                    <p className="text-xs uppercase tracking-[0.4em] text-emerald-200">EX TICKET</p>
+                    <h3 className="font-display text-xl text-white">EXチケット</h3>
+                    <p className="text-[0.75rem] text-white/75">最上級のプライベートホール。フィナーレ演出とEXカードがここで待っています。</p>
+                    <div className="flex items-center gap-3 text-[0.65rem] text-white/80">
+                      <span className="rounded-full border border-white/20 px-3 py-1 uppercase tracking-[0.35em]">
+                        {formatRarity(tier.rarityRange)}
+                      </span>
+                      <span className="rounded-full border border-white/10 px-3 py-1 uppercase tracking-[0.35em] text-emerald-200">EX</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative h-20 w-32">
+                      <Image
+                        src="/ticket-illustration-vip.svg"
+                        alt="VIP ticket"
+                        fill
+                        sizes="136px"
+                        className="object-contain drop-shadow-[0_32px_40px_rgba(0,0,0,0.55)]"
+                      />
+                    </div>
+                    <Link
+                      href="/gacha"
+                      className="inline-flex items-center justify-center rounded-full border border-white/20 px-5 py-2 text-[0.7rem] uppercase tracking-[0.35em] text-white/85 transition hover:border-green-300 hover:text-white"
+                    >
+                      ガチャへ
+                    </Link>
+                  </div>
+                </article>
+              );
+            }
+
+            return null;
+          })}
         </div>
       </section>
+
+      <Link
+        href="/purchase"
+        className="flex h-14 items-center justify-center rounded-full bg-[#ffe347] text-sm font-semibold uppercase tracking-[0.35em] text-[#2a1000] transition hover:bg-[#ffef7a]"
+      >
+        チケット購入へ
+      </Link>
     </section>
   );
 }
