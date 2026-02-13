@@ -107,7 +107,7 @@ export async function exitNeonHall() {
     await detachSessionByToken(supabase, token);
   }
   await clearSessionToken();
-  redirect('/login');
+  redirect('/');
 }
 
 export async function resendVerificationEmail(formData: FormData) {
