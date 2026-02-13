@@ -44,7 +44,7 @@ export function SplashGateway() {
     return () => clearInterval(interval);
   }, [phase]);
 
-  const heroLines = useMemo(() => ["来世", "GACHA"], []);
+  const heroLines = useMemo(() => ["RAISE", "GACHA"], []);
 
   const showFirst = phase === "first";
   const showShuffle = phase === "shuffle";
@@ -175,7 +175,7 @@ export function SplashGateway() {
                     <div key={line}>{line}</div>
                   ))}
                 </div>
-                <p className="text-sm text-white/80">もしも生まれ変わったら～輪廻の書庫へようこそ</p>
+                <p className="text-sm text-white/80">もしも人生が生まれ変わったら～</p>
               </div>
             </div>
             <div className="flex flex-col gap-4">
