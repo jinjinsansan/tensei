@@ -40,6 +40,7 @@ export function TabBar({ items }: TabBarProps) {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
               className={cn(
                 "tab-bar-item flex flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-1 text-[0.7rem] transition",
                 item.primary && "tab-bar-primary shadow-neon",
