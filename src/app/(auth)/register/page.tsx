@@ -3,14 +3,15 @@ import Link from 'next/link';
 import { registerLibraryMember } from '@/app/(auth)/actions';
 
 type RegisterPageProps = {
-  searchParams?: { error?: string };
+  searchParams?: Promise<{ error?: string }>;
 };
 
 const inputClassName =
   'mt-2 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:border-neon-blue focus:outline-none';
 
-export default function RegisterPage({ searchParams }: RegisterPageProps) {
-  const error = searchParams?.error;
+export default async function RegisterPage({ searchParams }: RegisterPageProps) {
+  const params = (await searchParams) ?? {};
+  const error = params.error;
 
   return (
     <section className="space-y-8">

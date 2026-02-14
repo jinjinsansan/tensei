@@ -1,6 +1,3 @@
-import Image from "next/image";
-import Link from "next/link";
-
 import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { GachaNeonPlayer } from "@/components/gacha/gacha-neon-player";
 import { getSessionWithSnapshot } from "@/lib/app/session";
@@ -14,130 +11,91 @@ const FALLBACK_TICKETS: TicketBalanceItem[] = [
   { code: "ex", name: "EXチケット", quantity: 0, colorToken: "glow-green", sortOrder: 4 },
 ];
 
-const GACHA_CARDS = [
-  {
-    id: "ito",
-    title: "伊藤ガチャ",
-    description: "いつも仕事を失敗ばかりしてしまう伊藤は超厳しい尊師に認めてもらうことが出来るのか？",
-    ticketNote: "ガチャは１チケット消費します",
-    icon: "/ito.png",
-    badge: "text-neon-blue",
-    accent: "from-[#3bd9ff]/35 via-transparent to-transparent",
-    playable: true,
-  },
-  {
-    id: "kanda",
-    title: "神田ガチャ",
-    description: "世紀末覇者カンダと戦に挑むバトルチャレンジガチャ神田を倒すことが出来るのか？",
-    ticketNote: "ガチャは１チケットを消費します",
-    icon: null,
-    badge: "text-rose-200",
-    accent: "from-[#ff6b6b]/30 via-transparent to-transparent",
-    ribbon: "準備中",
-    playable: false,
-  },
+const FLOW: { phase: string; title: string; description: string }[] = [
+  { phase: "PHASE 1", title: "STANDBY", description: "待機映像で来世ヒントを 60% の信頼度で先出し" },
+  { phase: "PHASE 2", title: "COUNTDOWN", description: "色が昇格するたびに期待度アップ。SKIP で一気に Phase 3" },
+  { phase: "PHASE 3", title: "PUCHUN", description: "プチュン発生で当たり確定。演出は自動再生" },
+  { phase: "PHASE 3.5", title: "TITLE VIDEO", description: "タイトル動画＋★ヒントで転生先を推理" },
+  { phase: "PHASE 4", title: "転生前→チャンス→メイン", description: "健太固有シナリオ。NEXT でテンポ良く進行" },
+  { phase: "PHASE 5", title: "CARD REVEAL", description: "テキストカードで結果を仮表示。正式UIは後日差し替え" },
 ];
 
-function DisabledRoundButton({ label }: { label: string }) {
-  return (
-    <button type="button" disabled className="group relative h-32 w-32 cursor-not-allowed rounded-full opacity-50">
-      <div className="absolute inset-0 rounded-full border-[5px] border-zinc-500 bg-black shadow-[0_0_18px_rgba(0,0,0,0.6)]" />
-      <div className="absolute inset-3 rounded-full border border-zinc-600 bg-gradient-to-b from-zinc-200 via-zinc-400 to-zinc-500 shadow-[inset_0_3px_6px_rgba(255,255,255,0.85),inset_0_-3px_6px_rgba(0,0,0,0.55),0_6px_12px_rgba(0,0,0,0.6)]" />
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
-        <span className="relative z-10 text-[0.7rem] font-bold leading-tight tracking-[0.12em] text-zinc-800 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          {label}
-        </span>
-        <span className="relative z-10 mt-1 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-700">START</span>
-      </div>
-      <div className="pointer-events-none absolute inset-3 rounded-full bg-gradient-to-br from-white/50 to-transparent opacity-60" />
-    </button>
-  );
+const HINTS = [
+  "STANDBY/COUNTDOWN/TITLE はすべて 60% が本命ヒント",
+  "どんでん返し発生時は偽カード→本カードを強調",
+  "SKIP は Phase 2 と Phase 4-A のみで利用可能",
+];
+
+async function getTicketBalancesSafe() {
+  if (process.env.BYPASS_MAIN_APP_GUARD === 'true') {
+    return FALLBACK_TICKETS;
+  }
+  try {
+    const { snapshot } = await getSessionWithSnapshot();
+    return snapshot.tickets.length > 0 ? snapshot.tickets : FALLBACK_TICKETS;
+  } catch (error) {
+    console.warn('[gacha/page] Using fallback tickets:', error instanceof Error ? error.message : error);
+    return FALLBACK_TICKETS;
+  }
 }
 
 export default async function GachaPage() {
-  const { snapshot } = await getSessionWithSnapshot();
-  const tickets = snapshot.tickets.length > 0 ? snapshot.tickets : FALLBACK_TICKETS;
+  const tickets = await getTicketBalancesSafe();
 
   return (
     <section className="space-y-10">
-      <div className="space-y-2 text-center">
-        <div className="relative inline-block">
-          <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 blur-2xl" />
-          <h1 className="relative font-display text-5xl font-bold tracking-[0.05em] text-transparent bg-gradient-to-r from-[#fff65c] via-[#ff9b3d] to-[#ff2d95] bg-clip-text drop-shadow-[0_0_50px_rgba(255,246,92,0.8)] drop-shadow-[0_0_90px_rgba(255,157,61,0.6)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
-            ガチャホール
-          </h1>
-        </div>
-        <p className="text-sm text-white/70">もしも生まれ変わったら～未来の自分を探そう</p>
-      </div>
-
-      <section className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-5 py-5">
-        <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neon-yellow">
-          <span>Tickets</span>
-          <Link href="/mypage/tickets" className="text-[11px] text-neon-blue">
-            残高履歴
-          </Link>
-        </div>
-        <TicketBalanceCarousel tickets={tickets} />
-      </section>
-
-      <section className="space-y-4">
-        {GACHA_CARDS.map((card) => (
-          <article
-            key={card.id}
-            className="relative overflow-hidden rounded-3xl border border-white/12 px-6 py-6 shadow-[0_20px_55px_rgba(0,0,0,0.55)]"
-          >
-            <div className="absolute inset-0 bg-white/5 backdrop-blur-xl" />
-            <div className={`absolute inset-0 bg-gradient-to-br ${card.accent}`} />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_60%)]" />
-            <div className="absolute inset-0 border border-white/10" />
-            {card.ribbon ? (
-              <div className="absolute right-[-70px] top-6 z-20 rotate-45 border border-white/20 bg-white/10 px-16 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-white/80 backdrop-blur-md shadow-[0_10px_25px_rgba(0,0,0,0.35)]">
-                {card.ribbon}
-              </div>
-            ) : null}
-            <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  {card.icon ? (
-                    <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-white/10 shadow-[0_0_20px_rgba(59,217,255,0.35)]">
-                      <Image
-                        src={card.icon}
-                        alt={`${card.title} アイコン`}
-                        fill
-                        sizes="48px"
-                        className="object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/10 text-[10px] font-semibold text-white/70">
-                      準備中
-                    </div>
-                  )}
-                  <div>
-                    <p
-                      className={`inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] ${card.badge}`}
-                    >
-                      GACHA
-                    </p>
-                    <h3 className="mt-2 font-display text-2xl text-white">{card.title}</h3>
-                  </div>
+      <header className="rounded-[32px] border border-white/10 bg-gradient-to-br from-[#1b0f2f]/90 via-[#090316]/95 to-[#050208]/95 px-8 py-10 shadow-[0_35px_90px_rgba(0,0,0,0.75)]">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-[0.6em] text-white/40">RAISE GACHA</p>
+            <h1 className="font-display text-5xl tracking-[0.05em] text-white">来世ガチャ体験ホール</h1>
+            <p className="text-sm text-white/70">
+              「もしも生まれ変わったら」を映像で体験するフルスクリーンガチャ。共通テンプレート + キャラ固有演出で
+              STANDBY → COUNTDOWN → プチュン → タイトル動画 → 転生シーン → カードリビールを一気に再生します。
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              {HINTS.map((hint) => (
+                <div
+                  key={hint}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-[0.78rem] text-white/75"
+                >
+                  {hint}
                 </div>
-                <p className="text-sm leading-relaxed text-white/85">{card.description}</p>
-                <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[0.7rem] text-white/75">
-                  {card.ticketNote}
-                </span>
-              </div>
-              <div className="flex w-full justify-center sm:w-auto sm:justify-end">
-                {card.playable ? (
-                  <GachaNeonPlayer playVariant="round" playLabel="ガチャを始める" />
-                ) : (
-                  <DisabledRoundButton label="準備中" />
-                )}
-              </div>
+              ))}
             </div>
-          </article>
-        ))}
-      </section>
+          </div>
+          <div className="flex flex-col items-center gap-4 rounded-[28px] border border-white/10 bg-black/30 px-6 py-6 text-center">
+            <div className="text-xs uppercase tracking-[0.4em] text-white/60">START</div>
+            <p className="text-sm text-white/70">チケット 1 枚で健太モジュールを再生します。</p>
+            <GachaNeonPlayer playVariant="round" playLabel="来世ガチャ" />
+            <p className="text-[11px] text-white/50">演出開始後は自動でフルスクリーン表示されます。</p>
+          </div>
+        </div>
+      </header>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section className="rounded-[32px] border border-white/10 bg-black/30 px-6 py-6">
+          <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neon-yellow">
+            <span>Ticket Balance</span>
+          </div>
+          <div className="mt-4">
+            <TicketBalanceCarousel tickets={tickets} />
+          </div>
+        </section>
+
+        <aside className="rounded-[32px] border border-white/10 bg-black/35 px-6 py-6">
+          <p className="text-xs uppercase tracking-[0.4em] text-white/45">Flow</p>
+          <div className="mt-4 space-y-4">
+            {FLOW.map((item) => (
+              <div key={item.phase} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="text-[11px] uppercase tracking-[0.45em] text-white/50">{item.phase}</p>
+                <h3 className="font-display text-lg text-white">{item.title}</h3>
+                <p className="text-sm text-white/70">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </aside>
+      </div>
     </section>
   );
 }

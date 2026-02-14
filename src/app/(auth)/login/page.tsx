@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { loginLibraryMember, resendVerificationEmail } from "../actions";
 
+type LoginPageParams = { error?: string; resend?: string };
+
 type LoginPageProps = {
-  searchParams?: { error?: string; resend?: string };
+  searchParams?: Promise<LoginPageParams>;
 };
 
 export const metadata: Metadata = {
@@ -16,9 +18,10 @@ const resendMessages: Record<string, { text: string; variant: "error" | "success
   sent: { text: "認証メールを送信しました。", variant: "success" },
 };
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
-  const error = searchParams?.error;
-  const resend = searchParams?.resend ? resendMessages[searchParams.resend] : null;
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = (await searchParams) ?? {};
+  const error = params.error;
+  const resend = params.resend ? resendMessages[params.resend] : null;
 
   return (
     <div className="space-y-6">

@@ -14,6 +14,10 @@ import { drawStar } from '@/lib/gacha/rtp';
 import type { CharacterWeight } from '@/lib/gacha/config';
 import type { StoryPayload, VideoSegment, GachaEngineResult } from '@/lib/gacha/types';
 import type { Json, Tables } from '@/types/database';
+import type { GachaResult, Rarity } from '@/lib/gacha/common/types';
+import { buildCommonAssetPath } from '@/lib/gacha/assets';
+import { getCharacter } from '@/lib/gacha/characters';
+import { mapCardDbIdToModuleId, mapCharacterDbIdToModuleId } from '@/lib/gacha/characters/mapping';
 
 type GenerateOptions = {
   sessionId: string;
@@ -24,6 +28,8 @@ type GenerateOptions = {
 type PreStoryRow = Tables<'pre_stories'>;
 type ChanceRow = Tables<'chance_scenes'>;
 type ScenarioRow = Tables<'scenarios'>;
+
+const LOSS_CARD_PATH = buildCommonAssetPath('loss_card.png');
 
 export async function generateGachaPlay({
   sessionId,
@@ -70,6 +76,15 @@ export async function generateGachaPlay({
     scenarioRows,
   });
 
+  const moduleCharacterId = mapCharacterDbIdToModuleId(character.id);
+  const gachaResult = buildGachaResult({
+    story,
+    supabaseCharacter: character,
+    supabaseCard: selectedCard,
+    hadReversal,
+    moduleCharacterId,
+  });
+
   const historyRow = await insertGachaHistory(supabase, {
     user_session_id: sessionId,
     app_user_id: appUserId,
@@ -90,10 +105,12 @@ export async function generateGachaPlay({
     card_awarded: false,
     history_id: historyRow.id,
     obtained_via: 'single_gacha',
+    metadata: ({ gachaResult } as unknown) as Json,
   });
 
   return {
     story,
+    gachaResult,
     resultRow,
     card: selectedCard,
     character,
@@ -217,4 +234,53 @@ function mapToSegment(
     telopText,
     telopType,
   };
+}
+
+function buildGachaResult(params: {
+  story: StoryPayload;
+  supabaseCharacter: Tables<'characters'>;
+  supabaseCard: Tables<'cards'>;
+  hadReversal: boolean;
+  moduleCharacterId: string | null;
+}): GachaResult {
+  const { story, supabaseCharacter, supabaseCard, hadReversal, moduleCharacterId } = params;
+  const characterId = moduleCharacterId ?? supabaseCharacter.id;
+  const characterModule = moduleCharacterId ? getCharacter(moduleCharacterId) : null;
+  const moduleCardId = mapCardDbIdToModuleId(supabaseCard.id);
+  const moduleCard = moduleCardId && characterModule
+    ? characterModule.cards.find((card) => card.cardId === moduleCardId)
+    : null;
+  const cardInfo = moduleCardId && characterModule ? characterModule.getCardDisplayInfo(moduleCardId) : null;
+  const cardImagePath = moduleCardId && characterModule
+    ? characterModule.getCardImagePath(moduleCardId)
+    : supabaseCard.card_image_url ?? '';
+  const dondenRoute = hadReversal && moduleCardId && characterModule
+    ? characterModule.dondenRoutes.find((route) => route.toCardId === moduleCardId)
+    : null;
+  const dondenCard = dondenRoute && characterModule
+    ? characterModule.cards.find((card) => card.cardId === dondenRoute.fromCardId)
+    : null;
+
+  return {
+    isLoss: false,
+    characterId,
+    cardId: moduleCardId ?? supabaseCard.id,
+    rarity: moduleCard?.rarity ?? coerceRarity(supabaseCard.rarity),
+    starRating: moduleCard?.starRating ?? supabaseCard.star_level ?? story.starLevel,
+    cardName: cardInfo?.name ?? supabaseCard.card_name,
+    cardTitle: cardInfo?.title ?? supabaseCard.description ?? supabaseCard.card_name,
+    cardImagePath,
+    lossCardImagePath: LOSS_CARD_PATH,
+    isDonden: Boolean(dondenRoute),
+    dondenFromCardId: dondenRoute?.fromCardId,
+    dondenFromRarity: dondenCard?.rarity,
+    isSequel: false,
+  };
+}
+
+function coerceRarity(value: string | null | undefined): Rarity {
+  if (value === 'N' || value === 'R' || value === 'SR' || value === 'SSR' || value === 'UR' || value === 'LR') {
+    return value;
+  }
+  return 'N';
 }

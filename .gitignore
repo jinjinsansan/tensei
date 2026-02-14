@@ -12,6 +12,12 @@
 
 # testing
 /coverage
+test-results/
+.venv-tools/
+
+# local asset drops
+/カウントダウン映像/
+/健太映像/
 
 # next.js
 /.next/

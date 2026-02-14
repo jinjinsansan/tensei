@@ -10,6 +10,10 @@ import {
 } from '@/lib/data/gacha';
 import { fetchAuthedContext } from '@/lib/app/session';
 import type { StoryPayload } from '@/lib/gacha/types';
+import type { GachaResult } from '@/lib/gacha/common/types';
+import type { Tables } from '@/types/database';
+import { buildCommonAssetPath } from '@/lib/gacha/assets';
+import { mapCardDbIdToModuleId, mapCharacterDbIdToModuleId } from '@/lib/gacha/characters/mapping';
 
 type ResultRequest = {
   resultId: string;
@@ -61,10 +65,13 @@ export async function POST(request: Request) {
 
     const card = await fetchCardById(supabase, cardId);
     const story = resultRow.scenario_snapshot as StoryPayload;
+    const storedGachaResult = (resultRow.metadata as { gachaResult?: GachaResult } | null)?.gachaResult;
+    const gachaResult = storedGachaResult ?? createFallbackGachaResult(resultRow, card);
 
     return NextResponse.json({
       success: true,
       resultId: resultRow.id,
+      gachaResult,
       card: {
         id: card.id,
         name: card.card_name,
@@ -89,4 +96,27 @@ function validateBody(body: unknown): asserts body is ResultRequest {
   if (!body || typeof body !== 'object' || typeof (body as ResultRequest).resultId !== 'string') {
     throw new Error('resultId が必要です。');
   }
+}
+
+function createFallbackGachaResult(
+  resultRow: Tables<'gacha_results'>,
+  card: Tables<'cards'>,
+): GachaResult {
+  const characterModuleId = mapCharacterDbIdToModuleId(resultRow.character_id);
+  const cardModuleId = mapCardDbIdToModuleId(card.id);
+  return {
+    isLoss: false,
+    characterId: characterModuleId ?? resultRow.character_id ?? 'unknown',
+    cardId: cardModuleId ?? card.id,
+    rarity: (card.rarity as GachaResult['rarity']) ?? 'N',
+    starRating: card.star_level ?? resultRow.star_level ?? 1,
+    cardName: card.card_name,
+    cardTitle: card.description ?? card.card_name,
+    cardImagePath: card.card_image_url ?? '',
+    lossCardImagePath: buildCommonAssetPath('loss_card.png'),
+    isDonden: Boolean(resultRow.had_reversal),
+    dondenFromCardId: undefined,
+    dondenFromRarity: undefined,
+    isSequel: false,
+  };
 }

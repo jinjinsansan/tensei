@@ -1,11 +1,12 @@
 import type { StoryPayload } from '@/lib/gacha/types';
+import type { GachaResult } from '@/lib/gacha/common/types';
 
 export type PlayResponse = {
   success: true;
   resultId: string;
-  starLevel: number;
-  hadReversal: boolean;
   ticketBalance: number;
+  gachaResult: GachaResult;
+  story: StoryPayload;
   character: {
     id: string;
     name: string;
@@ -13,7 +14,6 @@ export type PlayResponse = {
     expectationLevel: number;
   };
   card: CardSummary;
-  story: StoryPayload;
 };
 
 export type CardSummary = {
@@ -28,8 +28,7 @@ export type CardSummary = {
 export type ResultResponse = {
   success: true;
   resultId: string;
-  starLevel: number;
-  hadReversal: boolean;
+  gachaResult: GachaResult;
   card: CardSummary;
   story: StoryPayload;
 };

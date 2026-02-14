@@ -30,9 +30,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       resultId: gacha.resultRow.id,
-      starLevel: gacha.story.starLevel,
-      hadReversal: gacha.story.hadReversal,
       ticketBalance: remaining,
+      gachaResult: gacha.gachaResult,
       character: {
         id: gacha.character.id,
         name: gacha.character.name,

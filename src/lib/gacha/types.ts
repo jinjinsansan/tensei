@@ -1,4 +1,5 @@
 import type { Tables } from '@/types/database';
+import type { GachaResult } from '@/lib/gacha/common/types';
 
 export type TelopType = 'neutral' | 'chance' | 'win' | 'lose' | 'reversal' | 'epic';
 
@@ -29,6 +30,7 @@ export type StoryPayload = {
 
 export type GachaEngineResult = {
   story: StoryPayload;
+  gachaResult: GachaResult;
   resultRow: Tables<'gacha_results'>;
   card: Tables<'cards'>;
   character: Tables<'characters'>;

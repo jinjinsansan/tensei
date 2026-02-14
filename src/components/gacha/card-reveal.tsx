@@ -1,56 +1,92 @@
 "use client";
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 import type { CardSummary } from '@/lib/api/gacha';
-import type { StoryPayload } from '@/lib/gacha/types';
+import type { GachaResult } from '@/lib/gacha/common/types';
 
 type Props = {
   open: boolean;
-  card: CardSummary | null;
-  story: StoryPayload | null;
+  gachaResult: GachaResult | null;
+  card?: CardSummary | null;
+  isClaiming?: boolean;
+  error?: string | null;
   onClose: () => void;
 };
 
-const rarityFrame: Record<string, string> = {
-  N: 'rarity-n',
-  R: 'rarity-r',
-  SR: 'rarity-sr',
-  SSR: 'rarity-ssr',
-  UR: 'rarity-ur',
-  LR: 'rarity-lr',
-};
-
-export function CardReveal({ open, card, story, onClose }: Props) {
+export function CardReveal({ open, gachaResult, card, isClaiming, error, onClose }: Props) {
   const router = useRouter();
-  if (!open || !card) return null;
-  const rarityClass = rarityFrame[card.rarity] ?? 'rarity-n';
-  const description = `あなたの来世は「${card.name}」の章でした。`;
+  if (!open || !gachaResult) return null;
+
+  const handleViewCollection = () => {
+    onClose();
+    router.push('/collection');
+  };
+
+  const rarityLabel = gachaResult.rarity;
+  const starLabel = gachaResult.isLoss ? '—' : `★${gachaResult.starRating}`;
+  const title = gachaResult.isLoss ? '転生失敗' : gachaResult.cardName;
+  const subtitle = gachaResult.isLoss
+    ? '今回は転生失敗ルート。次の挑戦で未来を切り拓こう。'
+    : gachaResult.cardTitle;
+  const description = gachaResult.isLoss
+    ? '魂の準備が整っていないようです。演出を参考にヒントを集めましょう。'
+    : `あなたの来世は ${gachaResult.cardName} でした。${gachaResult.isDonden ? 'どんでん返しで未来が覆りました。' : ''}`;
+  const hintLine = gachaResult.isLoss
+    ? '演出で得たヒントをもとに、次の挑戦を準備しましょう。'
+    : gachaResult.isDonden
+      ? 'どんでん返しで転生先が書き換わりました。真の章を記録します。'
+      : 'この結果は仮表示です。最終カードUIは後日アップデートされます。';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 py-10">
-      <div className="w-full max-w-md space-y-4 rounded-[32px] border border-accent/30 bg-card/95 p-6 text-primary shadow-library-card">
-        <p className="text-center text-sm text-accent">✦ 物語が完結しました ✦</p>
-        <div className={`library-book-frame ${rarityClass}`}>
-          <div className="relative mx-auto h-72 w-48 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-b from-[#3b2a1f] to-[#1f130c]">
-            <Image src={card.imageUrl} alt={card.name} fill className="object-cover" sizes="192px" />
-          </div>
-          <div className="mt-4 flex items-center justify-between text-sm">
-            <span className="rounded-full border border-white/20 px-3 py-1 text-primary">{card.rarity}</span>
-            <span className="text-lg font-semibold text-primary">★{card.starLevel}</span>
-          </div>
-          {story?.hadReversal && (
-            <p className="mt-3 text-center text-sm text-accent">隠された章が現れ、物語が書き換わりました。</p>
-          )}
+    <div className="fixed inset-0 z-[160] flex items-center justify-center bg-black/85 px-4 py-10">
+      <div className="w-full max-w-xl space-y-6 rounded-[32px] border border-white/15 bg-gradient-to-b from-[#13131f] via-[#090812] to-[#050208] p-8 text-white shadow-[0_45px_110px_rgba(0,0,0,0.85)]">
+        <div className="space-y-2 text-center">
+          <p className="text-[11px] uppercase tracking-[0.6em] text-white/45">RESULT</p>
+          <h3 className="font-display text-3xl tracking-[0.08em]">{title}</h3>
+          <p className="text-sm text-white/70">{subtitle}</p>
         </div>
-        <p className="text-center text-sm text-secondary">{description}</p>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <button className="library-button secondary flex-1" onClick={() => router.push('/collection')}>
-            書架を見る
+
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-center">
+          <p className="text-xs uppercase tracking-[0.5em] text-white/60">COMING CARD</p>
+          <div className="mt-4 space-y-1 text-sm">
+            <p className="text-white/80">レアリティ: {rarityLabel}</p>
+            <p className="text-white/80">スター: {starLabel}</p>
+            {gachaResult.isDonden && gachaResult.dondenFromCardId ? (
+              <p className="text-white/60 text-xs">
+                どんでん返し: {gachaResult.dondenFromCardId} → {gachaResult.cardId}
+              </p>
+            ) : null}
+          </div>
+          <p className="mt-4 text-sm text-white/75">{description}</p>
+          <div className="mt-4 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-xs text-white/60">
+            {hintLine}
+          </div>
+        </div>
+
+        {card ? (
+          <p className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center text-xs tracking-[0.2em] text-white/60">
+            {card.name} をコレクションに保存しました
+          </p>
+        ) : null}
+
+        {isClaiming ? <p className="text-center text-sm text-white/60">カード登録中...</p> : null}
+        {error ? <p className="text-center text-sm text-red-400">{error}</p> : null}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={handleViewCollection}
+            className="rounded-full border border-white/20 bg-white/10 px-6 py-3 text-sm font-semibold tracking-[0.2em] text-white transition hover:bg-white/20"
+          >
+            コレクションを見る
           </button>
-          <button className="library-button flex-1" onClick={onClose}>
-            もう1冊
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-full border border-white/10 bg-gradient-to-r from-[#fcd34d]/30 to-[#f97316]/30 px-6 py-3 text-sm font-semibold tracking-[0.2em] text-white transition hover:brightness-110"
+          >
+            もう一度ガチャ
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@ type PublicEnv = {
   NEXT_PUBLIC_SITE_NAME?: string;
   NEXT_PUBLIC_SITE_URL?: string;
   NEXT_PUBLIC_APP_URL?: string;
+  NEXT_PUBLIC_GACHA_ASSET_BASE_URL?: string;
 };
 
 function ensureEnv(name: keyof ServerEnv, value: string | undefined) {
@@ -35,5 +36,6 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_SITE_NAME: process.env.NEXT_PUBLIC_SITE_NAME,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_GACHA_ASSET_BASE_URL: process.env.NEXT_PUBLIC_GACHA_ASSET_BASE_URL,
   };
 }
