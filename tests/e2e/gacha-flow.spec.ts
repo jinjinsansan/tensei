@@ -88,7 +88,7 @@ test('来世ガチャを開始してカードリビールまで到達できる',
   await mockGachaApis(page);
   await page.goto('/gacha');
 
-  await page.getByRole('button', { name: '来世ガチャ' }).click();
+  await page.getByRole('button', { name: 'ガチャを始める' }).click();
 
   const nextButton = page.getByRole('button', { name: /^NEXT/ });
   await nextButton.waitFor({ state: 'visible' });

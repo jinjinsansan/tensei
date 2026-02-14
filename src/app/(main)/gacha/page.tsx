@@ -1,37 +1,91 @@
+import Image from "next/image";
+import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { GachaNeonPlayer } from "@/components/gacha/gacha-neon-player";
+import { getSessionWithSnapshot } from "@/lib/app/session";
+import type { TicketBalanceItem } from "@/lib/utils/tickets";
 
-const FLOW: { phase: string; title: string; description: string }[] = [
-  { phase: "PHASE 1", title: "STANDBY", description: "待機映像で来世ヒントを 60% の信頼度で先出し" },
-  { phase: "PHASE 2", title: "COUNTDOWN", description: "色が昇格するたびに期待度アップ。SKIP で一気に Phase 3" },
-  { phase: "PHASE 3", title: "PUCHUN", description: "プチュン発生で当たり確定。演出は自動再生" },
-  { phase: "PHASE 3.5", title: "TITLE VIDEO", description: "タイトル動画＋★ヒントで転生先を推理" },
-  { phase: "PHASE 4", title: "転生前→チャンス→メイン", description: "健太固有シナリオ。NEXT でテンポ良く進行" },
-  { phase: "PHASE 5", title: "CARD REVEAL", description: "テキストカードで結果を仮表示。正式UIは後日差し替え" },
+const FALLBACK_TICKETS: TicketBalanceItem[] = [
+  { code: "free", name: "フリーチケット", quantity: 0, colorToken: "neon-blue", sortOrder: 0 },
+  { code: "basic", name: "ベーシックチケット", quantity: 0, colorToken: "neon-yellow", sortOrder: 1 },
+  { code: "epic", name: "エピックチケット", quantity: 0, colorToken: "neon-pink", sortOrder: 2 },
+  { code: "premium", name: "プレミアムチケット", quantity: 0, colorToken: "neon-purple", sortOrder: 3 },
+  { code: "ex", name: "EXチケット", quantity: 0, colorToken: "glow-green", sortOrder: 4 },
 ];
-export default function GachaPage() {
+
+async function getTicketBalancesSafe() {
+  if (process.env.BYPASS_MAIN_APP_GUARD === 'true') {
+    return FALLBACK_TICKETS;
+  }
+  try {
+    const { snapshot } = await getSessionWithSnapshot();
+    return snapshot.tickets.length > 0 ? snapshot.tickets : FALLBACK_TICKETS;
+  } catch (error) {
+    console.warn('[gacha/page] Using fallback tickets:', error instanceof Error ? error.message : error);
+    return FALLBACK_TICKETS;
+  }
+}
+
+export default async function GachaPage() {
+  const tickets = await getTicketBalancesSafe();
+
   return (
-    <section className="space-y-6">
-      <header className="text-center">
-        <p className="text-[11px] uppercase tracking-[0.6em] text-white/40">RAISE GACHA</p>
-        <h1 className="mt-2 font-display text-3xl tracking-[0.05em] text-white">来世ガチャ</h1>
-      </header>
-
-      <div className="rounded-[30px] border border-white/10 bg-black/35 px-5 py-6">
-        <p className="text-xs uppercase tracking-[0.45em] text-white/45">Flow</p>
-        <div className="mt-4 space-y-4">
-          {FLOW.map((item) => (
-            <div key={item.phase} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-[11px] uppercase tracking-[0.45em] text-white/50">{item.phase}</p>
-              <h3 className="font-display text-lg text-white">{item.title}</h3>
-              <p className="text-sm text-white/70">{item.description}</p>
-            </div>
-          ))}
+    <section className="space-y-10">
+      <div className="space-y-2 text-center">
+        <div className="relative inline-block">
+          <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 blur-2xl" />
+          <h1 className="relative font-display text-5xl font-bold tracking-[0.05em] text-transparent bg-gradient-to-r from-[#fff65c] via-[#ff9b3d] to-[#ff2d95] bg-clip-text drop-shadow-[0_0_50px_rgba(255,246,92,0.8)] drop-shadow-[0_0_90px_rgba(255,157,61,0.6)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
+            ガチャホール
+          </h1>
         </div>
+        <p className="text-sm text-white/70">色んな人生に生まれ変わってみたいと願う主人公達</p>
       </div>
 
-      <div className="rounded-[30px] border border-white/10 bg-black/45 px-5 py-6 text-center">
-        <GachaNeonPlayer playVariant="default" playLabel="来世ガチャ" />
-      </div>
+      <section className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-5 py-5">
+        <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neon-yellow">
+          <span>Tickets</span>
+        </div>
+        <TicketBalanceCarousel tickets={tickets} />
+      </section>
+
+      <section className="space-y-4">
+        <article className="relative overflow-hidden rounded-3xl border border-white/12 px-6 py-6 shadow-[0_20px_55px_rgba(0,0,0,0.55)]">
+          <div className="absolute inset-0 bg-white/5 backdrop-blur-xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#3bd9ff]/35 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_60%)]" />
+          <div className="absolute inset-0 border border-white/10" />
+
+          <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-white/10 shadow-[0_0_20px_rgba(59,217,255,0.35)]">
+                  <Image 
+                    src="/raise_gacha_logo_cream.png" 
+                    alt="来世ガチャ ロゴ" 
+                    fill 
+                    sizes="48px" 
+                    className="object-cover" 
+                  />
+                </div>
+                <div>
+                  <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-neon-blue">
+                    GACHA
+                  </p>
+                  <h3 className="mt-2 font-display text-2xl text-white">来世ガチャ</h3>
+                </div>
+              </div>
+              <p className="text-sm leading-relaxed text-white/85">
+                色んな人生に生まれ変わってみたいと願う主人公達に転生チャンスが訪れる！幸せな来世を掴むことが出来るのか？
+              </p>
+              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[0.7rem] text-white/75">
+                ガチャは１チケットを消費します
+              </span>
+            </div>
+            <div className="flex w-full justify-center sm:w-auto sm:justify-end">
+              <GachaNeonPlayer playVariant="round" playLabel="ガチャを始める" />
+            </div>
+          </div>
+        </article>
+      </section>
     </section>
   );
 }
