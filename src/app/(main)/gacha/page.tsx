@@ -58,23 +58,23 @@ export default async function GachaPage() {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-white/10 shadow-[0_0_20px_rgba(59,217,255,0.35)]">
-                  <Image 
-                    src="/raise_gacha_logo_cream.png" 
-                    alt="来世ガチャ ロゴ" 
-                    fill 
-                    sizes="48px" 
-                    className="object-cover" 
+                  <Image
+                    src="/kenta_cards/card01_convenience.png"
+                    alt="健太ガチャ アイコン"
+                    fill
+                    sizes="48px"
+                    className="object-cover"
                   />
                 </div>
                 <div>
                   <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-neon-blue">
                     GACHA
                   </p>
-                  <h3 className="mt-2 font-display text-2xl text-white">来世ガチャ</h3>
+                  <h3 className="mt-2 font-display text-2xl text-white">健太ガチャ</h3>
                 </div>
               </div>
               <p className="text-sm leading-relaxed text-white/85">
-                色んな人生に生まれ変わってみたいと願う主人公達に転生チャンスが訪れる！幸せな来世を掴むことが出来るのか？
+                コンビニの深夜バイトで働く健太。毎日代わり映えしない日々の中である日転生チャンスが訪れる。健太の来世はいかに？
               </p>
               <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[0.7rem] text-white/75">
                 ガチャは１チケットを消費します
