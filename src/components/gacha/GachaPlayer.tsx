@@ -437,16 +437,17 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const phaseVideoLoop = phaseVideo?.loop ?? false;
 
   return (
-    <div className="fixed inset-0 z-[140] flex flex-col bg-gradient-to-b from-black via-black/95 to-black text-white">
-      <div className="flex w-full items-center justify-between border-b border-white/10 px-6 py-4 text-xs uppercase tracking-[0.35em] text-white/60">
-        <span>来世ガチャ</span>
-        <span>
-          {PHASE_META[phase].subtitle} · {PHASE_META[phase].title}
-        </span>
-      </div>
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/95 text-white">
+      <div className="flex h-full w-full max-w-[430px] flex-col bg-gradient-to-b from-black via-black/95 to-black">
+        <div className="flex w-full items-center justify-between border-b border-white/10 px-6 py-4 text-xs uppercase tracking-[0.35em] text-white/60">
+          <span>来世ガチャ</span>
+          <span>
+            {PHASE_META[phase].subtitle} · {PHASE_META[phase].title}
+          </span>
+        </div>
 
-      <div className="flex flex-1 flex-col px-6 py-8">
-        <div className="relative flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-black/70 shadow-[0_35px_90px_rgba(0,0,0,0.85)]">
+        <div className="flex flex-1 flex-col px-6 py-8">
+          <div className="relative flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-black/70 shadow-[0_35px_90px_rgba(0,0,0,0.85)]">
           {signedPhaseVideoSrc ? (
             <video
               key={phaseVideoKey}
@@ -499,6 +500,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
       <div className="flex w-full items-center justify-center gap-8 pb-12">
         <RoundMetalButton label="NEXT" subLabel="次へ" onClick={handleAdvance} disabled={disableNext} />
         <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={!canSkip} />
+      </div>
       </div>
     </div>
   );
