@@ -110,6 +110,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const [preSceneIndex, setPreSceneIndex] = useState(0);
   const [mainSceneIndex, setMainSceneIndex] = useState(0);
   const [dondenIndex, setDondenIndex] = useState(0);
+  const [videoReady, setVideoReady] = useState(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
 
@@ -391,22 +392,22 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   );
 
   const handleAdvance = useCallback(() => {
+    setVideoReady(false);
     progressPhase();
   }, [progressPhase]);
 
   const handleSkip = useCallback(() => {
     if (phase === 'COUNTDOWN') {
       // ハズレ時はスキップしてもカード結果へ直行
+      setVideoReady(false);
       startPhase(gachaResult.isLoss ? 'CARD_REVEAL' : 'PUCHUN');
       return;
     }
     if (phase === 'PRE_SCENE') {
+      setVideoReady(false);
       startPhase('MAIN_SCENE');
     }
   }, [phase, gachaResult, startPhase]);
-
-  const canSkip = phase === 'COUNTDOWN' || phase === 'PRE_SCENE';
-  const disableNext = phase === 'CARD_REVEAL';
 
   const details = buildPhaseDetails({
     phase,
@@ -439,10 +440,14 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
   const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
+  const hasPhaseVideo = Boolean(signedPhaseVideoSrc);
+  const canSkip = (phase === 'COUNTDOWN' || phase === 'PRE_SCENE') && hasPhaseVideo && videoReady;
+  const disableNext = phase === 'CARD_REVEAL' || (hasPhaseVideo && !videoReady);
   const preloadedCountdownSources = countdownVideos
     .map((src) => resolveAssetSrc(src) ?? src)
     .filter((src): src is string => Boolean(src));
   const handlePhaseVideoPlay = useCallback(() => {
+    setVideoReady(true);
     if (phase === 'COUNTDOWN') {
       // iPhone 実機では映像描画がわずかに遅れるため、音をほんの少し遅らせて同期感を高める
       if (isIOS()) {
