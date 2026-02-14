@@ -356,6 +356,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
           startPhase('CARD_REVEAL');
           return;
         case 'LOSS_REVEAL':
+          startPhase('CARD_REVEAL');
+          return;
         case 'CARD_REVEAL':
           exitPlayer();
           return;
@@ -395,7 +397,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   }, [phase, gachaResult, startPhase]);
 
   const canSkip = phase === 'COUNTDOWN' || phase === 'PRE_SCENE';
-  const disableNext = phase === 'CARD_REVEAL' || phase === 'LOSS_REVEAL';
+  const disableNext = phase === 'CARD_REVEAL';
 
   const details = buildPhaseDetails({
     phase,
