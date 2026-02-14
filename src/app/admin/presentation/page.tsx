@@ -137,7 +137,13 @@ export default async function PresentationPage() {
               min="0"
               max="100"
               step="1"
-              defaultValue={titleConfig?.probabilities?.hintRate ?? 60}
+              defaultValue={
+                typeof titleConfig?.probabilities === 'object' && 
+                titleConfig?.probabilities && 
+                'hintRate' in titleConfig.probabilities 
+                  ? Number(titleConfig.probabilities.hintRate) 
+                  : 60
+              }
               className="mt-1 w-full rounded-2xl bg-white/10 px-4 py-2"
             />
           </label>
@@ -153,7 +159,7 @@ export default async function PresentationPage() {
         <p className="text-sm text-slate-300">各レア度ごとに6色の出現確率を設定（合計100%）</p>
         {rarities.map((rarity) => {
           const config = standbyConfigs?.find((c) => c.rarity === rarity);
-          const probs = config?.probabilities ?? {};
+          const probs = (config?.probabilities as Record<string, number>) ?? {};
           return (
             <form key={rarity} action={updateStandbyProbabilities} className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
               <h3 className="font-semibold">レア度: {rarity}</h3>
@@ -188,7 +194,7 @@ export default async function PresentationPage() {
         <p className="text-sm text-slate-300">各レア度ごとに5グレードの出現確率を設定（合計100%）</p>
         {rarities.map((rarity) => {
           const config = countdownConfigs?.find((c) => c.rarity === rarity);
-          const probs = config?.probabilities ?? {};
+          const probs = (config?.probabilities as Record<string, number>) ?? {};
           return (
             <form key={rarity} action={updateCountdownProbabilities} className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
               <h3 className="font-semibold">レア度: {rarity}</h3>
