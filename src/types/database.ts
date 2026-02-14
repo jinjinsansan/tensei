@@ -709,6 +709,66 @@ export type Database = {
           }
         ];
       };
+      presentation_config: {
+        Row: {
+          id: string;
+          config_type: string;
+          rarity: string;
+          probabilities: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          config_type: string;
+          rarity: string;
+          probabilities: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          config_type?: string;
+          rarity?: string;
+          probabilities?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      countdown_patterns: {
+        Row: {
+          id: string;
+          pattern_id: string;
+          name: string;
+          grade: string;
+          steps: Json;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          pattern_id: string;
+          name: string;
+          grade: string;
+          steps: Json;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          pattern_id?: string;
+          name?: string;
+          grade?: string;
+          steps?: Json;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
