@@ -273,9 +273,20 @@ async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, 
   if (!cards.length) {
     throw new Error(`Character ${character.name} has no active cards.`);
   }
-  // ハズレ用カード（転生失敗）があれば抽選プールから除外しておく
+
+  // ハズレ用カード（転生失敗）があれば抽選プールから除外し、さらに max_supply / current_supply で在庫が尽きたカードも除外
   const lossCard = cards.find((card) => card.card_name === '転生失敗');
-  const playableCards = lossCard ? cards.filter((card) => card.id !== lossCard.id) : cards;
+  const basePlayableCards = lossCard ? cards.filter((card) => card.id !== lossCard.id) : cards;
+  const supplyFiltered = basePlayableCards.filter((card) => {
+    const max = (card as any).max_supply as number | null | undefined;
+    const current = (card as any).current_supply as number | null | undefined;
+    if (max == null) return true;
+    if (current == null) return true;
+    return current < max;
+  });
+
+  // max_supply が設定されているカードは current_supply >= max_supply になった時点で抽選対象から完全に外す
+  const playableCards = supplyFiltered;
   if (!playableCards.length) {
     throw new Error(`Character ${character.name} has no playable cards.`);
   }

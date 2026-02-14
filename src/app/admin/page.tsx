@@ -17,6 +17,11 @@ const cards = [
     href: "/admin/settings",
   },
   {
+    title: "カード在庫 / シリアル検索",
+    description: "シリアルナンバーからカードの現在の所持者を特定します。",
+    href: "/admin/inventory",
+  },
+  {
     title: "統計ダッシュボード",
     description: "星ごとの出現率や人気カードを確認します。",
     href: "/admin/stats",

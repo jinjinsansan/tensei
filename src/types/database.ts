@@ -624,6 +624,107 @@ export type Database = {
           }
         ];
       };
+      friend_requests: {
+        Row: {
+          id: string;
+          from_user_id: string;
+          to_user_id: string;
+          status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          from_user_id: string;
+          to_user_id: string;
+          status?: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['friend_requests']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'friend_requests_from_user_id_fkey';
+            columns: ['from_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'friend_requests_to_user_id_fkey';
+            columns: ['to_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      friends: {
+        Row: {
+          id: string;
+          user_id: string;
+          friend_user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          friend_user_id: string;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['friends']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'friends_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'friends_friend_user_id_fkey';
+            columns: ['friend_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      card_transfers: {
+        Row: {
+          id: string;
+          card_inventory_id: string;
+          from_user_id: string | null;
+          to_user_id: string | null;
+          created_at: string;
+          note: string | null;
+        };
+        Insert: {
+          id?: string;
+          card_inventory_id: string;
+          from_user_id: string;
+          to_user_id: string;
+          created_at?: string;
+          note?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['card_transfers']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'card_transfers_card_inventory_id_fkey';
+            columns: ['card_inventory_id'];
+            referencedRelation: 'card_inventory';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_transfers_from_user_id_fkey';
+            columns: ['from_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'card_transfers_to_user_id_fkey';
+            columns: ['to_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       referral_codes: {
         Row: {
           id: string;

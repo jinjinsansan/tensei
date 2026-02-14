@@ -344,6 +344,84 @@ begin
 end;
 $$;
 
+-- ============================================================
+-- Social graph & card transfer history
+-- ============================================================
+
+-- Friend requests between app users
+create table if not exists public.friend_requests (
+  id uuid primary key default gen_random_uuid(),
+  from_user_id uuid not null references public.app_users(id) on delete cascade,
+  to_user_id uuid not null references public.app_users(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending','accepted','rejected','cancelled')),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+
+create unique index if not exists friend_requests_unique on public.friend_requests(from_user_id, to_user_id);
+create index if not exists friend_requests_to_idx on public.friend_requests(to_user_id);
+
+-- Symmetric friend relationships (1行 = 一方向)。承認時に両方向を作成
+create table if not exists public.friends (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.app_users(id) on delete cascade,
+  friend_user_id uuid not null references public.app_users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (user_id, friend_user_id)
+);
+
+create index if not exists friends_user_idx on public.friends(user_id);
+
+-- シリアル付きカードの送付履歴
+create table if not exists public.card_transfers (
+  id uuid primary key default gen_random_uuid(),
+  card_inventory_id uuid not null references public.card_inventory(id) on delete cascade,
+  from_user_id uuid references public.app_users(id) on delete set null,
+  to_user_id uuid references public.app_users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  note text
+);
+
+create index if not exists card_transfers_card_idx on public.card_transfers(card_inventory_id);
+create index if not exists card_transfers_from_idx on public.card_transfers(from_user_id);
+create index if not exists card_transfers_to_idx on public.card_transfers(to_user_id);
+
+-- 紹介コード経由で参加したユーザーと紹介元ユーザーを自動でフレンドにするトリガー
+create or replace function public.handle_referral_friendship()
+returns trigger
+language plpgsql
+as $$
+declare
+  ref_owner uuid;
+begin
+  if NEW.status <> 'granted' or OLD.status is not distinct from NEW.status then
+    return NEW;
+  end if;
+
+  select app_user_id into ref_owner from public.referral_codes where id = NEW.referral_code_id;
+  if ref_owner is null then
+    return NEW;
+  end if;
+
+  -- 双方向のフレンド関係を作成（既に存在する場合は何もしない）
+  insert into public.friends(user_id, friend_user_id)
+  values (ref_owner, NEW.invited_user_id)
+  on conflict (user_id, friend_user_id) do nothing;
+
+  insert into public.friends(user_id, friend_user_id)
+  values (NEW.invited_user_id, ref_owner)
+  on conflict (user_id, friend_user_id) do nothing;
+
+  return NEW;
+end;
+$$;
+
+create trigger referral_friendship_after_update
+after update of status on public.referral_claims
+for each row
+when (OLD.status is distinct from NEW.status and NEW.status = 'granted')
+execute function public.handle_referral_friendship();
+
 -- Presentation config (STANDBY色、カウントダウングレード、タイトルヒント確率)
 create table if not exists public.presentation_config (
   id uuid primary key default gen_random_uuid(),

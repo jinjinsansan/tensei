@@ -15,7 +15,7 @@ export async function GET() {
       supabase
         .from("card_inventory")
         .select(
-          `card_id, serial_number, obtained_at,
+          `id, card_id, serial_number, obtained_at,
            cards:card_inventory_card_id_fkey (
              id,
              card_name,
@@ -45,6 +45,7 @@ export async function GET() {
     }
 
     const collection = (collectionData ?? []).map((item) => ({
+      id: item.id,
       card_id: item.card_id,
       serial_number: item.serial_number,
       obtained_at: item.obtained_at,
