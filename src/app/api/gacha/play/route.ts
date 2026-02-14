@@ -10,7 +10,7 @@ type PlayRequest = {
   ticketCode?: string;
 };
 
-const ALLOW_GUEST_GACHA = process.env.GACHA_ALLOW_GUEST === 'true';
+const ALLOW_GUEST_GACHA = process.env.GACHA_ALLOW_GUEST !== 'false';
 
 export async function POST(request: Request) {
   try {
