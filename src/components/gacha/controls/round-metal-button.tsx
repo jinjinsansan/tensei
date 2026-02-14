@@ -22,7 +22,7 @@ export function RoundMetalButton({ label, subLabel, className, disabled, ...prop
       <div className="absolute inset-0 rounded-full border-[5px] border-zinc-500 bg-black shadow-[0_0_18px_rgba(0,0,0,0.6)]" />
       <div className="absolute inset-3 rounded-full border border-zinc-600 bg-gradient-to-b from-zinc-200 via-zinc-400 to-zinc-500 shadow-[inset_0_3px_6px_rgba(255,255,255,0.85),inset_0_-3px_6px_rgba(0,0,0,0.55),0_6px_12px_rgba(0,0,0,0.6)]" />
       <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
-        <span className="relative z-10 font-display text-2xl font-bold uppercase tracking-[0.2em] text-zinc-800 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+        <span className="relative z-10 font-display text-base font-bold uppercase tracking-[0.25em] text-zinc-800 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
           {label}
         </span>
         {subLabel ? (
