@@ -437,47 +437,36 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const phaseVideoLoop = phaseVideo?.loop ?? false;
 
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/95 text-white">
-      <div className="flex h-full w-full max-w-[430px] flex-col bg-gradient-to-b from-black via-black/95 to-black">
-        <div className="flex w-full items-center justify-between border-b border-white/10 px-6 py-4 text-xs uppercase tracking-[0.35em] text-white/60">
-          <span>来世ガチャ</span>
-          <span>
-            {PHASE_META[phase].subtitle} · {PHASE_META[phase].title}
-          </span>
-        </div>
-
-        <div className="flex flex-1 flex-col">
-          <div className="relative flex-1 overflow-hidden bg-black">
-          {signedPhaseVideoSrc ? (
-            <video
-              key={phaseVideoKey}
-              src={signedPhaseVideoSrc}
-              className="h-full w-full object-contain"
-              autoPlay
-              muted
-              loop={phaseVideoLoop}
-              playsInline
-              onEnded={shouldAutoAdvanceOnEnd ? () => progressPhase() : undefined}
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
+      <div className="flex h-full w-full max-w-[430px] flex-col">
+        {signedPhaseVideoSrc ? (
+          <video
+            key={phaseVideoKey}
+            src={signedPhaseVideoSrc}
+            className="h-full w-full object-contain"
+            autoPlay
+            muted
+            loop={phaseVideoLoop}
+            playsInline
+            onEnded={shouldAutoAdvanceOnEnd ? () => progressPhase() : undefined}
+          />
+        ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
+          <div className="flex h-full w-full items-center justify-center">
+            <Image
+              src={signedLossCardImage}
+              alt="転生失敗"
+              width={176}
+              height={256}
+              unoptimized
+              className="h-64 w-44 rounded-2xl border border-white/20 object-cover"
             />
-          ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
-            <div className="flex h-full w-full items-center justify-center">
-              <Image
-                src={signedLossCardImage}
-                alt="転生失敗"
-                width={176}
-                height={256}
-                unoptimized
-                className="h-64 w-44 rounded-2xl border border-white/20 object-cover"
-              />
-            </div>
-          ) : null}
-        </div>
-      </div>
+          </div>
+        ) : null}
 
-      <div className="flex w-full items-center justify-center gap-8 pb-12">
-        <RoundMetalButton label="NEXT" subLabel="次へ" onClick={handleAdvance} disabled={disableNext} />
-        <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={!canSkip} />
-      </div>
+        <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-8">
+          <RoundMetalButton label="NEXT" subLabel="次へ" onClick={handleAdvance} disabled={disableNext} />
+          <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={!canSkip} />
+        </div>
       </div>
     </div>
   );
