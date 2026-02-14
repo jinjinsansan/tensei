@@ -62,6 +62,11 @@ function isIOS() {
   return /iP(hone|od|ad)/.test(navigator.userAgent);
 }
 
+function isControlsLocked(phase: GachaPhase, videoReady: boolean) {
+  // CARD_REVEAL 以外のフェーズでは、動画の再生開始まではボタンをロックする
+  return phase !== 'CARD_REVEAL' && !videoReady;
+}
+
 export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId }: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
@@ -392,11 +397,13 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   );
 
   const handleAdvance = useCallback(() => {
+    if (isControlsLocked(phase, videoReady)) return;
     setVideoReady(false);
     progressPhase();
-  }, [progressPhase]);
+  }, [phase, videoReady, progressPhase]);
 
   const handleSkip = useCallback(() => {
+    if (isControlsLocked(phase, videoReady)) return;
     if (phase === 'COUNTDOWN') {
       // ハズレ時はスキップしてもカード結果へ直行
       setVideoReady(false);
@@ -407,7 +414,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
       setVideoReady(false);
       startPhase('MAIN_SCENE');
     }
-  }, [phase, gachaResult, startPhase]);
+  }, [phase, videoReady, gachaResult, startPhase]);
 
   const details = buildPhaseDetails({
     phase,
@@ -441,8 +448,9 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
   const hasPhaseVideo = Boolean(signedPhaseVideoSrc);
-  const canSkip = (phase === 'COUNTDOWN' || phase === 'PRE_SCENE') && hasPhaseVideo && videoReady;
-  const disableNext = phase === 'CARD_REVEAL' || (hasPhaseVideo && !videoReady);
+  const controlsLocked = hasPhaseVideo && isControlsLocked(phase, videoReady);
+  const canSkip = (phase === 'COUNTDOWN' || phase === 'PRE_SCENE') && !controlsLocked;
+  const disableNext = phase === 'CARD_REVEAL' || controlsLocked;
   const preloadedCountdownSources = countdownVideos
     .map((src) => resolveAssetSrc(src) ?? src)
     .filter((src): src is string => Boolean(src));
