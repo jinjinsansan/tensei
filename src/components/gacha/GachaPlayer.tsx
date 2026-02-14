@@ -31,7 +31,7 @@ import {
   triggerDondenVibration,
   triggerPuchunVibration,
 } from '@/lib/gacha/haptics';
-import { playCardRevealCue, playCountdownTone, playDondenSfx, playPuchunSfx } from '@/lib/gacha/sfx';
+import { playCountdownHit } from '@/lib/gacha/sfx';
 import { useSignedAssetResolver } from '@/lib/gacha/client-assets';
 
 type Props = {
@@ -268,7 +268,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
     }
     const nextStep = countdownSelection?.pattern.steps[countdownIndex];
     if (!nextStep) return;
-    // playCountdownTone(nextStep.color); // Removed per user request
+    playCountdownHit();
     const prevColor = countdownColorRef.current;
     countdownColorRef.current = nextStep.color;
     triggerCountdownUpgrade(prevColor, nextStep.color);
