@@ -57,6 +57,11 @@ const PHASE_META: Record<GachaPhase, { subtitle: string; title: string }> = {
 const PRE_SCENE_PATTERNS = ['A', 'B', 'C', 'D'] as const;
 const AUTO_PHASES: GachaPhase[] = ['PUCHUN', 'TITLE_VIDEO', 'CHANCE_SCENE', 'MAIN_SCENE', 'DONDEN_SCENE'];
 
+function isIOS() {
+  if (typeof navigator === 'undefined') return false;
+  return /iP(hone|od|ad)/.test(navigator.userAgent);
+}
+
 export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId }: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
@@ -434,10 +439,19 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
   const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
+  const preloadedCountdownSources = countdownVideos
+    .map((src) => resolveAssetSrc(src) ?? src)
+    .filter((src): src is string => Boolean(src));
   const handlePhaseVideoPlay = useCallback(() => {
     if (phase === 'COUNTDOWN') {
-      // 映像の再生開始タイミングに合わせて効果音を鳴らす
-      playCountdownHit();
+      // iPhone 実機では映像描画がわずかに遅れるため、音をほんの少し遅らせて同期感を高める
+      if (isIOS()) {
+        window.setTimeout(() => {
+          playCountdownHit();
+        }, 80);
+      } else {
+        playCountdownHit();
+      }
     }
   }, [phase]);
 
@@ -465,6 +479,12 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   return (
     <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
+        {/* カウントダウン用の全動画をオフスクリーンで preload して、iPhone 実機でのラグを軽減 */}
+        <div className="pointer-events-none absolute -z-10 h-0 w-0 overflow-hidden">
+          {preloadedCountdownSources.map((src, index) => (
+            <video key={`preload-${index}`} src={src} preload="auto" playsInline muted />
+          ))}
+        </div>
         {signedPhaseVideoSrc ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
@@ -472,6 +492,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
               src={signedPhaseVideoSrc}
               className="h-full w-full object-cover"
               autoPlay
+              preload="auto"
               loop={phaseVideoLoop}
               playsInline
               onPlay={handlePhaseVideoPlay}
