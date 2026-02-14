@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { getUserFromSession } from "@/lib/data/session";
 
 const links = [
   { href: '/admin', label: 'ダッシュボード' },
@@ -18,12 +19,11 @@ const links = [
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  // Note: /admin/login と /admin/logout は認証不要なので、このレイアウトは適用されない
   const supabase = getServiceSupabase();
-  const { data } = await supabase.auth.getUser();
+  const user = await getUserFromSession(supabase);
 
-  // 認証チェック - 未ログインの場合はログインページへリダイレクト
-  if (!data.user) {
+  // 認証チェック - 未ログインまたは管理者でない場合はログインページへリダイレクト
+  if (!user || !user.is_admin) {
     redirect('/login-admin');
   }
   return (
@@ -33,9 +33,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.3em] text-accent">Admin</p>
             <h2 className="mt-2 text-xl font-semibold">来世ガチャ管理</h2>
-            {data.user && (
-              <p className="mt-2 text-xs text-slate-400 truncate">{data.user.email}</p>
-            )}
+            <p className="mt-2 text-xs text-slate-400 truncate">{user.email}</p>
           </div>
           <nav className="flex flex-col gap-2">
             {links.map((link) => (

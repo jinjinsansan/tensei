@@ -1,43 +1,13 @@
-"use client";
+import { redirect } from 'next/navigation';
+import { loginAsAdmin } from './actions';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+type AdminLoginPageProps = {
+  searchParams?: Promise<{ error?: string }>;
+};
 
-export default function AdminLoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createBrowserSupabaseClient();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-
-      if (data.user) {
-        router.push("/admin");
-        router.refresh();
-      }
-    } catch (err) {
-      setError("ログインに失敗しました");
-      setLoading(false);
-    }
-  };
+export default async function AdminLoginPage({ searchParams }: AdminLoginPageProps) {
+  const params = (await searchParams) ?? {};
+  const error = params.error;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-black via-zinc-950 to-black px-4">
@@ -47,7 +17,7 @@ export default function AdminLoginPage() {
           <p className="mt-2 text-sm text-white/60">来世ガチャ管理パネル</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form action={loginAsAdmin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-white/80">
               メールアドレス
@@ -55,11 +25,10 @@ export default function AdminLoginPage() {
             <input
               type="email"
               id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
               required
               className="mt-1 w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-white/40 focus:outline-none"
-              placeholder="admin@example.com"
+              placeholder="goldbenchan@gmail.com"
             />
           </div>
 
@@ -70,9 +39,9 @@ export default function AdminLoginPage() {
             <input
               type="password"
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
               required
+              minLength={8}
               className="mt-1 w-full rounded-2xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/40 focus:border-white/40 focus:outline-none"
               placeholder="••••••••"
             />
@@ -86,10 +55,9 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-yellow-400 px-4 py-3 font-bold text-black transition hover:brightness-110 disabled:opacity-50"
+            className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-yellow-400 px-4 py-3 font-bold text-black transition hover:brightness-110"
           >
-            {loading ? "ログイン中..." : "ログイン"}
+            ログイン
           </button>
         </form>
       </div>

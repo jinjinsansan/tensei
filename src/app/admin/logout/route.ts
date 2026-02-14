@@ -1,9 +1,8 @@
-import { NextResponse } from 'next/server';
+import { redirect } from 'next/navigation';
 
-import { getServiceSupabase } from '@/lib/supabase/service';
+import { clearSessionToken } from '@/lib/session/cookie';
 
 export async function POST() {
-  const supabase = getServiceSupabase();
-  await supabase.auth.signOut();
-  return NextResponse.redirect(new URL('/login-admin', process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'));
+  await clearSessionToken();
+  redirect('/login-admin');
 }

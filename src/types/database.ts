@@ -48,6 +48,7 @@ export type Database = {
           display_name: string | null;
           avatar_url: string | null;
           metadata: Json;
+          is_admin: boolean;
           created_at: string;
           updated_at: string;
           last_login_at: string | null;
@@ -59,6 +60,7 @@ export type Database = {
           display_name?: string | null;
           avatar_url?: string | null;
           metadata?: Json;
+          is_admin?: boolean;
           created_at?: string;
           updated_at?: string;
           last_login_at?: string | null;

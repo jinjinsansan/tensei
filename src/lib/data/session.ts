@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database, Tables, TablesInsert, Json, TablesUpdate } from '@/types/database';
+import { getSessionToken } from '@/lib/session/cookie';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -119,4 +120,30 @@ export async function detachSessionByToken(
     .from('user_sessions')
     .update({ app_user_id: null, last_seen_at: new Date().toISOString() })
     .eq('session_token', sessionToken);
+}
+
+export async function getUserFromSession(
+  client: DbClient,
+): Promise<Tables<'app_users'> | null> {
+  const sessionToken = await getSessionToken();
+  if (!sessionToken) {
+    return null;
+  }
+
+  const session = await findSessionByToken(client, sessionToken);
+  if (!session || !session.app_user_id) {
+    return null;
+  }
+
+  const { data, error } = await client
+    .from('app_users')
+    .select('*')
+    .eq('id', session.app_user_id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return data as Tables<'app_users'>;
 }
