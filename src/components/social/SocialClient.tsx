@@ -157,55 +157,58 @@ export function SocialClient({ userId, displayName, email }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Your ID</p>
-        <p className="mt-2 text-sm text-secondary">このIDを友だちに伝えると、フレンド申請を受け取れます。</p>
+    <div className="space-y-6 text-white">
+      <section className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5 shadow-panel-inset">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-neon-yellow">YOUR ID</p>
+        <p className="mt-2 text-xs text-white/70">このIDを友だちに伝えると、フレンド申請を受け取れます。</p>
         <div className="mt-3 space-y-1 text-sm">
-          <p>ニックネーム: {displayName ?? "未設定"}</p>
-          <p>メールアドレス: {email ?? "未設定"}</p>
-          <p className="break-all text-xs text-secondary">フレンドID: {userId}</p>
+          <p>ニックネーム: <span className="font-medium">{displayName ?? "未設定"}</span></p>
+          <p>メールアドレス: <span className="font-medium">{email ?? "未設定"}</span></p>
+          <p className="break-all text-[11px] text-white/60">フレンドID: {userId}</p>
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <h2 className="text-xl font-bold">フレンドを招待</h2>
-          <p className="mt-1 text-xs text-secondary">相手のフレンドIDを入力して申請します。</p>
+        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+          <h2 className="text-base font-semibold tracking-[0.08em]">フレンドを招待</h2>
+          <p className="mt-1 text-[11px] text-white/70">相手のフレンドIDを入力して申請します。</p>
           <form onSubmit={handleSendRequest} className="mt-3 space-y-3 text-sm">
             <input
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
               placeholder="相手のフレンドID"
-              className="w-full rounded-2xl border border-accent/25 bg-card/60 px-3 py-2 text-primary placeholder:text-secondary"
+              className="w-full rounded-2xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40"
             />
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-accent px-4 py-2 text-sm font-semibold text-hall-background disabled:opacity-60"
+              className="w-full rounded-full bg-accent px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-hall-background disabled:opacity-60"
             >
               フレンド申請を送る
             </button>
           </form>
         </div>
 
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <h2 className="text-xl font-bold">届いている申請</h2>
+        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+          <h2 className="text-base font-semibold tracking-[0.08em]">届いている申請</h2>
           {requests.length === 0 ? (
-            <p className="mt-3 text-sm text-secondary">受信中の申請はありません。</p>
+            <p className="mt-3 text-sm text-white/65">受信中の申請はありません。</p>
           ) : (
             <ul className="mt-3 space-y-2 text-sm">
               {requests.map((req) => (
-                <li key={req.id} className="flex items-center justify-between gap-2 rounded-2xl border border-accent/15 bg-card/60 px-3 py-2">
+                <li
+                  key={req.id}
+                  className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/40 px-3 py-2"
+                >
                   <div>
-                    <div className="font-medium">{req.from_display_name ?? req.from_email ?? req.from_user_id}</div>
-                    <div className="text-[11px] text-secondary">{new Date(req.created_at).toLocaleString("ja-JP")}</div>
+                    <div className="text-sm font-medium">{req.from_display_name ?? req.from_email ?? req.from_user_id}</div>
+                    <div className="text-[11px] text-white/60">{new Date(req.created_at).toLocaleString("ja-JP")}</div>
                   </div>
                   <button
                     type="button"
                     disabled={loading}
                     onClick={() => void handleAcceptRequest(req.id)}
-                    className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-hall-background disabled:opacity-60"
+                    className="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-hall-background disabled:opacity-60"
                   >
                     承認
                   </button>
@@ -217,16 +220,19 @@ export function SocialClient({ userId, displayName, email }: Props) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <h2 className="text-xl font-bold">フレンド一覧</h2>
+        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+          <h2 className="text-base font-semibold tracking-[0.08em]">フレンド一覧</h2>
           {friends.length === 0 ? (
-            <p className="mt-3 text-sm text-secondary">まだフレンドがいません。</p>
+            <p className="mt-3 text-sm text-white/65">まだフレンドがいません。</p>
           ) : (
             <ul className="mt-3 space-y-2 text-sm">
               {friends.map((friend) => (
-                <li key={friend.id} className="rounded-2xl border border-accent/15 bg-card/60 px-3 py-2">
-                  <div className="font-medium">{friend.display_name ?? friend.email ?? friend.id}</div>
-                  <div className="text-[11px] text-secondary">
+                <li
+                  key={friend.id}
+                  className="rounded-2xl border border-white/10 bg-black/40 px-3 py-2"
+                >
+                  <div className="text-sm font-medium">{friend.display_name ?? friend.email ?? friend.id}</div>
+                  <div className="text-[11px] text-white/60">
                     フレンドID: <span className="break-all">{friend.id}</span>
                   </div>
                 </li>
@@ -235,16 +241,16 @@ export function SocialClient({ userId, displayName, email }: Props) {
           )}
         </div>
 
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <h2 className="text-xl font-bold">カードを贈る</h2>
-          <p className="mt-1 text-xs text-secondary">手元のカードを1枚選んで、フレンドにプレゼントできます。</p>
+        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+          <h2 className="text-base font-semibold tracking-[0.08em]">カードを贈る</h2>
+          <p className="mt-1 text-[11px] text-white/70">手元のカードを1枚選んで、フレンドにプレゼントできます。</p>
           <form onSubmit={handleSendCard} className="mt-3 space-y-3 text-sm">
             <div>
-              <label className="text-xs text-secondary">送るカード</label>
+              <label className="text-[11px] text-white/65">送るカード</label>
               <select
                 value={selectedInventoryId}
                 onChange={(e) => setSelectedInventoryId(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-accent/25 bg-card/60 px-3 py-2 text-black"
+                className="mt-1 w-full rounded-2xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-black"
               >
                 <option value="">選択してください</option>
                 {collection.map((item) => (
@@ -255,11 +261,11 @@ export function SocialClient({ userId, displayName, email }: Props) {
               </select>
             </div>
             <div>
-              <label className="text-xs text-secondary">送り先フレンド</label>
+              <label className="text-[11px] text-white/65">送り先フレンド</label>
               <select
                 value={selectedFriendId}
                 onChange={(e) => setSelectedFriendId(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-accent/25 bg-card/60 px-3 py-2 text-black"
+                className="mt-1 w-full rounded-2xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-black"
               >
                 <option value="">選択してください</option>
                 {friends.map((friend) => (
@@ -272,7 +278,7 @@ export function SocialClient({ userId, displayName, email }: Props) {
             <button
               type="submit"
               disabled={loading || !selectedInventoryId || !selectedFriendId}
-              className="w-full rounded-2xl bg-accent px-4 py-2 text-sm font-semibold text-hall-background disabled:opacity-60"
+              className="w-full rounded-full bg-accent px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-hall-background disabled:opacity-60"
             >
               カードを送付する
             </button>

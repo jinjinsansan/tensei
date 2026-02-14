@@ -15,3 +15,8 @@ export function playCountdownHit() {
   if (!audio) return;
   void audio.play().catch(() => undefined);
 }
+
+// 事前に Audio 要素だけ作っておきたい場合に使用
+export function primeCountdownHit() {
+  void getCountdownAudio();
+}

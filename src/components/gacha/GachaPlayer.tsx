@@ -31,7 +31,7 @@ import {
   triggerDondenVibration,
   triggerPuchunVibration,
 } from '@/lib/gacha/haptics';
-import { playCountdownHit } from '@/lib/gacha/sfx';
+import { playCountdownHit, primeCountdownHit } from '@/lib/gacha/sfx';
 import { useSignedAssetResolver } from '@/lib/gacha/client-assets';
 
 type Props = {
@@ -266,9 +266,10 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
       countdownColorRef.current = null;
       return;
     }
+    // iOS 実機での遅延を減らすため、ここで事前に Audio 要素だけ用意しておく
+    primeCountdownHit();
     const nextStep = countdownSelection?.pattern.steps[countdownIndex];
     if (!nextStep) return;
-    playCountdownHit();
     const prevColor = countdownColorRef.current;
     countdownColorRef.current = nextStep.color;
     triggerCountdownUpgrade(prevColor, nextStep.color);
@@ -433,6 +434,12 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
   const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
+  const handlePhaseVideoPlay = useCallback(() => {
+    if (phase === 'COUNTDOWN') {
+      // 映像の再生開始タイミングに合わせて効果音を鳴らす
+      playCountdownHit();
+    }
+  }, [phase]);
 
   // CARD_REVEAL フェーズになったら CardReveal を表示
   if (phase === 'CARD_REVEAL') {
@@ -467,6 +474,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
               autoPlay
               loop={phaseVideoLoop}
               playsInline
+              onPlay={handlePhaseVideoPlay}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
