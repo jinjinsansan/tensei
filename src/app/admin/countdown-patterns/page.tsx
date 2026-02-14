@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 
 import { getServiceSupabase } from "@/lib/supabase/service";
 
-type CdColor = 'green' | 'blue' | 'red' | 'rainbow';
+type CdColor = 'green' | 'blue' | 'red' | 'gold' | 'rainbow' | 'white';
 type Grade = 'E1' | 'E2' | 'E3' | 'E4' | 'E5';
 
 async function togglePattern(formData: FormData) {
@@ -104,9 +104,9 @@ export default async function CountdownPatternsPage() {
     .order("grade", { ascending: true })
     .order("pattern_id", { ascending: true });
 
-  const colors: CdColor[] = ['green', 'blue', 'red', 'rainbow'];
+  const colors: CdColor[] = ['green', 'blue', 'red', 'gold', 'rainbow', 'white'];
   const grades: Grade[] = ['E1', 'E2', 'E3', 'E4', 'E5'];
-  const numbers = [1, 2, 3, 4, 5, 6, 7, 8];
+  const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   return (
     <div className="space-y-6">
