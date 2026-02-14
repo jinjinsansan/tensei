@@ -343,3 +343,54 @@ begin
   return new_serial;
 end;
 $$;
+
+-- Presentation config (STANDBY色、カウントダウングレード、タイトルヒント確率)
+create table if not exists public.presentation_config (
+  id uuid primary key default gen_random_uuid(),
+  config_type text not null check (config_type in ('standby_color', 'countdown_grade', 'title_hint')),
+  rarity text not null,
+  probabilities jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (config_type, rarity)
+);
+
+-- Countdown patterns
+create table if not exists public.countdown_patterns (
+  id uuid primary key default gen_random_uuid(),
+  pattern_id text not null unique,
+  name text not null,
+  grade text not null check (grade in ('E1', 'E2', 'E3', 'E4', 'E5')),
+  steps jsonb not null,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Insert default presentation config (optional - can be configured via admin panel)
+-- STANDBY色のデフォルト確率例（60%ヒント方式）
+insert into public.presentation_config (config_type, rarity, probabilities)
+values
+  ('standby_color', 'N', '{"black":60,"white":20,"yellow":10,"red":5,"blue":3,"rainbow":2}'::jsonb),
+  ('standby_color', 'R', '{"black":10,"white":10,"yellow":60,"red":10,"blue":8,"rainbow":2}'::jsonb),
+  ('standby_color', 'SR', '{"black":5,"white":5,"yellow":10,"red":60,"blue":15,"rainbow":5}'::jsonb),
+  ('standby_color', 'SSR', '{"black":3,"white":3,"yellow":5,"red":20,"blue":60,"rainbow":9}'::jsonb),
+  ('standby_color', 'UR', '{"black":2,"white":2,"yellow":3,"red":10,"blue":20,"rainbow":63}'::jsonb),
+  ('standby_color', 'LR', '{"black":1,"white":1,"yellow":2,"red":5,"blue":10,"rainbow":81}'::jsonb),
+  ('title_hint', 'ALL', '{"hintRate":60}'::jsonb)
+on conflict (config_type, rarity) do nothing;
+
+-- Insert default countdown patterns (30 patterns as per spec)
+insert into public.countdown_patterns (pattern_id, name, grade, steps)
+values
+  ('E1_01', '最高数字緑', 'E1', '[{"number":8,"color":"green"},{"number":7,"color":"green"},{"number":6,"color":"green"},{"number":5,"color":"green"}]'::jsonb),
+  ('E1_02', '下降青→緑', 'E1', '[{"number":5,"color":"blue"},{"number":4,"color":"blue"},{"number":3,"color":"green"},{"number":2,"color":"green"}]'::jsonb),
+  ('E2_01', '赤スタート', 'E2', '[{"number":6,"color":"red"},{"number":5,"color":"blue"},{"number":4,"color":"blue"},{"number":3,"color":"blue"}]'::jsonb),
+  ('E2_02', '青大量', 'E2', '[{"number":7,"color":"blue"},{"number":6,"color":"blue"},{"number":5,"color":"blue"},{"number":4,"color":"blue"}]'::jsonb),
+  ('E3_01', '赤2回', 'E3', '[{"number":8,"color":"red"},{"number":7,"color":"red"},{"number":6,"color":"blue"},{"number":5,"color":"blue"}]'::jsonb),
+  ('E3_02', '青→赤', 'E3', '[{"number":6,"color":"blue"},{"number":5,"color":"red"},{"number":4,"color":"red"},{"number":3,"color":"blue"}]'::jsonb),
+  ('E4_01', '赤3回', 'E4', '[{"number":8,"color":"red"},{"number":7,"color":"red"},{"number":6,"color":"red"},{"number":5,"color":"blue"}]'::jsonb),
+  ('E4_02', 'レインボー登場', 'E4', '[{"number":7,"color":"red"},{"number":6,"color":"red"},{"number":5,"color":"rainbow"},{"number":4,"color":"blue"}]'::jsonb),
+  ('E5_01', 'レインボー複数', 'E5', '[{"number":8,"color":"rainbow"},{"number":7,"color":"rainbow"},{"number":6,"color":"red"},{"number":5,"color":"red"}]'::jsonb),
+  ('E5_02', 'フルレインボー', 'E5', '[{"number":8,"color":"rainbow"},{"number":7,"color":"rainbow"},{"number":6,"color":"rainbow"},{"number":5,"color":"rainbow"}]'::jsonb)
+on conflict (pattern_id) do nothing;
