@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
 import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
+import { CardReveal } from '@/components/gacha/CardReveal';
 
 import {
   chooseCountdownPattern,
@@ -296,14 +297,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
     onClose?.();
   }, [onClose]);
 
-  useEffect(() => {
-    if (phase === 'LOSS_REVEAL' || phase === 'CARD_REVEAL') {
-      const timer = setTimeout(() => exitPlayer(), 1800);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [phase, exitPlayer]);
-
   const countdownTotal = countdownVideos.length;
   const preSceneTotal = preSceneMeta?.videos.length ?? 0;
   const mainSceneTotal = mainSceneVideos.length;
@@ -435,6 +428,27 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
   const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
+
+  // CARD_REVEAL フェーズになったら CardReveal を表示
+  if (phase === 'CARD_REVEAL') {
+    const cardData = {
+      id: gachaResult.cardId,
+      cardName: gachaResult.cardName,
+      imageUrl: gachaResult.cardImagePath,
+      starRating: gachaResult.starRating,
+      serialNumber: null,
+    };
+
+    return (
+      <CardReveal
+        starRating={gachaResult.starRating}
+        cards={[cardData]}
+        loading={false}
+        onClose={exitPlayer}
+        resultLabel={gachaResult.isLoss ? 'ハズレ' : '結果'}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
