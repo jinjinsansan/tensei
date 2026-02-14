@@ -266,7 +266,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
     }
     const nextStep = countdownSelection?.pattern.steps[countdownIndex];
     if (!nextStep) return;
-    playCountdownTone(nextStep.color);
+    // playCountdownTone(nextStep.color); // Removed per user request
     const prevColor = countdownColorRef.current;
     countdownColorRef.current = nextStep.color;
     triggerCountdownUpgrade(prevColor, nextStep.color);
@@ -447,6 +447,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
             autoPlay
             loop={phaseVideoLoop}
             playsInline
+            onEnded={shouldAutoAdvanceOnEnd ? () => progressPhase() : undefined}
           />
         ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
           <div className="flex h-full w-full items-center justify-center">
