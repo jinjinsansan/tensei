@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
-import { PhasePlaceholder } from '@/components/gacha/phases/phase-placeholder';
+
 import {
   chooseCountdownPattern,
   getCountdownVideoPath,
@@ -446,40 +446,21 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
           </span>
         </div>
 
-        <div className="flex flex-1 flex-col px-6 py-8">
-          <div className="relative flex-1 overflow-hidden rounded-[32px] border border-white/10 bg-black/70 shadow-[0_35px_90px_rgba(0,0,0,0.85)]">
+        <div className="flex flex-1 flex-col">
+          <div className="relative flex-1 overflow-hidden bg-black">
           {signedPhaseVideoSrc ? (
             <video
               key={phaseVideoKey}
               src={signedPhaseVideoSrc}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               autoPlay
               muted
               loop={phaseVideoLoop}
               playsInline
               onEnded={shouldAutoAdvanceOnEnd ? () => progressPhase() : undefined}
             />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center p-8">
-              <PhasePlaceholder
-                title={PHASE_META[phase].title}
-                subtitle={PHASE_META[phase].subtitle}
-                details={details}
-              />
-            </div>
-          )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65" />
-          <div className="pointer-events-none absolute left-6 top-6 rounded-full border border-white/15 bg-white/10 px-4 py-1 text-[10px] uppercase tracking-[0.4em] text-white/80">
-            {PHASE_META[phase].subtitle}
-          </div>
-          {phaseVideo?.progress ? (
-            <div className="pointer-events-none absolute right-6 top-6 rounded-full border border-white/15 bg-black/40 px-4 py-1 text-[11px] font-semibold tracking-[0.2em] text-white/80">
-              {phaseVideo.progress}
-            </div>
-          ) : null}
-
-          {phase === 'LOSS_REVEAL' && signedLossCardImage ? (
-            <div className="absolute inset-0 flex items-center justify-center">
+          ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
+            <div className="flex h-full w-full items-center justify-center">
               <Image
                 src={signedLossCardImage}
                 alt="転生失敗"
@@ -491,10 +472,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
             </div>
           ) : null}
         </div>
-
-        <p className="mt-6 text-center text-sm text-white/65 whitespace-pre-line">
-          {details ?? '演出を準備中...'}
-        </p>
       </div>
 
       <div className="flex w-full items-center justify-center gap-8 pb-12">
