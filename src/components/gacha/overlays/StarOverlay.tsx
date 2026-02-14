@@ -26,25 +26,30 @@ export function StarOverlay({ starCount }: Props) {
   }, [starCount]);
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-24 flex items-center justify-center gap-2">
-      {Array.from({ length: 5 }).map((_, index) => {
-        const isLit = index < visibleStars;
-        return (
-          <div
-            key={index}
-            className={`text-5xl transition-all duration-300 ${
-              isLit ? 'scale-100 opacity-100' : 'scale-75 opacity-40'
-            }`}
-            style={{
-              filter: isLit
-                ? 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.8))'
-                : 'grayscale(100%) brightness(0.5)',
-            }}
-          >
-            {isLit ? '⭐' : '☆'}
-          </div>
-        );
-      })}
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <div className="inline-flex flex-col items-center gap-2 rounded-full bg-black/45 px-6 py-3 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
+        <p className="text-[10px] tracking-[0.4em] text-white/70">期待度</p>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: 5 }).map((_, index) => {
+            const isLit = index < visibleStars;
+            return (
+              <span
+                key={index}
+                className={`text-3xl leading-none transition-all duration-300 ${
+                  isLit ? 'scale-100 opacity-100 text-yellow-300' : 'scale-90 opacity-35 text-zinc-500'
+                }`}
+                style={{
+                  textShadow: isLit
+                    ? '0 0 12px rgba(250, 250, 210, 0.9), 0 0 26px rgba(99, 102, 241, 0.7)'
+                    : '0 0 4px rgba(15,23,42,0.8)',
+                }}
+              >
+                {isLit ? '★' : '★'}
+              </span>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

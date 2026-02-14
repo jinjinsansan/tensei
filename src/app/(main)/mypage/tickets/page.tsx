@@ -1,14 +1,14 @@
 export default function TicketHistoryPage() {
   const history = [
-    { label: '無料の栞 受領', amount: '+1', date: '2026/02/12' },
+    { label: 'フリーチケット 受領', amount: '+1', date: '2026/02/12' },
     { label: '健太の物語を開封', amount: '-1', date: '2026/02/12' },
   ];
 
   return (
     <section className="space-y-6 text-primary">
       <div className="space-y-2 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-accent">Bookmarks</p>
-        <h1 className="text-3xl font-bold">栞の記録</h1>
+        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-accent">Tickets</p>
+        <h1 className="text-3xl font-bold">チケットの記録</h1>
       </div>
       <div className="space-y-3">
         {history.map((entry) => (

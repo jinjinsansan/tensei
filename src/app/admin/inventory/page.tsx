@@ -1,5 +1,25 @@
 import { getServiceSupabase } from "@/lib/supabase/service";
 
+type InventoryRow = {
+  id: string;
+  card_id: string;
+  serial_number: number;
+  obtained_at: string;
+  cards: {
+    id: string;
+    card_name: string;
+    rarity: string;
+    star_level: number | null;
+  } | null;
+  owner: {
+    id: string;
+    email: string | null;
+    display_name: string | null;
+  } | null;
+};
+
+// searchParams 型は Next.js 側で提供されるため any を許容
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function InventoryAdminPage({ searchParams }: any) {
   const supabase = getServiceSupabase();
 
@@ -51,7 +71,8 @@ export default async function InventoryAdminPage({ searchParams }: any) {
       throw new Error(error.message);
     }
 
-    results = (data ?? []).map((row: any) => ({
+    const rows = (data ?? []) as InventoryRow[];
+    results = rows.map((row) => ({
       id: row.id as string,
       serial_number: row.serial_number as number,
       obtained_at: row.obtained_at as string,

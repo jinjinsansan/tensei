@@ -25,6 +25,16 @@ type CollectionItem = {
   rarity: string;
 };
 
+type ApiCollectionItem = {
+  id: string;
+  card_id: string;
+  serial_number: number;
+  cards: {
+    name: string;
+    rarity: string;
+  } | null;
+};
+
 type Props = {
   userId: string;
   displayName: string | null;
@@ -67,10 +77,10 @@ export function SocialClient({ userId, displayName, email }: Props) {
     const res = await fetch("/api/collection");
     if (!res.ok) return;
     const data = await res.json();
-    const items: CollectionItem[] = (data.collection ?? []).map((item: any) => ({
-      inventory_id: item.id as string,
-      card_id: item.card_id as string,
-      serial_number: item.serial_number as number,
+    const items: CollectionItem[] = (data.collection ?? []).map((item: ApiCollectionItem) => ({
+      inventory_id: item.id,
+      card_id: item.card_id,
+      serial_number: item.serial_number,
       card_name: item.cards?.name ?? "",
       rarity: item.cards?.rarity ?? "",
     }));

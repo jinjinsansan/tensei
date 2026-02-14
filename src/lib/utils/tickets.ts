@@ -7,11 +7,11 @@ export type TicketBalanceItem = {
 };
 
 export const DEFAULT_TICKET_BALANCES: TicketBalanceItem[] = [
-  { code: 'free', name: '無料の栞', quantity: 0, colorToken: 'bookmark-free', sortOrder: 0 },
-  { code: 'basic', name: '銅の栞', quantity: 0, colorToken: 'bookmark-bronze', sortOrder: 1 },
-  { code: 'epic', name: '銀の栞', quantity: 0, colorToken: 'bookmark-silver', sortOrder: 2 },
-  { code: 'premium', name: '金の栞', quantity: 0, colorToken: 'bookmark-gold', sortOrder: 3 },
-  { code: 'ex', name: '白金の栞', quantity: 0, colorToken: 'bookmark-platinum', sortOrder: 4 },
+  { code: 'free', name: 'フリーチケット', quantity: 0, colorToken: 'neon-blue', sortOrder: 0 },
+  { code: 'basic', name: 'ベーシックチケット', quantity: 0, colorToken: 'neon-yellow', sortOrder: 1 },
+  { code: 'epic', name: 'エピックチケット', quantity: 0, colorToken: 'neon-pink', sortOrder: 2 },
+  { code: 'premium', name: 'プレミアムチケット', quantity: 0, colorToken: 'neon-purple', sortOrder: 3 },
+  { code: 'ex', name: 'EXチケット', quantity: 0, colorToken: 'glow-green', sortOrder: 4 },
 ];
 
 export function canonicalizeGachaId(id?: string | null) {

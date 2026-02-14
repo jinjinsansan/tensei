@@ -20,7 +20,7 @@ const notoSans = Noto_Sans_JP({
 
 const publicEnv = getPublicEnv();
 const siteName = publicEnv.NEXT_PUBLIC_SITE_NAME ?? '来世ガチャ ～もしも生まれ変わったら～';
-const siteDescription = '輪廻の書庫で来世の物語をめくる、書物テーマの没入型ガチャ体験';
+const siteDescription = '来世の物語に出会える、チケット制の没入型ガチャ体験';
 const siteUrl = publicEnv.NEXT_PUBLIC_SITE_URL ?? publicEnv.NEXT_PUBLIC_APP_URL;
 const siteLogo = '/raise-gacha-logo.png';
 

@@ -312,7 +312,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
             setCountdownIndex((idx) => Math.min(idx + 1, countdownTotal - 1));
             return;
           }
-          startPhase(gachaResult.isLoss ? 'LOSS_REVEAL' : 'PUCHUN');
+          // ハズレ時はカウントダウン終了後に即カード結果へ遷移する
+          startPhase(gachaResult.isLoss ? 'CARD_REVEAL' : 'PUCHUN');
           return;
         case 'PUCHUN':
           startPhase(gachaResult.isLoss ? 'LOSS_REVEAL' : 'TITLE_VIDEO');
@@ -356,6 +357,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
           startPhase('CARD_REVEAL');
           return;
         case 'LOSS_REVEAL':
+          // 現状このフェーズには遷移しない（互換用）
           startPhase('CARD_REVEAL');
           return;
         case 'CARD_REVEAL':
@@ -388,7 +390,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
 
   const handleSkip = useCallback(() => {
     if (phase === 'COUNTDOWN') {
-      startPhase(gachaResult.isLoss ? 'LOSS_REVEAL' : 'PUCHUN');
+      // ハズレ時はスキップしてもカード結果へ直行
+      startPhase(gachaResult.isLoss ? 'CARD_REVEAL' : 'PUCHUN');
       return;
     }
     if (phase === 'PRE_SCENE') {
@@ -456,11 +459,11 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
     <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
         {signedPhaseVideoSrc ? (
-          <>
+          <div className="relative h-full w-full overflow-hidden">
             <video
               key={phaseVideoKey}
               src={signedPhaseVideoSrc}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
               autoPlay
               loop={phaseVideoLoop}
               playsInline
@@ -468,7 +471,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
             )}
-          </>
+          </div>
         ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
           <div className="flex h-full w-full items-center justify-center">
             <Image

@@ -16,7 +16,7 @@ async function fetchTicketTypes(client: DbClient): Promise<Tables<'ticket_types'
 async function fetchTicketTypeByCode(client: DbClient, code: string): Promise<Tables<'ticket_types'>> {
   const { data, error } = await client.from('ticket_types').select('*').eq('code', code).single();
   if (error || !data) {
-    throw new Error(`指定の栞 (${code}) が見つかりません。`);
+    throw new Error(`指定のチケット (${code}) が見つかりません。`);
   }
   return data as Tables<'ticket_types'>;
 }
@@ -44,7 +44,7 @@ async function ensureUserTicketRow(
     .select('*')
     .single();
   if (insertError || !inserted) {
-    throw insertError ?? new Error('栞残高の作成に失敗しました。');
+    throw insertError ?? new Error('チケット残高の作成に失敗しました。');
   }
   return inserted as Tables<'user_tickets'>;
 }
@@ -99,7 +99,7 @@ export async function grantTickets(
     .select('quantity')
     .single();
   if (error || !data) {
-    throw error ?? new Error('栞の付与に失敗しました。');
+    throw error ?? new Error('チケットの付与に失敗しました。');
   }
   return data.quantity as number;
 }
@@ -113,7 +113,7 @@ export async function consumeTicket(
   const type = await fetchTicketTypeByCode(client, code);
   const row = await ensureUserTicketRow(client, userId, type.id);
   if (row.quantity <= 0) {
-    throw new Error('栞が足りません。');
+    throw new Error('チケットが足りません。');
   }
   const nextQuantity = row.quantity - 1;
   const { error } = await client

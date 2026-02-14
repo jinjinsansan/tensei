@@ -21,18 +21,16 @@ export function GachaNeonPlayer({ playLabel = "ガチャを始める", playVaria
   const [displayResult, setDisplayResult] = useState<GachaResult | null>(null);
   const [cardSummary, setCardSummary] = useState<CardSummary | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
-  const [cardRevealOpen, setCardRevealOpen] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
 
-  const isDisabled = isLoading || Boolean(activeResult) || cardRevealOpen;
+  const isDisabled = isLoading || Boolean(activeResult);
 
   const startPlay = useCallback(async () => {
     if (isDisabled) return;
     setError(null);
     setClaimError(null);
-    setCardRevealOpen(false);
     try {
       setIsLoading(true);
       const response = await playGacha();
@@ -49,10 +47,7 @@ export function GachaNeonPlayer({ playLabel = "ガチャを始める", playVaria
 
   const handlePlayerClose = useCallback(async () => {
     setActiveResult(null);
-    if (!resultId) {
-      setCardRevealOpen(true);
-      return;
-    }
+    if (!resultId) return;
     setIsClaiming(true);
     setClaimError(null);
     try {
@@ -64,12 +59,10 @@ export function GachaNeonPlayer({ playLabel = "ガチャを始める", playVaria
       setClaimError(err instanceof Error ? err.message : "結果の確定に失敗しました。");
     } finally {
       setIsClaiming(false);
-      setCardRevealOpen(true);
     }
   }, [resultId]);
 
   const handleRevealClose = useCallback(() => {
-    setCardRevealOpen(false);
     setDisplayResult(null);
     setCardSummary(null);
     setClaimError(null);
@@ -102,15 +95,9 @@ export function GachaNeonPlayer({ playLabel = "ガチャを始める", playVaria
     <div className="space-y-3 text-center">
       <div className="flex justify-center">{button}</div>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {claimError ? <p className="text-sm text-red-400">{claimError}</p> : null}
       <GachaPlayer gachaResult={activeResult} onClose={handlePlayerClose} sessionId={resultId ?? undefined} />
-      <CardReveal
-        open={cardRevealOpen}
-        gachaResult={displayResult}
-        card={cardSummary}
-        isClaiming={isClaiming}
-        error={claimError}
-        onClose={handleRevealClose}
-      />
+      {/* GachaPlayer 内のカードリビールを正式版として使用するため、旧RESULTモーダルは撤去 */}
     </div>
   );
 }

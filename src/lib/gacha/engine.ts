@@ -278,8 +278,8 @@ async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, 
   const lossCard = cards.find((card) => card.card_name === '転生失敗');
   const basePlayableCards = lossCard ? cards.filter((card) => card.id !== lossCard.id) : cards;
   const supplyFiltered = basePlayableCards.filter((card) => {
-    const max = (card as any).max_supply as number | null | undefined;
-    const current = (card as any).current_supply as number | null | undefined;
+    const max = card.max_supply;
+    const current = card.current_supply;
     if (max == null) return true;
     if (current == null) return true;
     return current < max;

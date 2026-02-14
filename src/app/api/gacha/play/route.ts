@@ -47,7 +47,13 @@ export async function POST(request: Request) {
     }
 
     const { session, user } = context;
-    const { remaining } = await consumeTicket(supabase, user.id, { ticketCode: body?.ticketCode });
+    const isAdmin = user.is_admin === true;
+
+    let remaining: number | null = null;
+    if (!isAdmin) {
+      const result = await consumeTicket(supabase, user.id, { ticketCode: body?.ticketCode });
+      remaining = result.remaining;
+    }
 
     const gacha = await generateGachaPlay({
       sessionId: session.id,
@@ -79,7 +85,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('gacha/play error', error);
     const message = error instanceof Error ? error.message : 'ガチャの生成に失敗しました。';
-    const status = message.includes('栞') ? 400 : 500;
+    const status = message.includes('チケット') ? 400 : 500;
     return NextResponse.json(
       {
         success: false,

@@ -5,6 +5,11 @@ import { getServiceSupabase } from "@/lib/supabase/service";
 type CdColor = 'green' | 'blue' | 'red' | 'gold' | 'rainbow' | 'white';
 type Grade = 'E1' | 'E2' | 'E3' | 'E4' | 'E5';
 
+type CountdownStep = {
+  number: number;
+  color: CdColor;
+};
+
 async function togglePattern(formData: FormData) {
   "use server";
   const supabase = getServiceSupabase();
@@ -246,7 +251,7 @@ export default async function CountdownPatternsPage() {
               </div>
 
               <div className="grid grid-cols-4 gap-3">
-                {Array.isArray(pattern.steps) && pattern.steps.map((step: any, idx: number) => (
+                {Array.isArray(pattern.steps) && (pattern.steps as CountdownStep[]).map((step, idx) => (
                   <div key={idx} className="space-y-2 rounded-lg border border-white/5 bg-white/5 p-2">
                     <p className="text-xs font-semibold">ステップ{idx + 1}</p>
                     <label className="block text-xs">
