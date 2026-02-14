@@ -445,10 +445,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
             src={signedPhaseVideoSrc}
             className="h-full w-full object-contain"
             autoPlay
-            muted
             loop={phaseVideoLoop}
             playsInline
-            onEnded={shouldAutoAdvanceOnEnd ? () => progressPhase() : undefined}
           />
         ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
           <div className="flex h-full w-full items-center justify-center">
