@@ -30,16 +30,39 @@ export type ParsedGachaConfig = {
   rtp: RtpSlot[];
   reversalRates: ReversalRates;
   characterWeights: CharacterWeight[];
+  /** 0.0 - 1.0: プチュン無し(完全ハズレ)の確率 */
+  lossRate: number;
 };
 
 export function parseGachaConfig(row: Tables<'gacha_config'>): ParsedGachaConfig {
   const rtp = rtpSchema.parse(row.rtp_config ?? []);
-  const reversalRates = reversalSchema.parse(row.reversal_rates ?? {});
+
+  const rawReversal = (row.reversal_rates ?? {}) as Record<string, unknown>;
+
+  // lossRate は reversal_rates.lossRate に保存する（既存の星別リバーサル率とは分離）
+  const rawLossRate = typeof rawReversal.lossRate === 'number' ? rawReversal.lossRate : undefined;
+
+  const numericReversalSource: Record<string, number> = Object.fromEntries(
+    Object.entries(rawReversal)
+      .filter(([key, value]) => /^[0-9]+$/.test(key) && typeof value === 'number')
+      .map(([key, value]) => [key, value as number]),
+  );
+
+  const reversalRates = reversalSchema.parse(numericReversalSource);
   const characterWeights = characterWeightsSchema.parse(row.character_weights ?? []);
 
   const normalizedReversalRates = Object.fromEntries(
     Object.entries(reversalRates).map(([star, rate]) => [Number(star), Math.max(0, Number(rate))]),
   );
+
+  const lossRate = (() => {
+    if (typeof rawLossRate === 'number' && Number.isFinite(rawLossRate)) {
+      // 0.0〜1.0 にクランプ
+      return Math.min(Math.max(rawLossRate, 0), 1);
+    }
+    // デフォルト: 60% ハズレ
+    return 0.6;
+  })();
 
   return {
     id: row.id,
@@ -47,5 +70,6 @@ export function parseGachaConfig(row: Tables<'gacha_config'>): ParsedGachaConfig
     rtp,
     reversalRates: normalizedReversalRates,
     characterWeights,
+    lossRate,
   };
 }

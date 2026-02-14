@@ -47,7 +47,6 @@ export async function generateGachaPlay({
 }: GenerateOptions): Promise<GachaEngineResult> {
   const supabase = getServiceSupabase();
   const scenario = await resolveScenario(supabase, configSlug);
-
   const historyRow = await insertGachaHistory(supabase, {
     user_session_id: sessionId,
     app_user_id: appUserId,
@@ -57,19 +56,24 @@ export async function generateGachaPlay({
     gacha_type: 'single',
   });
 
-  const resultRow = await insertGachaResult(supabase, {
-    user_session_id: sessionId,
-    app_user_id: appUserId,
-    character_id: scenario.character.id,
-    card_id: scenario.card.id,
-    star_level: scenario.star,
-    had_reversal: scenario.hadReversal,
-    scenario_snapshot: scenario.story as Json,
-    card_awarded: false,
-    history_id: historyRow.id,
-    obtained_via: 'single_gacha',
-    metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
-  });
+  let resultRow: Tables<'gacha_results'> | null = null;
+
+  // ハズレ時は gacha_results を作らず、resultId も返さない（カード付与なし）
+  if (!scenario.gachaResult.isLoss) {
+    resultRow = await insertGachaResult(supabase, {
+      user_session_id: sessionId,
+      app_user_id: appUserId,
+      character_id: scenario.character.id,
+      card_id: scenario.card.id,
+      star_level: scenario.star,
+      had_reversal: scenario.hadReversal,
+      scenario_snapshot: scenario.story as Json,
+      card_awarded: false,
+      history_id: historyRow.id,
+      obtained_via: 'single_gacha',
+      metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
+    });
+  }
 
   return {
     story: scenario.story,
@@ -276,10 +280,63 @@ async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, 
     throw new Error(`Character ${character.name} has no active cards.`);
   }
 
+  // まず★レベルを抽選（ハズレでも統計用に記録しておく）
   const star = drawStar(config.rtp);
   const starCards = cards.filter((card) => card.star_level === star);
   const selectableCards = starCards.length ? starCards : cards;
   const selectedCard = pickRandom(selectableCards);
+  const lossRoll = randomFloat();
+  const isLoss = lossRoll < config.lossRate;
+
+  if (isLoss) {
+    // 完全ハズレルート: シナリオは空、ハズレカードのみ表示
+    const story: StoryPayload = {
+      starLevel: star,
+      hadReversal: false,
+      characterId: character.id,
+      cardId: selectedCard.id,
+      preStory: [],
+      chance: [],
+      mainStory: [],
+      reversalStory: [],
+      finalCard: {
+        id: selectedCard.id,
+        card_name: selectedCard.card_name,
+        rarity: selectedCard.rarity,
+        star_level: selectedCard.star_level,
+        card_image_url: selectedCard.card_image_url,
+        has_reversal: selectedCard.has_reversal,
+      },
+    };
+
+    const moduleCharacterId = mapCharacterDbIdToModuleId(character.id);
+    const characterId = moduleCharacterId ?? character.id;
+
+    const gachaResult: GachaResult = {
+      isLoss: true,
+      characterId,
+      cardId: 'loss',
+      rarity: 'N',
+      starRating: star,
+      cardName: '転生失敗',
+      cardTitle: 'この来世は見つかりませんでした...',
+      cardImagePath: LOSS_CARD_PATH,
+      lossCardImagePath: LOSS_CARD_PATH,
+      isDonden: false,
+      dondenFromCardId: undefined,
+      dondenFromRarity: undefined,
+      isSequel: false,
+    };
+
+    return {
+      story,
+      gachaResult,
+      card: selectedCard,
+      character,
+      star,
+      hadReversal: false,
+    };
+  }
 
   const reversalRate = config.reversalRates[star] ?? 0;
   const hadReversal = Boolean(selectedCard.has_reversal) && randomFloat() < reversalRate;

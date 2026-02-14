@@ -64,7 +64,7 @@ export function CardReveal({ open, gachaResult, card, isClaiming, error, onClose
           </div>
         </div>
 
-        {card ? (
+        {card && !gachaResult.isLoss ? (
           <p className="rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-center text-xs tracking-[0.2em] text-white/60">
             {card.name} をコレクションに保存しました
           </p>

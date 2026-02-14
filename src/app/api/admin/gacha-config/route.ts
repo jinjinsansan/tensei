@@ -9,12 +9,19 @@ export async function POST(request: Request) {
 
     const supabase = getServiceSupabase();
 
+    // lossRate は reversal_rates.lossRate として保存する
+    const mergedReversalRates = {
+      ...(reversalRates ?? {}),
+      // 0〜1 の範囲にクランプして保存
+      lossRate: typeof lossRate === 'number' ? Math.min(Math.max(lossRate, 0), 1) : undefined,
+    };
+
     // gacha_config テーブルを更新
     const { error } = await supabase
       .from('gacha_config')
       .update({
         rtp_config: rtpConfig,
-        reversal_rates: reversalRates,
+        reversal_rates: mergedReversalRates,
         character_weights: characterWeights,
         updated_at: new Date().toISOString(),
       })
