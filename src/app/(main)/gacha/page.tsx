@@ -81,7 +81,7 @@ export default async function GachaPage() {
               </span>
             </div>
             <div className="flex w-full justify-center sm:w-auto sm:justify-end">
-              <GachaNeonPlayer playVariant="round" playLabel="ガチャを始める" />
+              <GachaNeonPlayer playVariant="round" />
             </div>
           </div>
         </article>

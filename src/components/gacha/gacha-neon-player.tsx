@@ -15,7 +15,7 @@ type Props = {
   playVariant?: PlayVariant;
 };
 
-export function GachaNeonPlayer({ playLabel = "ガチャを始める", playVariant = "round" }: Props) {
+export function GachaNeonPlayer({ playLabel = "ガチャを\n始める", playVariant = "round" }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeResult, setActiveResult] = useState<GachaResult | null>(null);
   const [displayResult, setDisplayResult] = useState<GachaResult | null>(null);
