@@ -276,14 +276,14 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
     if (prevPhaseRef.current === phase) return;
     prevPhaseRef.current = phase;
     if (phase === 'PUCHUN' && !gachaResult.isLoss) {
-      playPuchunSfx();
+      // playPuchunSfx(); // Removed per user request
       triggerPuchunVibration();
     } else if (phase === 'DONDEN_SCENE' && gachaResult.isDonden) {
-      playDondenSfx();
+      // playDondenSfx(); // Removed per user request
       triggerDondenVibration();
     } else if (phase === 'CARD_REVEAL') {
       if (!gachaResult.isLoss) {
-        playCardRevealCue(gachaResult.starRating);
+        // playCardRevealCue(gachaResult.starRating); // Removed per user request
         triggerCardRevealVibration(gachaResult.starRating);
       } else {
         triggerCardRevealVibration(1);
@@ -387,9 +387,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   );
 
   const handleAdvance = useCallback(() => {
-    if (AUTO_PHASES.includes(phase)) return;
     progressPhase();
-  }, [phase, progressPhase]);
+  }, [progressPhase]);
 
   const handleSkip = useCallback(() => {
     if (phase === 'COUNTDOWN') {
@@ -402,7 +401,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
   }, [phase, gachaResult, startPhase]);
 
   const canSkip = phase === 'COUNTDOWN' || phase === 'PRE_SCENE';
-  const disableNext = AUTO_PHASES.includes(phase);
+  const disableNext = phase === 'CARD_REVEAL' || phase === 'LOSS_REVEAL';
 
   const details = buildPhaseDetails({
     phase,
@@ -447,7 +446,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
             autoPlay
             loop={phaseVideoLoop}
             playsInline
-            onEnded={shouldAutoAdvanceOnEnd ? () => progressPhase() : undefined}
           />
         ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
           <div className="flex h-full w-full items-center justify-center">
