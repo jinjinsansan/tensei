@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
+import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
 
 import {
   chooseCountdownPattern,
@@ -437,16 +438,21 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
 
   return (
     <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
-      <div className="flex h-full w-full max-w-[430px] flex-col">
+      <div className="relative flex h-full w-full max-w-[430px] flex-col">
         {signedPhaseVideoSrc ? (
-          <video
-            key={phaseVideoKey}
-            src={signedPhaseVideoSrc}
-            className="h-full w-full object-contain"
-            autoPlay
-            loop={phaseVideoLoop}
-            playsInline
-          />
+          <>
+            <video
+              key={phaseVideoKey}
+              src={signedPhaseVideoSrc}
+              className="h-full w-full object-contain"
+              autoPlay
+              loop={phaseVideoLoop}
+              playsInline
+            />
+            {phase === 'TITLE_VIDEO' && titleSelection && (
+              <StarOverlay starCount={titleSelection.starDisplay} />
+            )}
+          </>
         ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
           <div className="flex h-full w-full items-center justify-center">
             <Image
