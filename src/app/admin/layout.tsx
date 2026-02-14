@@ -18,12 +18,13 @@ const links = [
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
+  // Note: /admin/login と /admin/logout は認証不要なので、このレイアウトは適用されない
   const supabase = getServiceSupabase();
   const { data } = await supabase.auth.getUser();
 
   // 認証チェック - 未ログインの場合はログインページへリダイレクト
   if (!data.user) {
-    redirect('/admin/login');
+    redirect('/login-admin');
   }
   return (
     <div className="min-h-screen bg-primary text-primary">
