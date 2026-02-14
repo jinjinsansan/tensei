@@ -3,32 +3,39 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Rarity = 'N' | 'R' | 'SR' | 'SSR' | 'UR' | 'LR';
+const STAR_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
+type StarLevel = (typeof STAR_LEVELS)[number];
 
 export default function SettingsPage() {
   const router = useRouter();
   const [lossRate, setLossRate] = useState(60);
   const [dondenRate, setDondenRate] = useState(15);
-  const [rarityDistribution, setRarityDistribution] = useState({
-    N: 35,
-    R: 25,
-    SR: 20,
-    SSR: 12,
-    UR: 6,
-    LR: 2,
+  const [starDistribution, setStarDistribution] = useState<Record<StarLevel, number>>({
+    1: 15,
+    2: 13,
+    3: 12,
+    4: 11,
+    5: 10,
+    6: 9,
+    7: 8,
+    8: 7,
+    9: 5,
+    10: 4,
+    11: 4,
+    12: 2,
   });
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const handleRarityChange = (rarity: Rarity, value: number) => {
-    setRarityDistribution((prev) => ({
+  const handleStarChange = (star: StarLevel, value: number) => {
+    setStarDistribution((prev) => ({
       ...prev,
-      [rarity]: value,
+      [star]: value,
     }));
   };
 
-  const getTotalRarity = () => {
-    return Object.values(rarityDistribution).reduce((sum, val) => sum + val, 0);
+  const getTotalStarDistribution = () => {
+    return Object.values(starDistribution).reduce((sum, val) => sum + val, 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,9 +43,9 @@ export default function SettingsPage() {
     setError(null);
 
     // バリデーション
-    const total = getTotalRarity();
+    const total = getTotalStarDistribution();
     if (Math.abs(total - 100) > 0.01) {
-      setError(`レア度分布の合計が100%である必要があります（現在: ${total}%）`);
+      setError(`★レベル分布の合計が100%である必要があります（現在: ${total}%）`);
       return;
     }
 
@@ -55,18 +62,15 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
-      // RTP設定を構築
-      const rtpConfig = Object.entries(rarityDistribution).map(([rarity, probability], index) => ({
-        star: index + 1,
-        probability: probability / 100,
+      // RTP設定を構築（★1〜★12 を個別に設定）
+      const rtpConfig = STAR_LEVELS.map((star) => ({
+        star,
+        probability: (starDistribution[star] ?? 0) / 100,
       }));
 
-      // リバーサル率を構築
+      // リバーサル率を構築（現在は全★で一律）
       const reversalRates = Object.fromEntries(
-        Object.keys(rarityDistribution).map((_, index) => [
-          String(index + 1),
-          dondenRate / 100,
-        ])
+        STAR_LEVELS.map((star) => [String(star), dondenRate / 100])
       );
 
       // キャラクター比率（健太のみ）
@@ -101,8 +105,8 @@ export default function SettingsPage() {
     }
   };
 
-  const totalRarity = getTotalRarity();
-  const isValidTotal = Math.abs(totalRarity - 100) < 0.01;
+  const totalStar = getTotalStarDistribution();
+  const isValidTotal = Math.abs(totalStar - 100) < 0.01;
 
   return (
     <div className="space-y-6">
@@ -135,29 +139,31 @@ export default function SettingsPage() {
         {/* レア度分布（当たり時） */}
         <section className="space-y-4 rounded-3xl border border-white/15 bg-white/5 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">レア度分布（当たり時）</h2>
+            <h2 className="text-xl font-semibold">★レベル分布（当たり時）</h2>
             <span
               className={`text-lg font-bold ${
                 isValidTotal ? "text-emerald-400" : "text-red-400"
               }`}
             >
-              合計: {totalRarity.toFixed(1)}%
+              合計: {totalStar.toFixed(1)}%
             </span>
           </div>
-          <p className="text-xs text-slate-400">当たりを引いた時の各レア度の出現確率（合計100%）</p>
+          <p className="text-xs text-slate-400">当たりを引いた時の各★レベルの出現確率（合計100%）</p>
 
           <div className="space-y-3">
-            {(Object.entries(rarityDistribution) as [Rarity, number][]).map(([rarity, value]) => (
-              <div key={rarity} className="space-y-2">
+            {STAR_LEVELS.map((star) => {
+              const value = starDistribution[star] ?? 0;
+              return (
+              <div key={star} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="font-semibold">{rarity}</label>
+                  <label className="font-semibold">★{star}</label>
                   <input
                     type="number"
                     min="0"
                     max="100"
                     step="0.1"
                     value={value}
-                    onChange={(e) => handleRarityChange(rarity, Number(e.target.value))}
+                    onChange={(e) => handleStarChange(star, Number(e.target.value))}
                     className="w-20 rounded-xl bg-white/10 px-3 py-1 text-right"
                   />
                 </div>
@@ -167,11 +173,11 @@ export default function SettingsPage() {
                   max="100"
                   step="0.1"
                   value={value}
-                  onChange={(e) => handleRarityChange(rarity, Number(e.target.value))}
+                  onChange={(e) => handleStarChange(star, Number(e.target.value))}
                   className="w-full"
                 />
               </div>
-            ))}
+            );})}
           </div>
 
           {!isValidTotal && (
