@@ -158,7 +158,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
 
   return (
     <div className="space-y-6 text-white">
-      <section className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5 shadow-panel-inset">
+      {/* あなたのIDカード: フリー/ベーシックに近い深いブルー系グラデーション */}
+      <section className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#0b0416] via-[#1a0a22] to-[#050006] px-5 py-5 shadow-panel-inset">
         <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-neon-yellow">YOUR ID</p>
         <p className="mt-2 text-xs text-white/70">このIDを友だちに伝えると、フレンド申請を受け取れます。</p>
         <div className="mt-3 space-y-1 text-sm">
@@ -169,7 +170,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+        {/* フレンド招待: ベーシックチケットに近いアンバー系 */}
+        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#2a1a02] via-[#3f2607] to-[#0b0502] px-5 py-5">
           <h2 className="text-base font-semibold tracking-[0.08em]">フレンドを招待</h2>
           <p className="mt-1 text-[11px] text-white/70">相手のフレンドIDを入力して申請します。</p>
           <form onSubmit={handleSendRequest} className="mt-3 space-y-3 text-sm">
@@ -189,7 +191,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
           </form>
         </div>
 
-        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+        {/* 届いている申請: エピックチケットに近いローズ系 */}
+        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#2b0014] via-[#430029] to-[#070008] px-5 py-5">
           <h2 className="text-base font-semibold tracking-[0.08em]">届いている申請</h2>
           {requests.length === 0 ? (
             <p className="mt-3 text-sm text-white/65">受信中の申請はありません。</p>
@@ -220,7 +223,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+        {/* フレンド一覧: プレミアムチケットに近いパープル系 */}
+        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#1c0030] via-[#2f0150] to-[#05000a] px-5 py-5">
           <h2 className="text-base font-semibold tracking-[0.08em]">フレンド一覧</h2>
           {friends.length === 0 ? (
             <p className="mt-3 text-sm text-white/65">まだフレンドがいません。</p>
@@ -241,7 +245,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
           )}
         </div>
 
-        <div className="rounded-3xl border border-white/12 bg-white/5 px-5 py-5">
+        {/* カード送付: EXチケットに近いグリーン系 */}
+        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#032415] via-[#064030] to-[#010b06] px-5 py-5">
           <h2 className="text-base font-semibold tracking-[0.08em]">カードを贈る</h2>
           <p className="mt-1 text-[11px] text-white/70">手元のカードを1枚選んで、フレンドにプレゼントできます。</p>
           <form onSubmit={handleSendCard} className="mt-3 space-y-3 text-sm">
