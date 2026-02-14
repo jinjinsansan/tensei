@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
 import { consumeTicket } from '@/lib/data/tickets';
-import { generateGachaPlay } from '@/lib/gacha/engine';
+import { generateGachaPlay, generateGuestGachaPlay } from '@/lib/gacha/engine';
 import { fetchAuthedContext } from '@/lib/app/session';
 
 type PlayRequest = {
@@ -10,14 +10,42 @@ type PlayRequest = {
   ticketCode?: string;
 };
 
+const ALLOW_GUEST_GACHA = process.env.GACHA_ALLOW_GUEST === 'true';
+
 export async function POST(request: Request) {
   try {
     const body = await readJsonBody(request);
     const supabase = getServiceSupabase();
     const context = await fetchAuthedContext(supabase);
+
     if (!context) {
-      return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
+      if (!ALLOW_GUEST_GACHA) {
+        return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
+      }
+      const gacha = await generateGuestGachaPlay(body?.configSlug);
+      return NextResponse.json({
+        success: true,
+        resultId: null,
+        ticketBalance: null,
+        gachaResult: gacha.gachaResult,
+        character: {
+          id: gacha.character.id,
+          name: gacha.character.name,
+          thumbnailUrl: gacha.character.thumbnail_url,
+          expectationLevel: gacha.character.expectation_level,
+        },
+        card: {
+          id: gacha.card.id,
+          name: gacha.card.card_name,
+          rarity: gacha.card.rarity,
+          starLevel: gacha.card.star_level,
+          imageUrl: gacha.card.card_image_url,
+          hasReversal: gacha.card.has_reversal,
+        },
+        story: gacha.story,
+      });
     }
+
     const { session, user } = context;
     const { remaining } = await consumeTicket(supabase, user.id, { ticketCode: body?.ticketCode });
 
@@ -29,7 +57,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      resultId: gacha.resultRow.id,
+      resultId: gacha.resultRow?.id ?? null,
       ticketBalance: remaining,
       gachaResult: gacha.gachaResult,
       character: {

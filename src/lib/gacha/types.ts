@@ -31,7 +31,7 @@ export type StoryPayload = {
 export type GachaEngineResult = {
   story: StoryPayload;
   gachaResult: GachaResult;
-  resultRow: Tables<'gacha_results'>;
+  resultRow: Tables<'gacha_results'> | null;
   card: Tables<'cards'>;
   character: Tables<'characters'>;
 };

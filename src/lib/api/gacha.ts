@@ -3,8 +3,8 @@ import type { GachaResult } from '@/lib/gacha/common/types';
 
 export type PlayResponse = {
   success: true;
-  resultId: string;
-  ticketBalance: number;
+  resultId: string | null;
+  ticketBalance: number | null;
   gachaResult: GachaResult;
   story: StoryPayload;
   character: {

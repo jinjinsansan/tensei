@@ -31,89 +31,64 @@ type ScenarioRow = Tables<'scenarios'>;
 
 const LOSS_CARD_PATH = buildCommonAssetPath('loss_card.png');
 
+type ScenarioPayload = {
+  story: StoryPayload;
+  gachaResult: GachaResult;
+  card: Tables<'cards'>;
+  character: Tables<'characters'>;
+  star: number;
+  hadReversal: boolean;
+};
+
 export async function generateGachaPlay({
   sessionId,
   appUserId,
   configSlug = 'default',
 }: GenerateOptions): Promise<GachaEngineResult> {
   const supabase = getServiceSupabase();
-  const [config, characters] = await Promise.all([
-    fetchGachaConfig(supabase, configSlug),
-    fetchActiveCharacters(supabase),
-  ]);
-
-  if (!characters.length) {
-    throw new Error('No active characters configured.');
-  }
-
-  const character = pickCharacterByWeight(characters, config.characterWeights);
-  const cards = await fetchCardsByCharacter(supabase, character.id);
-  if (!cards.length) {
-    throw new Error(`Character ${character.name} has no active cards.`);
-  }
-
-  const star = drawStar(config.rtp);
-  const starCards = cards.filter((card) => card.star_level === star);
-  const selectableCards = starCards.length ? starCards : cards;
-  const selectedCard = pickRandom(selectableCards);
-
-  const reversalRate = config.reversalRates[star] ?? 0;
-  const hadReversal = Boolean(selectedCard.has_reversal) && randomFloat() < reversalRate;
-
-  const [preStories, chanceScenes, scenarioRows] = await Promise.all([
-    fetchPreStories(supabase, character.id),
-    fetchChanceScenes(supabase, character.id),
-    fetchScenarios(supabase, selectedCard.id),
-  ]);
-
-  const story = buildStoryPayload({
-    starLevel: star,
-    hadReversal,
-    characterId: character.id,
-    card: selectedCard,
-    preStories,
-    chanceScenes,
-    scenarioRows,
-  });
-
-  const moduleCharacterId = mapCharacterDbIdToModuleId(character.id);
-  const gachaResult = buildGachaResult({
-    story,
-    supabaseCharacter: character,
-    supabaseCard: selectedCard,
-    hadReversal,
-    moduleCharacterId,
-  });
+  const scenario = await resolveScenario(supabase, configSlug);
 
   const historyRow = await insertGachaHistory(supabase, {
     user_session_id: sessionId,
     app_user_id: appUserId,
-    star_level: star,
-    scenario: story as Json,
-    had_reversal: hadReversal,
+    star_level: scenario.star,
+    scenario: scenario.story as Json,
+    had_reversal: scenario.hadReversal,
     gacha_type: 'single',
   });
 
   const resultRow = await insertGachaResult(supabase, {
     user_session_id: sessionId,
     app_user_id: appUserId,
-    character_id: character.id,
-    card_id: selectedCard.id,
-    star_level: star,
-    had_reversal: hadReversal,
-    scenario_snapshot: story as Json,
+    character_id: scenario.character.id,
+    card_id: scenario.card.id,
+    star_level: scenario.star,
+    had_reversal: scenario.hadReversal,
+    scenario_snapshot: scenario.story as Json,
     card_awarded: false,
     history_id: historyRow.id,
     obtained_via: 'single_gacha',
-    metadata: ({ gachaResult } as unknown) as Json,
+    metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
   });
 
   return {
-    story,
-    gachaResult,
+    story: scenario.story,
+    gachaResult: scenario.gachaResult,
     resultRow,
-    card: selectedCard,
-    character,
+    card: scenario.card,
+    character: scenario.character,
+  };
+}
+
+export async function generateGuestGachaPlay(configSlug = 'default'): Promise<GachaEngineResult> {
+  const supabase = getServiceSupabase();
+  const scenario = await resolveScenario(supabase, configSlug);
+  return {
+    story: scenario.story,
+    gachaResult: scenario.gachaResult,
+    resultRow: null,
+    card: scenario.card,
+    character: scenario.character,
   };
 }
 
@@ -283,4 +258,63 @@ function coerceRarity(value: string | null | undefined): Rarity {
     return value;
   }
   return 'N';
+}
+
+async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, configSlug: string): Promise<ScenarioPayload> {
+  const [config, characters] = await Promise.all([
+    fetchGachaConfig(supabase, configSlug),
+    fetchActiveCharacters(supabase),
+  ]);
+
+  if (!characters.length) {
+    throw new Error('No active characters configured.');
+  }
+
+  const character = pickCharacterByWeight(characters, config.characterWeights);
+  const cards = await fetchCardsByCharacter(supabase, character.id);
+  if (!cards.length) {
+    throw new Error(`Character ${character.name} has no active cards.`);
+  }
+
+  const star = drawStar(config.rtp);
+  const starCards = cards.filter((card) => card.star_level === star);
+  const selectableCards = starCards.length ? starCards : cards;
+  const selectedCard = pickRandom(selectableCards);
+
+  const reversalRate = config.reversalRates[star] ?? 0;
+  const hadReversal = Boolean(selectedCard.has_reversal) && randomFloat() < reversalRate;
+
+  const [preStories, chanceScenes, scenarioRows] = await Promise.all([
+    fetchPreStories(supabase, character.id),
+    fetchChanceScenes(supabase, character.id),
+    fetchScenarios(supabase, selectedCard.id),
+  ]);
+
+  const story = buildStoryPayload({
+    starLevel: star,
+    hadReversal,
+    characterId: character.id,
+    card: selectedCard,
+    preStories,
+    chanceScenes,
+    scenarioRows,
+  });
+
+  const moduleCharacterId = mapCharacterDbIdToModuleId(character.id);
+  const gachaResult = buildGachaResult({
+    story,
+    supabaseCharacter: character,
+    supabaseCard: selectedCard,
+    hadReversal,
+    moduleCharacterId,
+  });
+
+  return {
+    story,
+    gachaResult,
+    card: selectedCard,
+    character,
+    star,
+    hadReversal,
+  };
 }
