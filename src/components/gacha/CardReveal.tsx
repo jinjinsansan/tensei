@@ -9,6 +9,7 @@ type CardData = {
   imageUrl: string;
   starRating: number;
   serialNumber?: number | null;
+  description?: string | null;
 };
 
 type Props = {
@@ -17,9 +18,11 @@ type Props = {
   loading: boolean;
   onClose: () => void;
   resultLabel?: string;
+  errorMessage?: string | null;
+  onRetry?: () => void;
 };
 
-export function CardReveal({ starRating, cards, loading, onClose, resultLabel = '結果' }: Props) {
+export function CardReveal({ starRating, cards, loading, onClose, resultLabel = '結果', errorMessage, onRetry }: Props) {
   const list = cards ?? [];
   const displayCount = list.length;
 
@@ -49,6 +52,8 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
         {list.map((card) => {
           const displayName = card.cardName ?? 'カード';
           const displayStar = card.starRating ?? starRating;
+          const starCount = Math.max(1, Math.min(displayStar, 12));
+          const starIcons = '★'.repeat(starCount);
           return (
             <div
               key={card.id}
@@ -56,10 +61,11 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[0.65rem] uppercase tracking-[0.35em] text-amber-200/80">★{displayStar}</p>
-                  <p className="font-display text-xl text-white drop-shadow-[0_6px_25px_rgba(0,0,0,0.8)]">
-                    {displayName}
-                  </p>
+                  <p className="text-[0.8rem] text-amber-200">{starIcons}</p>
+                  <p className="font-display text-xl text-white drop-shadow-[0_6px_25px_rgba(0,0,0,0.8)]">{displayName}</p>
+                  {card.description ? (
+                    <p className="mt-1 text-[0.75rem] text-white/70">{card.description}</p>
+                  ) : null}
                 </div>
                 {card.serialNumber ? (
                   <span className="rounded-full border border-white/20 px-3 py-1 text-[0.7rem] text-white/80">
@@ -105,7 +111,23 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
           </p>
         </div>
 
-        <div className="relative mt-8">{renderBody()}</div>
+        <div className="relative mt-8 space-y-4">
+          {renderBody()}
+          {errorMessage ? (
+            <div className="rounded-2xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-center text-xs text-red-200">
+              <p>{errorMessage}</p>
+              {onRetry ? (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="mt-2 inline-flex items-center justify-center rounded-full border border-red-300/60 bg-transparent px-4 py-1 text-[11px] font-semibold tracking-[0.16em] text-red-100 hover:bg-red-500/10"
+                >
+                  カード情報を再取得
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         <div className="relative mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link

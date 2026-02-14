@@ -12,6 +12,7 @@ type CollectionItem = {
     id: string;
     name: string;
     rarity: string;
+    star_level: number | null;
     description: string | null;
     image_url: string | null;
     max_supply: number | null;
@@ -207,6 +208,9 @@ export function CollectionList() {
           filtered.map((item) => {
             const card = item.cards;
             if (!card) return null;
+            const starLevel = card.star_level ?? null;
+            const starIcons = starLevel ? '★'.repeat(Math.max(1, Math.min(starLevel, 12))) : '';
+            const serialLabel = `#${String(item.serial_number).padStart(3, '0')}`;
             return (
               <Link
                 key={`${item.card_id}-${item.serial_number}`}
@@ -234,9 +238,15 @@ export function CollectionList() {
                       {RARITY_LABELS[card.rarity] ?? card.rarity}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-zinc-400">
-                    #{item.serial_number}
-                  </p>
+                  {starIcons && (
+                    <p className="mt-1 text-xs text-amber-200">{starIcons}</p>
+                  )}
+                  {card.description && (
+                    <p className="mt-1 text-[11px] text-zinc-200">
+                      {card.description}
+                    </p>
+                  )}
+                  <p className="mt-1 text-[11px] text-zinc-400">シリアル: {serialLabel}</p>
                   {(card.person_name || card.card_style) && (
                     <p className="text-xs text-zinc-500">
                       {card.person_name ?? ""}

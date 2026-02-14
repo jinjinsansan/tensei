@@ -23,6 +23,7 @@ export type CardSummary = {
   starLevel: number;
   imageUrl: string;
   hasReversal: boolean;
+  serialNumber?: number | null;
 };
 
 export type ResultResponse = {
@@ -31,6 +32,8 @@ export type ResultResponse = {
   gachaResult: GachaResult;
   card: CardSummary;
   story: StoryPayload;
+  serialNumber: number | null;
+  inventoryId: string | null;
 };
 
 export async function playGacha(configSlug?: string): Promise<PlayResponse> {

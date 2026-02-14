@@ -41,19 +41,24 @@ export async function POST(request: Request) {
       throw new Error('カード情報が見つかりません。');
     }
 
+    let serialNumber: number | null = null;
+    let inventoryId: string | null = null;
+
     if (!resultRow.card_awarded) {
       const { data: serialData, error: serialError } = await supabase
         .rpc('next_card_serial', { target_card_id: cardId });
       if (serialError || typeof serialData !== 'number') {
         throw serialError ?? new Error('シリアル番号の取得に失敗しました。');
       }
-      await insertCardInventoryEntry(supabase, {
+      const inventoryRow = await insertCardInventoryEntry(supabase, {
         app_user_id: user.id,
         card_id: cardId,
         serial_number: serialData,
         obtained_via: resultRow.obtained_via ?? 'single_gacha',
         gacha_result_id: resultRow.id,
       });
+      serialNumber = serialData;
+      inventoryId = inventoryRow.id;
       await upsertCardCollection(supabase, {
         user_session_id: session.id,
         app_user_id: user.id,
@@ -61,6 +66,17 @@ export async function POST(request: Request) {
         gacha_result_id: resultRow.id,
       });
       resultRow = await completeGachaResult(supabase, resultRow.id);
+    } else {
+      const { data: inventoryRow } = await supabase
+        .from('card_inventory')
+        .select('id, serial_number')
+        .eq('gacha_result_id', resultRow.id)
+        .eq('app_user_id', user.id)
+        .maybeSingle();
+      if (inventoryRow) {
+        serialNumber = typeof inventoryRow.serial_number === 'number' ? inventoryRow.serial_number : null;
+        inventoryId = inventoryRow.id as string;
+      }
     }
 
     const card = await fetchCardById(supabase, cardId);
@@ -71,6 +87,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       resultId: resultRow.id,
+      serialNumber,
+      inventoryId,
       gachaResult,
       card: {
         id: card.id,
@@ -79,6 +97,7 @@ export async function POST(request: Request) {
         starLevel: card.star_level,
         imageUrl: card.card_image_url,
         hasReversal: card.has_reversal,
+        serialNumber,
       },
       starLevel: resultRow.star_level,
       hadReversal: resultRow.had_reversal,

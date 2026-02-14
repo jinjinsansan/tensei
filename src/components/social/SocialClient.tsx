@@ -23,6 +23,8 @@ type CollectionItem = {
   serial_number: number;
   card_name: string;
   rarity: string;
+  star_level: number | null;
+  description: string | null;
 };
 
 type ApiCollectionItem = {
@@ -32,6 +34,8 @@ type ApiCollectionItem = {
   cards: {
     name: string;
     rarity: string;
+    star_level: number | null;
+    description: string | null;
   } | null;
 };
 
@@ -83,6 +87,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
       serial_number: item.serial_number,
       card_name: item.cards?.name ?? "",
       rarity: item.cards?.rarity ?? "",
+      star_level: item.cards?.star_level ?? null,
+      description: item.cards?.description ?? null,
     }));
     setCollection(items);
   }
@@ -260,7 +266,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
                 <option value="">選択してください</option>
                 {collection.map((item) => (
                   <option key={item.inventory_id} value={item.inventory_id}>
-                    {item.card_name} / {item.rarity} / #{item.serial_number}
+                    {item.star_level ? '★'.repeat(Math.max(1, Math.min(item.star_level, 12))) + ' ' : ''}
+                    {item.card_name} / #{item.serial_number}
                   </option>
                 ))}
               </select>

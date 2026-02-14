@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
 import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
 import { CardReveal } from '@/components/gacha/CardReveal';
+import { claimGachaResult } from '@/lib/api/gacha';
 
 import {
   chooseCountdownPattern,
@@ -39,6 +40,7 @@ type Props = {
   onClose?: () => void;
   onPhaseChange?: (phase: GachaPhase) => void;
   sessionId?: string | null;
+  resultId?: string | null;
 };
 
 const PHASE_META: Record<GachaPhase, { subtitle: string; title: string }> = {
@@ -67,7 +69,7 @@ function isControlsLocked(phase: GachaPhase, videoReady: boolean) {
   return phase !== 'CARD_REVEAL' && !videoReady;
 }
 
-export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId }: Props) {
+export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId, resultId }: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
 
@@ -97,6 +99,7 @@ export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId }: 
       onClose={onClose}
       onPhaseChange={onPhaseChange}
       sessionKey={activeKey}
+      resultId={resultId}
     />,
     portalTarget,
   );
@@ -109,13 +112,17 @@ type ActivePlayerProps = {
   sessionKey: string;
 };
 
-function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: ActivePlayerProps) {
+function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, resultId }: ActivePlayerProps & { resultId?: string | null }) {
   const [phase, setPhase] = useState<GachaPhase>('STANDBY');
   const [countdownIndex, setCountdownIndex] = useState(0);
   const [preSceneIndex, setPreSceneIndex] = useState(0);
   const [mainSceneIndex, setMainSceneIndex] = useState(0);
   const [dondenIndex, setDondenIndex] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
+  const [serialNumber, setSerialNumber] = useState<number | null>(null);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const hasClaimedRef = useRef(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
 
@@ -248,25 +255,50 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
 
   const resolveAssetSrc = useSignedAssetResolver(assetSources);
 
-  const startPhase = useCallback((nextPhase: GachaPhase) => {
-    switch (nextPhase) {
-      case 'COUNTDOWN':
-        setCountdownIndex(0);
-        break;
-      case 'PRE_SCENE':
-        setPreSceneIndex(0);
-        break;
-      case 'MAIN_SCENE':
-        setMainSceneIndex(0);
-        break;
-      case 'DONDEN_SCENE':
-        setDondenIndex(0);
-        break;
-      default:
-        break;
-    }
-    setPhase(nextPhase);
+  const ensureClaimed = useCallback((currentResultId?: string | null) => {
+    if (!currentResultId || hasClaimedRef.current) return;
+    setClaimError(null);
+    setIsClaiming(true);
+    void claimGachaResult(currentResultId)
+      .then((res) => {
+        hasClaimedRef.current = true;
+        setSerialNumber(res.serialNumber ?? null);
+      })
+      .catch((error: unknown) => {
+        hasClaimedRef.current = false;
+        const message = error instanceof Error ? error.message : '結果の確定に失敗しました。時間をおいて再度お試しください。';
+        setClaimError(message);
+      })
+      .finally(() => {
+        setIsClaiming(false);
+      });
   }, []);
+
+  const startPhase = useCallback(
+    (nextPhase: GachaPhase) => {
+      switch (nextPhase) {
+        case 'COUNTDOWN':
+          setCountdownIndex(0);
+          break;
+        case 'PRE_SCENE':
+          setPreSceneIndex(0);
+          break;
+        case 'MAIN_SCENE':
+          setMainSceneIndex(0);
+          break;
+        case 'DONDEN_SCENE':
+          setDondenIndex(0);
+          break;
+        default:
+          break;
+      }
+      if (nextPhase === 'CARD_REVEAL') {
+        ensureClaimed(resultId);
+      }
+      setPhase(nextPhase);
+    },
+    [ensureClaimed, resultId],
+  );
 
   useEffect(() => {
     onPhaseChange?.(phase);
@@ -475,15 +507,18 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey }: 
       cardName: gachaResult.cardName,
       imageUrl: gachaResult.cardImagePath,
       starRating: gachaResult.starRating,
-      serialNumber: null,
+      serialNumber,
+      description: gachaResult.cardTitle,
     };
 
     return (
       <CardReveal
         starRating={gachaResult.starRating}
         cards={[cardData]}
-        loading={false}
+        loading={isClaiming && !serialNumber}
         onClose={exitPlayer}
+        errorMessage={claimError}
+        onRetry={resultId ? () => ensureClaimed(resultId) : undefined}
         resultLabel={gachaResult.isLoss ? 'ハズレ' : '結果'}
       />
     );
