@@ -57,7 +57,10 @@ export default async function CardAdminPage() {
           </label>
           <label className="text-sm">
             キャラクター
-            <select name="character" className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2">
+            <select
+              name="character"
+              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2 text-black"
+            >
               {characters.map((character) => (
                 <option key={character.id} value={character.id}>
                   {character.name}
@@ -71,7 +74,10 @@ export default async function CardAdminPage() {
           </label>
           <label className="text-sm">
             レアリティ
-            <select name="rarity" className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2">
+            <select
+              name="rarity"
+              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2 text-black"
+            >
               {['N','R','SR','SSR','UR','LR'].map((rarity) => (
                 <option key={rarity} value={rarity}>
                   {rarity}

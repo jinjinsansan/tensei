@@ -142,7 +142,7 @@ export default async function CountdownPatternsPage() {
             </label>
             <label className="block text-sm">
               グレード
-              <select name="grade" required className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2">
+              <select name="grade" required className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2 text-black">
                 {grades.map((g) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
@@ -156,7 +156,11 @@ export default async function CountdownPatternsPage() {
                 <p className="text-xs font-semibold">ステップ{step}</p>
                 <label className="block text-xs">
                   数字
-                  <select name={`step${step}_number`} required className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm">
+                  <select
+                    name={`step${step}_number`}
+                    required
+                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm text-black"
+                  >
                     {numbers.map((n) => (
                       <option key={n} value={n}>{n}</option>
                     ))}
@@ -164,7 +168,11 @@ export default async function CountdownPatternsPage() {
                 </label>
                 <label className="block text-xs">
                   色
-                  <select name={`step${step}_color`} required className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm">
+                  <select
+                    name={`step${step}_color`}
+                    required
+                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm text-black"
+                  >
                     {colors.map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -228,7 +236,7 @@ export default async function CountdownPatternsPage() {
                   <select
                     name="grade"
                     defaultValue={pattern.grade}
-                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm"
+                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm text-black"
                   >
                     {grades.map((g) => (
                       <option key={g} value={g}>{g}</option>
@@ -246,7 +254,7 @@ export default async function CountdownPatternsPage() {
                       <select
                         name={`step${idx + 1}_number`}
                         defaultValue={step.number}
-                        className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-xs"
+                        className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-xs text-black"
                       >
                         {numbers.map((n) => (
                           <option key={n} value={n}>{n}</option>
@@ -258,7 +266,7 @@ export default async function CountdownPatternsPage() {
                       <select
                         name={`step${idx + 1}_color`}
                         defaultValue={step.color}
-                        className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-xs"
+                        className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-xs text-black"
                       >
                         {colors.map((c) => (
                           <option key={c} value={c}>{c}</option>

@@ -74,7 +74,10 @@ export default async function ScenarioAdminPage() {
         <form action={addScenario} className="mt-4 grid gap-4 md:grid-cols-2">
           <label className="text-sm">
             カード
-            <select name="card" className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2">
+            <select
+              name="card"
+              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2 text-black"
+            >
               {cards.map((card) => (
                 <option key={card.id} value={card.id}>
                   {card.card_name}
@@ -84,7 +87,10 @@ export default async function ScenarioAdminPage() {
           </label>
           <label className="text-sm">
             フェーズ
-            <select name="phase" className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2">
+            <select
+              name="phase"
+              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2 text-black"
+            >
               {phases.map((phase) => (
                 <option key={phase.value} value={phase.value}>
                   {phase.label}
@@ -110,7 +116,10 @@ export default async function ScenarioAdminPage() {
           </label>
           <label className="text-sm">
             テロップタイプ
-            <select name="telopType" className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2">
+            <select
+              name="telopType"
+              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2 text-black"
+            >
               {telops.map((type) => (
                 <option key={type} value={type}>
                   {type}
