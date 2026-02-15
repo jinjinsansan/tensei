@@ -333,8 +333,8 @@ async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, 
       starRating: star,
       cardName: '転生失敗',
       cardTitle: 'この来世は見つかりませんでした...',
-      // プチュン映像なしのハズレカードは、来世ガチャのロゴカードを使用する
-      cardImagePath: '/raise_gacha_logo_cream.png',
+      // プチュン映像なしのハズレカードは、来世ガチャのロゴカードを使用する（public 配下の静的画像）
+      cardImagePath: '/raise-gacha-logo.png',
       lossCardImagePath: LOSS_CARD_PATH,
       isDonden: false,
       dondenFromCardId: undefined,

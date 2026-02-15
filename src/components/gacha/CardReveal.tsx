@@ -54,6 +54,7 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
           const displayStar = card.starRating ?? starRating;
           const starCount = Math.max(1, Math.min(displayStar, 12));
           const starIcons = '★'.repeat(starCount);
+          const isLossCard = card.id === 'loss';
           return (
             <div
               key={card.id}
@@ -75,14 +76,27 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
               </div>
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[22px] border border-white/15 bg-black/40">
                 {card.imageUrl ? (
-                  <Image
-                    src={card.imageUrl}
-                    alt={displayName}
-                    fill
-                    sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
-                    className="object-contain"
-                    priority
-                  />
+                  isLossCard ? (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Image
+                        src={card.imageUrl}
+                        alt={displayName}
+                        width={260}
+                        height={260}
+                        className="max-h-[80%] w-auto object-contain drop-shadow-[0_18px_45px_rgba(0,0,0,0.8)]"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <Image
+                      src={card.imageUrl}
+                      alt={displayName}
+                      fill
+                      sizes="(max-width: 640px) 80vw, (max-width: 1024px) 40vw, 320px"
+                      className="object-contain"
+                      priority
+                    />
+                  )
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sm text-white/60">
                     画像準備中
