@@ -28,6 +28,11 @@ type ApiResponse = {
   totalAvailable: number;
   collection: CollectionItem[];
   cards: { id: string; name: string; rarity: string; image_url: string | null }[];
+  page?: {
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 };
 
 const RARITY_LABELS: Record<string, string> = {
@@ -49,26 +54,43 @@ const RARITY_ORDER: Record<string, number> = {
 export function CollectionList() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [sort, setSort] = useState<"recent" | "rarity" | "name">("recent");
   const [rarityFilter, setRarityFilter] = useState("all");
   const [personFilter, setPersonFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
 
+  const PAGE_SIZE = 50;
+
+  async function fetchPage(offset: number, append: boolean) {
+    const res = await fetch(`/api/collection?limit=${PAGE_SIZE}&offset=${offset}`);
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json?.error ?? "取得に失敗しました");
+    }
+    const payload = json as ApiResponse;
+    setData((prev) => {
+      if (!prev || !append) {
+        return payload;
+      }
+      return {
+        ...payload,
+        collection: [...prev.collection, ...payload.collection],
+      };
+    });
+  }
+
   useEffect(() => {
     let mounted = true;
-    fetch("/api/collection")
-      .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok) throw new Error(json?.error ?? "取得に失敗しました");
-        return json as ApiResponse;
-      })
-      .then((payload) => {
-        if (mounted) setData(payload);
-      })
-      .catch((err: Error) => {
-        if (mounted) setError(err.message);
-      });
+    (async () => {
+      try {
+        await fetchPage(0, false);
+      } catch (err) {
+        if (!mounted) return;
+        setError(err instanceof Error ? err.message : "取得に失敗しました");
+      }
+    })();
 
     return () => {
       mounted = false;
@@ -260,6 +282,30 @@ export function CollectionList() {
           })
         )}
       </div>
+
+      {data.page?.hasMore && (
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={async () => {
+              if (loadingMore) return;
+              setLoadingMore(true);
+              try {
+                const nextOffset = (data.page?.offset ?? 0) + (data.page?.limit ?? PAGE_SIZE);
+                await fetchPage(nextOffset, true);
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "追加のカード取得に失敗しました");
+              } finally {
+                setLoadingMore(false);
+              }
+            }}
+            className="rounded-full border border-white/20 bg-black/30 px-6 py-2 text-xs font-semibold tracking-[0.3em] text-white/80 hover:border-neon-blue hover:text-white disabled:opacity-50"
+            disabled={loadingMore}
+          >
+            {loadingMore ? "読み込み中..." : "過去のカードをさらに表示"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

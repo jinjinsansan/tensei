@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { fetchAuthedContext } from "@/lib/app/session";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
-export async function GET() {
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 200;
+
+export async function GET(request: Request) {
   try {
     const supabase = getServiceSupabase();
     const context = await fetchAuthedContext(supabase);
@@ -11,7 +14,19 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [{ data: collectionData, error: collectionError }, { data: cardsData, error: cardsError }] = await Promise.all([
+    const url = new URL(request.url);
+    const limitParam = url.searchParams.get("limit");
+    const offsetParam = url.searchParams.get("offset");
+    const rawLimit = Number.isFinite(Number(limitParam)) ? Number(limitParam) : DEFAULT_LIMIT;
+    const rawOffset = Number.isFinite(Number(offsetParam)) ? Number(offsetParam) : 0;
+    const limit = Math.min(Math.max(rawLimit || DEFAULT_LIMIT, 1), MAX_LIMIT);
+    const offset = Math.max(rawOffset || 0, 0);
+
+    const [
+      { data: collectionData, error: collectionError, count: totalOwnedCount },
+      { data: cardsData, error: cardsError },
+      { count: distinctOwnedCount, error: distinctError },
+    ] = await Promise.all([
       supabase
         .from("card_inventory")
         .select(
@@ -20,22 +35,28 @@ export async function GET() {
              id,
              card_name,
              rarity,
-              star_level,
+             star_level,
              description,
              card_image_url,
              max_supply,
              current_supply,
              person_name,
              card_style
-           )`
+           )`,
+          { count: "exact" }
         )
         .eq("app_user_id", context.user.id)
-        .order("obtained_at", { ascending: false }),
+        .order("obtained_at", { ascending: false })
+        .range(offset, offset + limit - 1),
       supabase
         .from("cards")
         .select("id, card_name, rarity, card_image_url")
         .eq("is_active", true)
-        .order("rarity", { ascending: false })
+        .order("rarity", { ascending: false }),
+      supabase
+        .from("card_collection")
+        .select("id", { count: "exact", head: true })
+        .eq("app_user_id", context.user.id),
     ]);
 
     if (collectionError) {
@@ -43,6 +64,9 @@ export async function GET() {
     }
     if (cardsError) {
       throw new Error(cardsError.message);
+    }
+    if (distinctError) {
+      throw new Error(distinctError.message);
     }
 
     const collection = (collectionData ?? []).map((item) => ({
@@ -73,9 +97,11 @@ export async function GET() {
       image_url: card.card_image_url,
     }));
 
-    const totalOwned = collection.length;
-    const distinctOwned = new Set(collection.map((item) => item.card_id)).size;
+    const totalOwned = totalOwnedCount ?? collection.length;
+    const distinctOwned = distinctOwnedCount ?? new Set(collection.map((item) => item.card_id)).size;
     const totalAvailable = cards.length;
+
+    const hasMore = totalOwned > offset + collection.length;
 
     return NextResponse.json({
       totalOwned,
@@ -83,6 +109,11 @@ export async function GET() {
       totalAvailable,
       collection,
       cards,
+      page: {
+        limit,
+        offset,
+        hasMore,
+      },
     });
   } catch (error) {
     console.error("collection error", error);
