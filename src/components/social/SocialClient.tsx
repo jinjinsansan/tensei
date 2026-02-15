@@ -39,6 +39,15 @@ type ApiCollectionItem = {
   } | null;
 };
 
+type CollectionApiResponse = {
+  collection?: ApiCollectionItem[];
+  page?: {
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+};
+
 type Props = {
   userId: string;
   displayName: string | null;
@@ -78,19 +87,38 @@ export function SocialClient({ userId, displayName, email }: Props) {
   }
 
   async function refreshCollection() {
-    const res = await fetch("/api/collection");
-    if (!res.ok) return;
-    const data = await res.json();
-    const items: CollectionItem[] = (data.collection ?? []).map((item: ApiCollectionItem) => ({
-      inventory_id: item.id,
-      card_id: item.card_id,
-      serial_number: item.serial_number,
-      card_name: item.cards?.name ?? "",
-      rarity: item.cards?.rarity ?? "",
-      star_level: item.cards?.star_level ?? null,
-      description: item.cards?.description ?? null,
-    }));
-    setCollection(items);
+    const PAGE_SIZE = 200;
+    let all: CollectionItem[] = [];
+    let offset = 0;
+
+    // すべての所持カードをフレンド送付候補として使えるよう、ページネーションを最後まで走査する
+    // エラーが出た場合は直前の状態を維持する
+    let hasMore = true;
+    while (hasMore) {
+      const res = await fetch(`/api/collection?limit=${PAGE_SIZE}&offset=${offset}`);
+      if (!res.ok) break;
+      const data: CollectionApiResponse = await res.json();
+      const pageItems: CollectionItem[] = (data.collection ?? []).map((item) => ({
+        inventory_id: item.id,
+        card_id: item.card_id,
+        serial_number: item.serial_number,
+        card_name: item.cards?.name ?? "",
+        rarity: item.cards?.rarity ?? "",
+        star_level: item.cards?.star_level ?? null,
+        description: item.cards?.description ?? null,
+      }));
+      all = all.concat(pageItems);
+
+      const page = data.page;
+      hasMore = Boolean(page && page.hasMore);
+      if (hasMore && page) {
+        offset = page.offset + page.limit;
+      }
+    }
+
+    if (all.length > 0) {
+      setCollection(all);
+    }
   }
 
   async function handleSendRequest(e: React.FormEvent) {

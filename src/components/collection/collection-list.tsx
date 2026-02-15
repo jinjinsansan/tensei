@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -61,6 +61,8 @@ export function CollectionList() {
   const [personFilter, setPersonFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
 
+  const mountedRef = useRef(false);
+
   const PAGE_SIZE = 50;
 
   async function fetchPage(offset: number, append: boolean) {
@@ -70,6 +72,9 @@ export function CollectionList() {
       throw new Error(json?.error ?? "取得に失敗しました");
     }
     const payload = json as ApiResponse;
+    if (!mountedRef.current) {
+      return;
+    }
     setData((prev) => {
       if (!prev || !append) {
         return payload;
@@ -82,18 +87,18 @@ export function CollectionList() {
   }
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
     (async () => {
       try {
         await fetchPage(0, false);
       } catch (err) {
-        if (!mounted) return;
+        if (!mountedRef.current) return;
         setError(err instanceof Error ? err.message : "取得に失敗しました");
       }
     })();
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
     };
   }, []);
 
