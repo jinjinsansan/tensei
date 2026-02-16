@@ -19,9 +19,10 @@ export function CountdownImage({ imagePath, color, onAnimationComplete }: Props)
   const effect: CountdownEffect = COUNTDOWN_EFFECTS[color];
 
   return (
-    <div className="fixed inset-0 z-0 bg-black">
+    <div className="absolute inset-0 z-0 bg-black">
       {/* メイン画像 */}
       <motion.div
+        key={imagePath}
         className="relative h-full w-full"
         initial={{ scale: effect.scale[0], opacity: 0 }}
         animate={{ 
@@ -53,6 +54,7 @@ export function CountdownImage({ imagePath, color, onAnimationComplete }: Props)
 
       {/* グローエフェクト */}
       <motion.div
+        key={`glow-${imagePath}`}
         className="pointer-events-none absolute inset-0"
         initial={{ opacity: 0 }}
         animate={{ opacity: [0, 0.6, 0.3] }}
@@ -64,7 +66,7 @@ export function CountdownImage({ imagePath, color, onAnimationComplete }: Props)
 
       {/* パーティクルエフェクト（虹のみ） */}
       {effect.particles && (
-        <>
+        <div key={`particles-${imagePath}`}>
           {[...Array(12)].map((_, i) => {
             const angle = (i * 30) * (Math.PI / 180);
             const distance = 150 + Math.random() * 100;
@@ -73,7 +75,7 @@ export function CountdownImage({ imagePath, color, onAnimationComplete }: Props)
             
             return (
               <motion.div
-                key={i}
+                key={`particle-${i}`}
                 className="absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-500"
                 initial={{ x: 0, y: 0, opacity: 0, scale: 0 }}
                 animate={{ 
@@ -90,7 +92,7 @@ export function CountdownImage({ imagePath, color, onAnimationComplete }: Props)
               />
             );
           })}
-        </>
+        </div>
       )}
     </div>
   );
