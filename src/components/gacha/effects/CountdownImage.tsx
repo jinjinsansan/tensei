@@ -18,6 +18,8 @@ type Props = {
 export function CountdownImage({ imagePath, color, onAnimationComplete }: Props) {
   const effect: CountdownEffect = COUNTDOWN_EFFECTS[color];
 
+  console.log('[CountdownImage] Rendering:', { imagePath, color, effect });
+
   return (
     <div className="absolute inset-0 z-0 bg-black">
       {/* メイン画像 */}
