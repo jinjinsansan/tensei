@@ -1,10 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo } from "react";
-import { useFormStatus } from "react-dom";
-import { exitNeonHall } from "@/app/(auth)/actions";
-import { useMainApp } from "@/components/providers/main-app-provider";
+import { SignOutButton } from "@/components/menu/sign-out-button";
+import type { MainAppSnapshot } from "@/lib/app/main-app";
 
 const sections = [
   {
@@ -41,13 +37,13 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString("ja-JP", { month: "short", day: "numeric" });
 }
 
-export function MenuScreen() {
-  const { snapshot } = useMainApp();
-  const stats = useMemo(() => {
-    const totalTickets = snapshot.tickets.reduce((sum, ticket) => sum + (ticket.quantity ?? 0), 0);
-    const freeTicket = snapshot.tickets.find((ticket) => ticket.code === "free")?.quantity ?? 0;
-    return { totalTickets, freeTicket };
-  }, [snapshot.tickets]);
+type MenuScreenProps = {
+  snapshot: MainAppSnapshot;
+};
+
+export function MenuScreen({ snapshot }: MenuScreenProps) {
+  const totalTickets = snapshot.tickets.reduce((sum, ticket) => sum + (ticket.quantity ?? 0), 0);
+  const freeTicket = snapshot.tickets.find((ticket) => ticket.code === "free")?.quantity ?? 0;
 
   return (
     <section className="space-y-8">
@@ -58,7 +54,7 @@ export function MenuScreen() {
           <p className="text-sm text-zinc-300">{snapshot.user?.email ?? "unknown"}</p>
         </div>
         <div className="flex flex-wrap gap-6 text-sm text-zinc-400">
-          <p>Tickets: {stats.totalTickets}枚 (FREE {stats.freeTicket})</p>
+          <p>Tickets: {totalTickets}枚 (FREE {freeTicket})</p>
           <p>Last Login: {formatDate(snapshot.user?.lastLoginAt)}</p>
         </div>
       </div>
@@ -91,24 +87,8 @@ export function MenuScreen() {
       <div className="space-y-3 rounded-3xl border border-white/10 bg-black/25 px-5 py-6 shadow-panel-inset">
         <p className="text-xs uppercase tracking-[0.4em] text-red-300">Sign Out</p>
         <p className="text-sm text-zinc-400">端末の共有時は必ずサインアウトしてください。</p>
-        <form action={exitNeonHall}>
-          <SignOutButton />
-        </form>
+        <SignOutButton />
       </div>
     </section>
-  );
-}
-
-function SignOutButton() {
-  const { pending } = useFormStatus();
-
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-2 w-full rounded-full border border-white/20 px-4 py-3 text-[11px] uppercase tracking-[0.35em] text-white transition hover:border-neon-pink hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pending ? "SIGNING OUT..." : "SIGN OUT"}
-    </button>
   );
 }

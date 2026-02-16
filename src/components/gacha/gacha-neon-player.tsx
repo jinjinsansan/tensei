@@ -58,7 +58,7 @@ export function GachaNeonPlayer({ playLabel = "ガチャを\n始める", playVar
         type="button"
         onClick={startPlay}
         disabled={isDisabled}
-        className="w-full max-w-md rounded-[14px] border border-white/20 bg-gradient-to-b from-white/85 to-white/50 px-8 py-4 text-base font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_14px_30px_rgba(0,0,0,0.28),inset_0_2px_0_rgba(255,255,255,0.85),inset_0_-3px_0_rgba(0,0,0,0.2)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full max-w-md rounded-[14px] border border-white/20 bg-gradient-to-b from-white/85 to-white/50 px-8 py-4 text-base font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_14px_30px_rgba(0,0,0,0.28),inset_0_2px_0_rgba(255,255,255,0.85),inset_0_-3px_0_rgba(0,0,0,0.2)] transition-all duration-150 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isLoading ? "準備中..." : playLabel}
       </button>

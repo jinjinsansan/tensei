@@ -17,6 +17,12 @@
   box-sizing: border-box;
 }
 
+/* Fast transitions for better perceived performance */
+a, button, [role="button"] {
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
@@ -169,7 +175,7 @@ body::after {
 }
 
 .page-transition {
-  animation: page-fade 0.4s ease forwards;
+  animation: page-fade 0.15s ease forwards;
 }
 
 @keyframes page-fade {
