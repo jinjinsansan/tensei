@@ -284,6 +284,13 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       });
   }, []);
 
+  // フェーズとは無関係に、結果IDが届いたら即座に確定処理を開始しておく
+  useEffect(() => {
+    if (resultId) {
+      ensureClaimed(resultId);
+    }
+  }, [resultId, ensureClaimed]);
+
   const startPhase = useCallback(
     (nextPhase: GachaPhase) => {
       switch (nextPhase) {
