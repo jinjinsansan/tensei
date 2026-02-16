@@ -59,13 +59,13 @@ export default async function GachaPage() {
           <div className="relative z-10 space-y-6">
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-white/10 shadow-[0_0_20px_rgba(59,217,255,0.35)]">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-white shadow-[0_0_20px_rgba(59,217,255,0.35)]">
                   <Image
                     src="/raise-gacha-logo.png"
                     alt="来世ガチャ アイコン"
                     fill
                     sizes="48px"
-                    className="object-cover"
+                    className="object-contain p-1"
                   />
                 </div>
                 <div>
@@ -84,12 +84,14 @@ export default async function GachaPage() {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-              <div className="flex justify-center">
-                <GachaNeonPlayer playVariant="default" playLabel="ガチャを始める" />
-              </div>
+              <GachaNeonPlayer
+                playVariant="button"
+                playLabel="ガチャを始める"
+                className="rounded-[20px] border border-white/25 bg-gradient-to-b from-white/90 to-white/60 px-10 py-4 text-center font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_16px_35px_rgba(0,0,0,0.32),inset_0_3px_0_rgba(255,255,255,0.9),inset_0_-4px_0_rgba(0,0,0,0.25)] transition-all duration-150 hover:brightness-105 active:scale-[0.98]"
+              />
               <Link
                 href="/how-to-play"
-                className="rounded-[14px] border border-white/20 bg-gradient-to-b from-white/85 to-white/50 px-8 py-4 text-center text-base font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_14px_30px_rgba(0,0,0,0.28),inset_0_2px_0_rgba(255,255,255,0.85),inset_0_-3px_0_rgba(0,0,0,0.2)] transition-all duration-150 hover:brightness-105"
+                className="rounded-[20px] border border-white/25 bg-gradient-to-b from-white/90 to-white/60 px-10 py-4 text-center font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_16px_35px_rgba(0,0,0,0.32),inset_0_3px_0_rgba(255,255,255,0.9),inset_0_-4px_0_rgba(0,0,0,0.25)] transition-all duration-150 hover:brightness-105 active:scale-[0.98]"
               >
                 使い方を見る
               </Link>
@@ -120,9 +122,12 @@ export default async function GachaPage() {
               新しいガチャ形式が近日登場！お楽しみに
             </p>
             <div className="flex justify-center pt-2">
-              <div className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white/50">
+              <button
+                disabled
+                className="cursor-not-allowed rounded-[20px] border border-white/15 bg-gradient-to-b from-white/20 to-white/10 px-10 py-4 text-center font-bold tracking-[0.08em] text-white/40 shadow-[0_16px_35px_rgba(0,0,0,0.32),inset_0_3px_0_rgba(255,255,255,0.1),inset_0_-4px_0_rgba(0,0,0,0.2)]"
+              >
                 準備中
-              </div>
+              </button>
             </div>
           </div>
         </article>

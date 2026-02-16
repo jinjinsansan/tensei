@@ -7,14 +7,15 @@ import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button
 import { playGacha } from "@/lib/api/gacha";
 import type { GachaResult } from "@/lib/gacha/common/types";
 
-type PlayVariant = "round" | "default";
+type PlayVariant = "round" | "default" | "button";
 
 type Props = {
   playLabel?: string;
   playVariant?: PlayVariant;
+  className?: string;
 };
 
-export function GachaNeonPlayer({ playLabel = "ガチャを\n始める", playVariant = "round" }: Props) {
+export function GachaNeonPlayer({ playLabel = "ガチャを\n始める", playVariant = "round", className }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [activeResult, setActiveResult] = useState<GachaResult | null>(null);
   const [resultId, setResultId] = useState<string | null>(null);
@@ -53,6 +54,18 @@ export function GachaNeonPlayer({ playLabel = "ガチャを\n始める", playVar
         />
       );
     }
+    if (playVariant === "button") {
+      return (
+        <button
+          type="button"
+          onClick={startPlay}
+          disabled={isDisabled}
+          className={className}
+        >
+          {isLoading ? "準備中..." : playLabel}
+        </button>
+      );
+    }
     return (
       <button
         type="button"
@@ -63,7 +76,7 @@ export function GachaNeonPlayer({ playLabel = "ガチャを\n始める", playVar
         {isLoading ? "準備中..." : playLabel}
       </button>
     );
-  }, [playLabel, playVariant, startPlay, isDisabled, isLoading]);
+  }, [playLabel, playVariant, startPlay, isDisabled, isLoading, className]);
 
   return (
     <div className="space-y-3 text-center">
