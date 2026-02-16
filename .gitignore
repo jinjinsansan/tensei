@@ -23,6 +23,10 @@ test-results/
 # one-off deployment scripts
 upload-*-to-r2.py
 
+# temporary fix folders
+shoichi_fix_c07_c10/
+修正版昭一映像/
+
 # next.js
 /.next/
 /out/
