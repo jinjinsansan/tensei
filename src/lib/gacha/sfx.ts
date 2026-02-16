@@ -1,4 +1,5 @@
 let countdownAudio: HTMLAudioElement | null = null;
+let lastPlayTime = 0;
 
 function getCountdownAudio(): HTMLAudioElement | null {
   if (typeof window === 'undefined') return null;
@@ -11,7 +12,19 @@ function getCountdownAudio(): HTMLAudioElement | null {
 }
 
 export function playCountdownHit() {
-  console.log('[SFX] playCountdownHit() called');
+  const now = Date.now();
+  const timeSinceLastPlay = now - lastPlayTime;
+  
+  console.log('[SFX] playCountdownHit() called, time since last:', timeSinceLastPlay + 'ms');
+  
+  // 300ms以内の連続再生を防ぐ（動画切り替え時の重複音を防止）
+  if (timeSinceLastPlay < 300) {
+    console.log('[SFX] Skipping sound (too soon after previous play)');
+    return;
+  }
+  
+  lastPlayTime = now;
+  
   const audio = getCountdownAudio();
   if (!audio) {
     console.warn('[SFX] audio is null');
