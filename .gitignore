@@ -54,3 +54,4 @@ env.local
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+fire_numbers_4colors/
