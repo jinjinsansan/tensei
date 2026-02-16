@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { GachaNeonPlayer } from "@/components/gacha/gacha-neon-player";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
@@ -153,6 +154,16 @@ export default async function GachaPage() {
           </div>
         </article>
       </section>
+
+      <div className="relative mt-4 flex justify-center">
+        <div className="absolute inset-0 h-24 w-64 animate-pulse rounded-full bg-gradient-to-r from-[#ffe29f]/20 via-[#ffa99f]/20 to-[#fbc2eb]/20 blur-3xl" />
+        <Link
+          href="/how-to-play"
+          className="relative inline-flex items-center gap-2 rounded-full border border-white/15 bg-gradient-to-r from-[#ffe29f] via-[#ffa99f] to-[#fbc2eb] px-10 py-4 text-sm font-semibold tracking-[0.25em] text-[#1a1828] shadow-[0_25px_60px_rgba(0,0,0,0.45),inset_0_4px_0_rgba(255,255,255,0.7),inset_0_-4px_0_rgba(0,0,0,0.25)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        >
+          使い方ガイドへ
+        </Link>
+      </div>
     </section>
   );
 }
