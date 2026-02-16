@@ -458,18 +458,11 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   }, [phase, videoReady, progressPhase]);
 
   const handleSkip = useCallback(() => {
-    if (isControlsLocked(phase, videoReady)) return;
-    if (phase === 'COUNTDOWN') {
-      // ハズレ時はスキップしてもカード結果へ直行
-      setVideoReady(false);
-      startPhase(gachaResult.isLoss ? 'CARD_REVEAL' : 'PUCHUN');
-      return;
-    }
-    if (phase === 'PRE_SCENE') {
-      setVideoReady(false);
-      startPhase('MAIN_SCENE');
-    }
-  }, [phase, videoReady, gachaResult, startPhase]);
+    if (phase === 'CARD_REVEAL') return;
+    setShowCountdownFlash(false);
+    setVideoReady(false);
+    startPhase('CARD_REVEAL');
+  }, [phase, startPhase]);
 
   const details = buildPhaseDetails({
     phase,
@@ -503,7 +496,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const phaseVideoLoop = phaseVideo?.loop ?? false;
   const hasPhaseVideo = Boolean(signedPhaseVideoSrc);
   const controlsLocked = hasPhaseVideo && isControlsLocked(phase, videoReady);
-  const canSkip = (phase === 'COUNTDOWN' || phase === 'PRE_SCENE') && !controlsLocked;
+  const skipDisabled = phase === 'CARD_REVEAL';
   const disableNext = phase === 'CARD_REVEAL' || controlsLocked;
   const preloadedCountdownSources = countdownVideos
     .map((src) => resolveAssetSrc(src) ?? src)
@@ -615,7 +608,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
         <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-8">
           <RoundMetalButton label="NEXT" subLabel="次へ" onClick={handleAdvance} disabled={disableNext} />
-          <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={!canSkip} />
+          <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={skipDisabled} />
         </div>
       </div>
     </div>
