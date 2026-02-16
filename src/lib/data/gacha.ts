@@ -2,7 +2,7 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database, Tables, TablesInsert } from '@/types/database';
 import { parseGachaConfig, type ParsedGachaConfig } from '@/lib/gacha/config';
-import type { Rarity } from '@/lib/gacha/common/types';
+import type { CharacterId, Rarity } from '@/lib/gacha/common/types';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -36,7 +36,7 @@ export async function fetchGachaGlobalConfig(client: DbClient): Promise<{ lossRa
 }
 
 export type GachaCharacterConfig = {
-  characterId: string; // 'kenta' | 'shoichi' ...
+  characterId: CharacterId;
   characterName: string;
   isActive: boolean;
   weight: number;
@@ -50,12 +50,19 @@ export async function fetchGachaCharactersConfig(client: DbClient): Promise<Gach
     .order('created_at', { ascending: true });
   handleError(error);
   const rows = (data ?? []) as Tables<'gacha_characters'>[];
-  return rows.map((row) => ({
-    characterId: row.character_id,
-    characterName: row.character_name,
-    isActive: row.is_active,
-    weight: Number(row.weight ?? 0),
-  }));
+  return rows.map((row) => {
+    const charId = row.character_id;
+    // 型安全性のため、有効なCharacterIdであることを検証
+    if (charId !== 'kenta' && charId !== 'shoichi') {
+      throw new Error(`Invalid character_id in database: ${charId}`);
+    }
+    return {
+      characterId: charId as CharacterId,
+      characterName: row.character_name,
+      isActive: row.is_active,
+      weight: Number(row.weight ?? 0),
+    };
+  });
 }
 
 export type CharacterRtpConfig = {

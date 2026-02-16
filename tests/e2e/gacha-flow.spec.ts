@@ -7,7 +7,7 @@ const RESULT_ID = 'mock-result-id';
 const MOCK_CARD = {
   id: '22222222-1111-4111-8111-111111111111',
   name: 'コンビニ夜勤バイト',
-  rarity: 'N',
+  rarity: 'N' as const,
   starLevel: 1,
   imageUrl: '/kenta_cards/card01_convenience.png',
   hasReversal: false,
@@ -15,9 +15,9 @@ const MOCK_CARD = {
 
 const MOCK_GACHA_RESULT = {
   isLoss: true,
-  characterId: 'kenta',
+  characterId: 'kenta' as const,
   cardId: 'card01_convenience',
-  rarity: 'N',
+  rarity: 'N' as const,
   starRating: 1,
   cardName: 'コンビニ夜勤バイト',
   cardTitle: '闇のレジ番',
@@ -30,7 +30,7 @@ const MOCK_GACHA_RESULT = {
 const MOCK_STORY = {
   starLevel: 1,
   hadReversal: false,
-  characterId: 'kenta',
+  characterId: 'kenta' as const,
   cardId: MOCK_CARD.id,
   preStory: [],
   chance: [],
@@ -75,6 +75,8 @@ async function mockGachaApis(page: Page) {
   const resultPayload: ResultResponse = {
     success: true,
     resultId: RESULT_ID,
+    serialNumber: 1,
+    inventoryId: 'mock-inventory-id',
     gachaResult: MOCK_GACHA_RESULT,
     story: MOCK_STORY,
     card: MOCK_CARD,
