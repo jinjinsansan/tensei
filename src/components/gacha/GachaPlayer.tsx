@@ -7,8 +7,6 @@ import { createPortal } from 'react-dom';
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
 import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
 import { CardReveal } from '@/components/gacha/CardReveal';
-import { CountdownImage } from '@/components/gacha/effects/CountdownImage';
-import { CountdownFlash } from '@/components/gacha/effects/CountdownFlash';
 import { claimGachaResult } from '@/lib/api/gacha';
 
 import {
@@ -16,7 +14,6 @@ import {
   getCountdownVideoPath,
   type CountdownSelection,
 } from '@/lib/gacha/common/countdown-selector';
-import { getCountdownImagePath, COUNTDOWN_EFFECTS } from '@/lib/gacha/common/countdown-images';
 import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
 import { chooseTitleVideo } from '@/lib/gacha/common/title-video-selector';
 import type {
@@ -125,7 +122,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const [serialNumber, setSerialNumber] = useState<number | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
-  const [showCountdownFlash, setShowCountdownFlash] = useState(false);
   const hasClaimedRef = useRef(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
@@ -326,9 +322,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     const prevColor = countdownColorRef.current;
     countdownColorRef.current = nextStep.color;
     triggerCountdownUpgrade(prevColor, nextStep.color);
-    
-    // 静止画表示なので即座にvideoReadyをtrueに（ボタン有効化）
-    setVideoReady(true);
   }, [phase, countdownIndex, countdownSelection]);
 
   useEffect(() => {
@@ -444,11 +437,9 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const handleAdvance = useCallback(() => {
     if (isControlsLocked(phase, videoReady)) return;
     
-    // COUNTDOWNフェーズでは効果音を即座に再生し、フラッシュエフェクトを表示
+    // COUNTDOWNフェーズでは効果音を即座に再生（動画のonPlayを待たない）
     if (phase === 'COUNTDOWN') {
-      playCountdownHit(); // 効果音を即座に再生（タイミング問題解決）
-      setShowCountdownFlash(true);
-      setTimeout(() => setShowCountdownFlash(false), 200);
+      playCountdownHit();
     }
     
     setVideoReady(false);
@@ -509,26 +500,14 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const handlePhaseVideoPlay = useCallback(() => {
     // 同じ動画で既に再生済みの場合は何もしない（onPlayの重複発火を防ぐ）
     if (lastPlayedVideoKeyRef.current === phaseVideoKey) {
-      console.log('[GachaPlayer] onPlay ignored (duplicate):', phaseVideoKey);
       return;
     }
     
-    console.log('[GachaPlayer] onPlay fired:', phaseVideoKey, 'phase:', phase);
     lastPlayedVideoKeyRef.current = phaseVideoKey;
-    
     setVideoReady(true);
-    if (phase === 'COUNTDOWN') {
-      console.log('[GachaPlayer] Playing countdown hit sound');
-      // iPhone 実機では映像描画がわずかに遅れるため、音をほんの少し遅らせて同期感を高める
-      if (isIOS()) {
-        window.setTimeout(() => {
-          playCountdownHit();
-        }, 80);
-      } else {
-        playCountdownHit();
-      }
-    }
-  }, [phase, phaseVideoKey]);
+    
+    // COUNTDOWNの効果音はhandleAdvanceで既に再生済みなので、ここでは何もしない
+  }, [phaseVideoKey]);
 
   // CARD_REVEAL フェーズになったら CardReveal を表示
   if (phase === 'CARD_REVEAL') {
@@ -556,13 +535,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const phaseMeta = PHASE_META[phase];
 
-  // カウントダウン表示用のデータ取得
-  const countdownStep = countdownSelection?.pattern.steps[countdownIndex];
-  const countdownImagePath = countdownStep 
-    ? getCountdownImagePath(countdownStep.color, (countdownIndex % 8) + 1)
-    : null;
-  const countdownEffect = countdownStep ? COUNTDOWN_EFFECTS[countdownStep.color] : null;
-
   return (
     <div
       className="fixed inset-0 z-[140] flex items-center justify-center bg-black"
@@ -571,18 +543,13 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       data-phase-details={details ?? undefined}
     >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
-        {/* COUNTDOWNフェーズ：静止画+エフェクト表示 */}
-        {phase === 'COUNTDOWN' && countdownImagePath && countdownStep ? (
-          <>
-            <CountdownImage 
-              imagePath={countdownImagePath}
-              color={countdownStep.color}
-            />
-            {showCountdownFlash && countdownEffect && (
-              <CountdownFlash intensity={countdownEffect.flashIntensity} />
-            )}
-          </>
-        ) : signedPhaseVideoSrc ? (
+        {/* カウントダウン用の全動画をオフスクリーンで preload して、iPhone 実機でのラグを軽減 */}
+        <div className="pointer-events-none absolute -z-10 h-0 w-0 overflow-hidden">
+          {preloadedCountdownSources.map((src, index) => (
+            <video key={`preload-${index}`} src={src} preload="auto" playsInline muted />
+          ))}
+        </div>
+        {signedPhaseVideoSrc ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
               key={phaseVideoKey}
