@@ -42,8 +42,8 @@ export function CountdownImage({ imagePath, color }: Props) {
   return (
     <div className="absolute inset-0 z-0 bg-black">
       <div
-        className={`relative h-full w-full overflow-hidden rounded-[18px] bg-black/30 transition-[opacity,transform] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
-          isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-[1.08]'
+        className={`relative h-full w-full overflow-hidden rounded-[22px] bg-black/20 shadow-[0_25px_60px_rgba(0,0,0,0.65)] transition-[opacity,transform,filter] duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] will-change-transform ${
+          isVisible ? 'opacity-100 scale-100 blur-0 saturate-100' : 'opacity-0 scale-[0.72] blur-[8px] saturate-50'
         }`}
         style={backgroundStyle}
       >
@@ -53,7 +53,8 @@ export function CountdownImage({ imagePath, color }: Props) {
             background: `radial-gradient(circle at center, ${effect.glow} 0%, transparent 75%)`,
           }}
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-black/60" />
+        <div className="pointer-events-none absolute inset-0 mix-blend-screen opacity-20" style={{ background: 'radial-gradient(circle at top, rgba(255,255,255,0.8), transparent 55%)' }} />
       </div>
     </div>
   );
