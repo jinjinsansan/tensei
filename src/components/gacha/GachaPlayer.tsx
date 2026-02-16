@@ -7,11 +7,13 @@ import { createPortal } from 'react-dom';
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
 import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
 import { CardReveal } from '@/components/gacha/CardReveal';
-import { CountdownImage } from '@/components/gacha/effects/CountdownImage';
 import { claimGachaResult } from '@/lib/api/gacha';
 
-import { chooseCountdownPatternWithProbabilities, type CountdownSelection } from '@/lib/gacha/common/countdown-selector';
-import { getCountdownImagePath } from '@/lib/gacha/common/countdown-images';
+import {
+  chooseCountdownPatternWithProbabilities,
+  getCountdownVideoPath,
+  type CountdownSelection,
+} from '@/lib/gacha/common/countdown-selector';
 import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
 import { chooseTitleVideo } from '@/lib/gacha/common/title-video-selector';
 import type {
@@ -124,7 +126,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastPlayedVideoKeyRef = useRef<string | null>(null);
-  const countdownImageCacheRef = useRef<HTMLImageElement[]>([]);
 
   const presentation = usePresentationConfig();
 
@@ -153,40 +154,11 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     if (!hintRarity) return null;
     return chooseCountdownPatternWithProbabilities(hintRarity, presentation.countdown);
   });
-  const countdownSteps = useMemo(
-    () => countdownSelection?.pattern.steps ?? [],
+
+  const countdownVideos = useMemo(
+    () => countdownSelection?.pattern.steps.map((step) => getCountdownVideoPath(step)) ?? [],
     [countdownSelection],
   );
-  const countdownImageSources = useMemo(
-    () =>
-      countdownSteps.map((step, index) =>
-        getCountdownImagePath(step.color, (index % 8) + 1),
-      ),
-    [countdownSteps],
-  );
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!countdownImageSources.length) return;
-    const loadPromises = countdownImageSources.map((src) => {
-      const img = new window.Image();
-      img.src = src;
-      countdownImageCacheRef.current.push(img);
-      if (img.decode) {
-        return img
-          .decode()
-          .catch(() => undefined);
-      }
-      return new Promise<void>((resolve) => {
-        img.onload = () => resolve();
-        img.onerror = () => resolve();
-      });
-    });
-    void Promise.all(loadPromises);
-    return () => {
-      countdownImageCacheRef.current = [];
-    };
-  }, [countdownImageSources]);
 
   // タイトル動画の選択も一度だけ実行し、結果を保持（lazy initialization）
   const [titleSelection] = useState<TitleVideoSelection | null>(() => {
@@ -266,6 +238,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       if (value) set.add(value);
     };
     add(standbyVideo);
+    countdownVideos.forEach((src) => add(src));
     add(puchunVideo);
     add(titleVideoSrc);
     preSceneMeta?.videos.forEach((src) => add(src));
@@ -276,6 +249,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     return Array.from(set);
   }, [
     standbyVideo,
+    countdownVideos,
     puchunVideo,
     titleVideoSrc,
     preSceneMeta,
@@ -352,15 +326,12 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     }
     // iOS 実機での遅延を減らすため、ここで事前に Audio 要素だけ用意しておく
     primeCountdownHit();
-    const nextStep = countdownSteps[countdownIndex];
+    const nextStep = countdownSelection?.pattern.steps[countdownIndex];
     if (!nextStep) return;
     const prevColor = countdownColorRef.current;
     countdownColorRef.current = nextStep.color;
     triggerCountdownUpgrade(prevColor, nextStep.color);
-    
-    // 静止画なので即座にvideoReadyをtrueに設定（ボタン有効化）
-    setVideoReady(true);
-  }, [phase, countdownIndex, countdownSteps]);
+  }, [phase, countdownIndex, countdownSelection]);
 
   useEffect(() => {
     if (prevPhaseRef.current === phase) return;
@@ -385,7 +356,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     onClose?.();
   }, [onClose]);
 
-  const countdownTotal = countdownSteps.length;
+  const countdownTotal = countdownVideos.length;
   const preSceneTotal = preSceneMeta?.videos.length ?? 0;
   const mainSceneTotal = mainSceneVideos.length;
   const dondenTotal = dondenVideos.length;
@@ -475,16 +446,14 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const handleAdvance = useCallback(() => {
     if (isControlsLocked(phase, videoReady)) return;
     
-    // COUNTDOWN中およびSTANDBY→COUNTDOWN移行時に効果音を確実に再生
-    if (phase === 'COUNTDOWN' || (phase === 'STANDBY' && countdownTotal > 0)) {
+    // COUNTDOWNフェーズでは効果音を即座に再生（動画のonPlayを待たない）
+    if (phase === 'COUNTDOWN') {
       playCountdownHit();
     }
     
     setVideoReady(false);
-    requestAnimationFrame(() => {
-      progressPhase();
-    });
-  }, [phase, videoReady, progressPhase, countdownTotal]);
+    progressPhase();
+  }, [phase, videoReady, progressPhase]);
 
   const handleSkip = useCallback(() => {
     if (phase === 'CARD_REVEAL') return;
@@ -505,6 +474,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const phaseVideo = resolvePhaseVideo({
     phase,
     standbyVideo,
+    countdownVideos,
     countdownIndex,
     countdownTotal,
     puchunVideo,
@@ -564,19 +534,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const phaseMeta = PHASE_META[phase];
 
-  // カウントダウン静止画の表示データ
-  const countdownStep = countdownSteps[countdownIndex];
-  const countdownImagePath = countdownImageSources[countdownIndex] ?? null;
 
-  // デバッグログ
-  if (phase === 'COUNTDOWN' && countdownStep) {
-    console.log('[GachaPlayer COUNTDOWN]', {
-      countdownIndex,
-      step: countdownStep,
-      imagePath: countdownImagePath,
-      videoReady,
-    });
-  }
 
   return (
     <div
@@ -586,16 +544,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       data-phase-details={details ?? undefined}
     >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
-        {/* COUNTDOWNフェーズ: 静止画+エフェクト */}
-        {phase === 'COUNTDOWN' && countdownImagePath && countdownStep ? (
-          <>
-            <CountdownImage 
-              key={`countdown-step-${countdownIndex}`}
-              imagePath={countdownImagePath}
-              color={countdownStep.color}
-            />
-          </>
-        ) : signedPhaseVideoSrc ? (
+        {signedPhaseVideoSrc ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
               key={phaseVideoKey}
@@ -643,6 +592,7 @@ type PhaseVideoPlan = {
 function resolvePhaseVideo(args: {
   phase: GachaPhase;
   standbyVideo: string;
+  countdownVideos: string[];
   countdownIndex: number;
   countdownTotal: number;
   puchunVideo: string;
@@ -658,6 +608,7 @@ function resolvePhaseVideo(args: {
   const {
     phase,
     standbyVideo,
+    countdownVideos,
     countdownIndex,
     countdownTotal,
     puchunVideo,
@@ -678,7 +629,7 @@ function resolvePhaseVideo(args: {
       const total = countdownTotal || 0;
       const stepLabel = total ? `STEP ${Math.min(countdownIndex + 1, total)}/${total}` : 'COUNTDOWN';
       return {
-        src: null,
+        src: countdownVideos[countdownIndex] ?? null,
         loop: false,
         progress: stepLabel,
         key: `countdown-${countdownIndex}`,
