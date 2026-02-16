@@ -1,6 +1,6 @@
 'use client';
 
-import Image from 'next/image';
+import { useMemo } from 'react';
 import { COUNTDOWN_EFFECTS, type CountdownEffect } from '@/lib/gacha/common/countdown-images';
 import type { CdColor } from '@/lib/gacha/common/types';
 
@@ -10,24 +10,24 @@ type Props = {
 };
 
 /**
- * カウントダウン静止画表示コンポーネント（アニメーションなし）
+ * カウントダウン静止画表示コンポーネント（背景描画）
  */
 export function CountdownImage({ imagePath, color }: Props) {
   const effect: CountdownEffect = COUNTDOWN_EFFECTS[color];
+  const backgroundStyle = useMemo(
+    () => ({
+      backgroundImage: `url(${imagePath})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }),
+    [imagePath],
+  );
 
   return (
     <div className="absolute inset-0 z-0 bg-black">
-      <div className="relative h-full w-full">
-        <Image
-          src={imagePath}
-          alt="カウントダウン"
-          fill
-          className="object-cover"
-          priority
-          unoptimized
-        />
+      <div className="relative h-full w-full overflow-hidden rounded-[12px]" style={backgroundStyle}>
         <div
-          className="pointer-events-none absolute inset-0 opacity-40"
+          className="pointer-events-none absolute inset-0"
           style={{
             background: `radial-gradient(circle at center, ${effect.glow} 0%, transparent 75%)`,
           }}

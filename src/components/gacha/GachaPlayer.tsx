@@ -168,15 +168,25 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!countdownImageSources.length) return;
-    const images: HTMLImageElement[] = [];
-    countdownImageSources.forEach((src) => {
+    const controller = new AbortController();
+    const loadPromises = countdownImageSources.map((src) => {
       const img = new window.Image();
       img.src = src;
-      images.push(img);
+      countdownImageCacheRef.current.push(img);
+      if (img.decode) {
+        return img
+          .decode()
+          .catch(() => undefined);
+      }
+      return new Promise<void>((resolve) => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
     });
-    countdownImageCacheRef.current = images;
+    void Promise.all(loadPromises);
     return () => {
       countdownImageCacheRef.current = [];
+      controller.abort();
     };
   }, [countdownImageSources]);
 
@@ -473,7 +483,9 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     }
     
     setVideoReady(false);
-    progressPhase();
+    requestAnimationFrame(() => {
+      progressPhase();
+    });
   }, [phase, videoReady, progressPhase, countdownTotal]);
 
   const handleSkip = useCallback(() => {
