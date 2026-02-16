@@ -12,7 +12,6 @@ type Props = {
 export function CountdownFlash({ intensity }: Props) {
   return (
     <motion.div
-      key={`flash-${Date.now()}`}
       className="pointer-events-none absolute inset-0 z-10 bg-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: [0, intensity, 0] }}

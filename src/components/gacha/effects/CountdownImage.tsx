@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { COUNTDOWN_EFFECTS, type CountdownEffect } from '@/lib/gacha/common/countdown-images';
 import type { CdColor } from '@/lib/gacha/common/types';
 
@@ -15,7 +15,6 @@ type Props = {
 export function CountdownImage({ imagePath, color }: Props) {
   const effect: CountdownEffect = COUNTDOWN_EFFECTS[color];
   const [isVisible, setIsVisible] = useState(false);
-  const rafRef = useRef<number | null>(null);
   const backgroundStyle = useMemo(
     () => ({
       backgroundImage: `url(${imagePath})`,
@@ -26,16 +25,21 @@ export function CountdownImage({ imagePath, color }: Props) {
   );
 
   useEffect(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-    }
-    setIsVisible(false);
-    const id = requestAnimationFrame(() => setIsVisible(true));
-    rafRef.current = id;
-    return () => {
-      cancelAnimationFrame(id);
+    let hideFrame: number | null = null;
+    let showFrame: number | null = null;
+
+    hideFrame = requestAnimationFrame(() => {
       setIsVisible(false);
-      rafRef.current = null;
+      showFrame = requestAnimationFrame(() => setIsVisible(true));
+    });
+
+    return () => {
+      if (hideFrame) {
+        cancelAnimationFrame(hideFrame);
+      }
+      if (showFrame) {
+        cancelAnimationFrame(showFrame);
+      }
     };
   }, [imagePath]);
 

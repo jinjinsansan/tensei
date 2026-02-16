@@ -1,7 +1,8 @@
 import Image from "next/image";
-import Link from "next/link";
-import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
+
 import { GachaNeonPlayer } from "@/components/gacha/gacha-neon-player";
+import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
+import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { getSessionWithSnapshot } from "@/lib/app/session";
 import type { TicketBalanceItem } from "@/lib/utils/tickets";
 
@@ -48,86 +49,106 @@ export default async function GachaPage() {
         <TicketBalanceCarousel tickets={tickets} />
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-6">
         {/* 来世ガチャカード */}
-        <article className="relative overflow-hidden rounded-3xl border border-white/12 px-6 py-6 shadow-[0_20px_55px_rgba(0,0,0,0.55)]">
-          <div className="absolute inset-0 bg-white/5 backdrop-blur-xl" />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#3bd9ff]/35 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_60%)]" />
-          <div className="absolute inset-0 border border-white/10" />
-
-          <div className="relative z-10 space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/30 bg-white shadow-[0_0_20px_rgba(59,217,255,0.35)]">
-                  <Image
-                    src="/raise-gacha-logo.png"
-                    alt="来世ガチャ アイコン"
-                    fill
-                    sizes="48px"
-                    className="object-contain p-1"
-                  />
+        <article className="relative overflow-hidden rounded-[36px] border border-white/8 bg-gradient-to-br from-[#06090f] via-[#0c1221] to-[#05070e] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
+          <div className="relative rounded-[34px] bg-gradient-to-br from-[#0a0f1a] via-[#11192a] to-[#05070e] px-6 py-8 sm:px-8">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(63,200,255,0.35),transparent_55%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.1),transparent_60%)]" />
+              <div className="absolute inset-0 border border-white/10 rounded-[34px]" />
+            </div>
+            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
+              <div className="flex flex-1 flex-col gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white/20 bg-black/40 shadow-[0_0_35px_rgba(63,200,255,0.45)]">
+                    <Image
+                      src="/kenta_cards/card01_convenience.png"
+                      alt="健太 アイコン"
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.4em] text-[#a8f1ff]">
+                      GACHA
+                    </span>
+                    <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_8px_25px_rgba(12,15,31,0.9)]">
+                      来世ガチャ
+                    </h3>
+                  </div>
                 </div>
-                <div>
-                  <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-neon-blue">
-                    GACHA
-                  </p>
-                  <h3 className="mt-2 font-display text-2xl text-white">来世ガチャ</h3>
+                <p className="text-sm leading-relaxed text-white/85">
+                  20代のコンビニ店員、50代の冴えないサラリーマン、主人公達に転生チャンスが訪れる！果たして望む来世を手に入れることが出来るのか？
+                </p>
+                <div className="flex flex-wrap gap-3 text-xs text-white/75">
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
+                    ガチャは１チケットを消費します
+                  </span>
                 </div>
               </div>
-              <p className="text-sm leading-relaxed text-white/85">
-                主人公達は望む来世を手に入れることが出来るのか？
-              </p>
-              <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[0.7rem] text-white/75">
-                ガチャは１チケットを消費します
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-              <GachaNeonPlayer
-                playVariant="button"
-                playLabel="ガチャを始める"
-                className="rounded-[20px] border border-white/25 bg-gradient-to-b from-white/90 to-white/60 px-10 py-4 text-center font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_16px_35px_rgba(0,0,0,0.32),inset_0_3px_0_rgba(255,255,255,0.9),inset_0_-4px_0_rgba(0,0,0,0.25)] transition-all duration-150 hover:brightness-105 active:scale-[0.98]"
-              />
-              <Link
-                href="/how-to-play"
-                className="rounded-[20px] border border-white/25 bg-gradient-to-b from-white/90 to-white/60 px-10 py-4 text-center font-bold tracking-[0.08em] text-[#1a2230] shadow-[0_16px_35px_rgba(0,0,0,0.32),inset_0_3px_0_rgba(255,255,255,0.9),inset_0_-4px_0_rgba(0,0,0,0.25)] transition-all duration-150 hover:brightness-105 active:scale-[0.98]"
-              >
-                使い方を見る
-              </Link>
+              <div className="flex flex-1 items-center justify-center lg:justify-end">
+                <GachaNeonPlayer
+                  playVariant="round"
+                  playLabel="ガチャを\n始める"
+                  containerClassName="space-y-1 text-center w-full max-w-[150px]"
+                  buttonWrapperClassName="justify-center"
+                />
+              </div>
             </div>
           </div>
         </article>
 
         {/* バトルガチャカード（準備中） */}
-        <article className="relative overflow-hidden rounded-3xl border border-white/12 px-6 py-6 shadow-[0_20px_55px_rgba(0,0,0,0.55)] opacity-60">
-          <div className="absolute inset-0 bg-white/5 backdrop-blur-xl" />
-          <div className="absolute inset-0 bg-gradient-to-br from-[#ff2d95]/35 via-transparent to-transparent" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.16),transparent_60%)]" />
-          <div className="absolute inset-0 border border-white/10" />
-
-          <div className="relative z-10 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/10 shadow-[0_0_20px_rgba(255,45,149,0.35)]">
-                <span className="text-2xl">⚔️</span>
-              </div>
-              <div>
-                <p className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-neon-pink">
-                  COMING SOON
-                </p>
-                <h3 className="mt-2 font-display text-2xl text-white">バトルガチャ</h3>
-              </div>
+        <article className="relative overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-br from-[#12030b] via-[#1c090f] to-[#050103] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.55)] opacity-95">
+          <div className="relative rounded-[34px] bg-gradient-to-br from-[#1b050b] via-[#120107] to-[#050001] px-6 py-8 sm:px-8">
+            <div className="pointer-events-none absolute inset-0">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,99,155,0.25),transparent_55%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.08),transparent_60%)]" />
+              <div className="absolute inset-0 border border-white/10 rounded-[34px]" />
             </div>
-            <p className="text-sm leading-relaxed text-white/85">
-              新しいガチャ形式が近日登場！お楽しみに
-            </p>
-            <div className="flex justify-center pt-2">
-              <button
-                disabled
-                className="cursor-not-allowed rounded-[20px] border border-white/15 bg-gradient-to-b from-white/20 to-white/10 px-10 py-4 text-center font-bold tracking-[0.08em] text-white/40 shadow-[0_16px_35px_rgba(0,0,0,0.32),inset_0_3px_0_rgba(255,255,255,0.1),inset_0_-4px_0_rgba(0,0,0,0.2)]"
-              >
-                準備中
-              </button>
+            <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#ff6fb0] to-[#ff4378] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(255,67,120,0.35)]">
+              準備中
+            </div>
+            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
+              <div className="flex flex-1 flex-col gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white/15 bg-black/40 shadow-[0_0_30px_rgba(255,99,155,0.4)]">
+                    <Image
+                      src="/kenta_cards/card12_hero.png"
+                      alt="バトルガチャ アイコン"
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center rounded-full border border-white/12 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#ff8ec5]">
+                      GACHA
+                    </span>
+                    <h3 className="mt-2 font-display text-3xl text-white">バトルガチャ</h3>
+                  </div>
+                </div>
+                <p className="text-sm leading-relaxed text-white/85">
+                  来世ガチャに登場する主人公達が今度は１対１のバトルチャレンジを繰り広げる！果たして勝者はいったい誰なのか？
+                </p>
+                <div className="flex flex-wrap gap-3 text-xs text-white/70">
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
+                    ガチャは１チケットを消費します（予定）
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-1 items-center justify-center lg:justify-end">
+                <div className="w-full max-w-[150px]">
+                  <RoundMetalButton
+                    label={"ガチャを\n始める"}
+                    subLabel="START"
+                    disabled
+                    className="mx-auto"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </article>
