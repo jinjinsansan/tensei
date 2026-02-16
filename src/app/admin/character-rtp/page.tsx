@@ -30,6 +30,13 @@ async function updateCharacterConfig(formData: FormData) {
   const weightRaw = Number(formData.get('weight') ?? 0);
   const weight = Number.isFinite(weightRaw) ? Math.max(0, weightRaw) : 0;
 
+  const n = Number(formData.get('rarity_N') ?? 0);
+  const r = Number(formData.get('rarity_R') ?? 0);
+  const sr = Number(formData.get('rarity_SR') ?? 0);
+  const ssr = Number(formData.get('rarity_SSR') ?? 0);
+  const ur = Number(formData.get('rarity_UR') ?? 0);
+  const lr = Number(formData.get('rarity_LR') ?? 0);
+
   // 最低1つのキャラクターを有効にする必要があるかチェック
   if (!isActive) {
     const { data: otherCharacters } = await supabase
@@ -49,13 +56,6 @@ async function updateCharacterConfig(formData: FormData) {
     weight,
     totalRtp: n + r + sr + ssr + ur + lr
   });
-
-  const n = Number(formData.get('rarity_N') ?? 0);
-  const r = Number(formData.get('rarity_R') ?? 0);
-  const sr = Number(formData.get('rarity_SR') ?? 0);
-  const ssr = Number(formData.get('rarity_SSR') ?? 0);
-  const ur = Number(formData.get('rarity_UR') ?? 0);
-  const lr = Number(formData.get('rarity_LR') ?? 0);
   const dondenRaw = Number(formData.get('dondenRate') ?? 0);
   const dondenRate = Number.isFinite(dondenRaw) ? Math.min(Math.max(dondenRaw, 0), 100) : 0;
 
