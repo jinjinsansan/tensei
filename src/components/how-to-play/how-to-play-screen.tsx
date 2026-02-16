@@ -1,5 +1,3 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -89,7 +87,7 @@ export function HowToPlayScreen() {
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/kenta_cards/card06_musician.png"
+                  src="/kenta_cards/card06_boxer.png"
                   alt="健太カード2"
                   width={120}
                   height={160}
@@ -98,7 +96,7 @@ export function HowToPlayScreen() {
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/kenta_cards/card12_emperor.png"
+                  src="/kenta_cards/card12_hero.png"
                   alt="健太カード3"
                   width={120}
                   height={160}
