@@ -11,8 +11,12 @@ function getCountdownAudio(): HTMLAudioElement | null {
 }
 
 export function playCountdownHit() {
+  console.log('[SFX] playCountdownHit() called');
   const audio = getCountdownAudio();
-  if (!audio) return;
+  if (!audio) {
+    console.warn('[SFX] audio is null');
+    return;
+  }
   void audio.play().catch(() => undefined);
 }
 

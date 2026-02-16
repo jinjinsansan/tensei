@@ -493,11 +493,17 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     .filter((src): src is string => Boolean(src));
   const handlePhaseVideoPlay = useCallback(() => {
     // 同じ動画で既に再生済みの場合は何もしない（onPlayの重複発火を防ぐ）
-    if (lastPlayedVideoKeyRef.current === phaseVideoKey) return;
+    if (lastPlayedVideoKeyRef.current === phaseVideoKey) {
+      console.log('[GachaPlayer] onPlay ignored (duplicate):', phaseVideoKey);
+      return;
+    }
+    
+    console.log('[GachaPlayer] onPlay fired:', phaseVideoKey, 'phase:', phase);
     lastPlayedVideoKeyRef.current = phaseVideoKey;
     
     setVideoReady(true);
     if (phase === 'COUNTDOWN') {
+      console.log('[GachaPlayer] Playing countdown hit sound');
       // iPhone 実機では映像描画がわずかに遅れるため、音をほんの少し遅らせて同期感を高める
       if (isIOS()) {
         window.setTimeout(() => {
