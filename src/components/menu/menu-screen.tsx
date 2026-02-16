@@ -37,6 +37,10 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString("ja-JP", { month: "short", day: "numeric" });
 }
 
+const SECTION_CARD = "space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset";
+const LINK_CARD =
+  "group relative overflow-hidden rounded-3xl border border-white/12 bg-black/30 p-5 shadow-panel-inset transition hover:border-white/40";
+
 type MenuScreenProps = {
   snapshot: MainAppSnapshot;
 };
@@ -46,49 +50,70 @@ export function MenuScreen({ snapshot }: MenuScreenProps) {
   const freeTicket = snapshot.tickets.find((ticket) => ticket.code === "free")?.quantity ?? 0;
 
   return (
-    <section className="space-y-8">
-      <div className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-6 py-7 shadow-[0_20px_45px_rgba(0,0,0,0.35)]">
-        <p className="text-xs uppercase tracking-[0.5em] text-neon-yellow">MENU</p>
+    <section className="mx-auto w-full max-w-5xl space-y-8 pb-12">
+      <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 px-6 py-8 shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
+        <p className="text-xs uppercase tracking-[0.5em] text-neon-yellow">PLAYER MENU</p>
         <div className="space-y-1">
-          <h1 className="font-display text-3xl text-white">プレイヤー設定</h1>
+          <h1 className="font-display text-4xl text-white">メニューホール</h1>
           <p className="text-sm text-zinc-300">{snapshot.user?.email ?? "unknown"}</p>
+          <p className="text-sm text-zinc-400">来世ガチャの各セクションへ一括アクセスする管理ホールです。</p>
         </div>
-        <div className="flex flex-wrap gap-6 text-sm text-zinc-400">
-          <p>Tickets: {totalTickets}枚 (FREE {freeTicket})</p>
-          <p>Last Login: {formatDate(snapshot.user?.lastLoginAt)}</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Total Tickets</p>
+            <p className="font-display text-3xl text-white">{totalTickets}</p>
+            <p className="text-xs text-white/70">FREE {freeTicket}</p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Last Login</p>
+            <p className="font-display text-2xl text-white">{formatDate(snapshot.user?.lastLoginAt)}</p>
+            <p className="text-xs text-white/70">最終アクセス</p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Status</p>
+            <p className="font-display text-2xl text-white">ACTIVE</p>
+            <p className="text-xs text-white/70">アカウント有効</p>
+          </div>
         </div>
       </div>
 
       {sections.map((section) => (
-        <div key={section.title} className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.4em] text-zinc-400">{section.title}</p>
+        <section key={section.title} className={SECTION_CARD}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">{section.title}</p>
+              <p className="text-sm text-zinc-400">関連メニューへのショートカット</p>
+            </div>
+            <span className="rounded-full border border-white/15 px-3 py-1 text-[0.6rem] uppercase tracking-[0.35em] text-white/60">
+              {section.links.length} Links
+            </span>
+          </div>
           <div className="space-y-3">
             {section.links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center justify-between rounded-3xl border border-white/10 bg-black/25 px-5 py-4 shadow-panel-inset transition hover:border-neon-blue"
-              >
-                <div>
-                  <p className="font-display text-lg text-white">{link.title}</p>
-                  <p className="text-sm text-zinc-400">{link.description}</p>
+              <Link key={link.href} href={link.href} className={LINK_CARD}>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition group-hover:opacity-40" />
+                <div className="relative z-10 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-display text-lg text-white">{link.title}</p>
+                    <p className="text-sm text-white/70">{link.description}</p>
+                  </div>
+                  {link.badge && (
+                    <span className="rounded-full border border-white/20 px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] text-white/80">
+                      {link.badge}
+                    </span>
+                  )}
                 </div>
-                {link.badge && (
-                  <span className="rounded-full border border-white/20 px-3 py-1 text-[10px] uppercase tracking-[0.3em] text-neon-yellow">
-                    {link.badge}
-                  </span>
-                )}
               </Link>
             ))}
           </div>
-        </div>
+        </section>
       ))}
 
-      <div className="space-y-3 rounded-3xl border border-white/10 bg-black/25 px-5 py-6 shadow-panel-inset">
+      <section className={SECTION_CARD}>
         <p className="text-xs uppercase tracking-[0.4em] text-red-300">Sign Out</p>
         <p className="text-sm text-zinc-400">端末の共有時は必ずサインアウトしてください。</p>
         <SignOutButton />
-      </div>
+      </section>
     </section>
   );
 }

@@ -11,15 +11,16 @@ export default async function SocialPage() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-md space-y-8">
-      <div className="space-y-2 text-center">
-        <div className="relative inline-block">
-          <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 blur-2xl" />
-          <h1 className="relative font-display text-4xl font-bold tracking-[0.05em] text-transparent bg-gradient-to-r from-[#fff65c] via-[#ff9b3d] to-[#ff2d95] bg-clip-text drop-shadow-[0_0_40px_rgba(255,246,92,0.8)] drop-shadow-[0_0_70px_rgba(255,157,61,0.6)] drop-shadow-[0_4px_18px_rgba(0,0,0,0.9)]">
-            ソーシャル
-          </h1>
+    <section className="mx-auto w-full max-w-5xl space-y-8 pb-10">
+      <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 px-6 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
+        <p className="text-xs uppercase tracking-[0.5em] text-neon-purple">SOCIAL HUB</p>
+        <h1 className="font-display text-4xl text-white">ソーシャルホール</h1>
+        <p className="text-sm text-zinc-300">友だちIDを交換し、シリアル入りカードを送り合うホール。来世で出会った仲間と交流しましょう。</p>
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[0.65rem] uppercase tracking-[0.35em] text-white/70">
+          <span className="rounded-full border border-white/15 px-4 py-1">Friend Requests</span>
+          <span className="rounded-full border border-white/15 px-4 py-1">Card Transfer</span>
+          <span className="rounded-full border border-white/15 px-4 py-1">Serial Archive</span>
         </div>
-        <p className="text-sm text-white/75">友だちとつながり、カードやシリアルを通じて交流できます。</p>
       </div>
 
       <SocialClient
@@ -28,12 +29,15 @@ export default async function SocialPage() {
         email={context.user.email ?? null}
       />
 
-      <Link
-        href="/home"
-        className="flex h-12 items-center justify-center rounded-full border border-white/20 text-[11px] uppercase tracking-[0.35em] text-white/80 hover:border-neon-blue hover:text-white"
-      >
-        ホームへ戻る
-      </Link>
+      <div className="relative flex justify-center">
+        <div className="absolute inset-0 h-16 w-64 rounded-full bg-gradient-to-r from-[#ffe29f]/20 via-[#ffa99f]/20 to-[#fbc2eb]/20 blur-3xl" />
+        <Link
+          href="/home"
+          className="relative inline-flex items-center justify-center rounded-full border border-white/15 bg-gradient-to-r from-[#ffe29f] via-[#ffa99f] to-[#fbc2eb] px-10 py-3 text-sm font-semibold uppercase tracking-[0.35em] text-[#201327] shadow-[0_20px_45px_rgba(0,0,0,0.45),inset_0_4px_0_rgba(255,255,255,0.75),inset_0_-4px_0_rgba(0,0,0,0.25)] transition hover:scale-[1.02] active:scale-[0.98]"
+        >
+          ホームへ戻る
+        </Link>
+      </div>
     </section>
   );
 }

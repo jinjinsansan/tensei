@@ -32,18 +32,19 @@ export default async function GachaPage() {
   const tickets = await getTicketBalancesSafe();
 
   return (
-    <section className="space-y-10">
-      <div className="space-y-2 text-center">
-        <div className="relative inline-block">
-          <div className="absolute -inset-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-pink-500/15 blur-2xl" />
-          <h1 className="relative font-display text-5xl font-bold tracking-[0.05em] text-transparent bg-gradient-to-r from-[#fff65c] via-[#ff9b3d] to-[#ff2d95] bg-clip-text drop-shadow-[0_0_50px_rgba(255,246,92,0.8)] drop-shadow-[0_0_90px_rgba(255,157,61,0.6)] drop-shadow-[0_4px_20px_rgba(0,0,0,0.9)]">
-            ガチャホール
-          </h1>
+    <section className="mx-auto w-full max-w-5xl space-y-10 pb-10">
+      <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 px-6 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
+        <p className="text-xs uppercase tracking-[0.5em] text-neon-yellow">GACHA HALL</p>
+        <h1 className="font-display text-4xl text-white">来世ガチャホール</h1>
+        <p className="text-sm text-zinc-300">色んな人生に生まれ変わってみたい主人公達のための受付ホール。チケット残高を確認して来世へ挑戦。</p>
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[0.65rem] uppercase tracking-[0.35em] text-white/70">
+          <span className="rounded-full border border-white/15 px-4 py-1">動画演出フル収録</span>
+          <span className="rounded-full border border-white/15 px-4 py-1">シリアル付与</span>
+          <span className="rounded-full border border-white/15 px-4 py-1">v2 multi character</span>
         </div>
-        <p className="text-sm text-white/70">色んな人生に生まれ変わってみたいと願う主人公達</p>
       </div>
 
-      <section className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-5 py-5">
+      <section className="space-y-3 rounded-3xl border border-white/10 bg-black/25 px-6 py-6 shadow-panel-inset">
         <div className="flex items-center justify-between text-xs uppercase tracking-[0.35em] text-neon-yellow">
           <span>Tickets</span>
         </div>

@@ -54,6 +54,10 @@ type Props = {
   email: string | null;
 };
 
+const SECTION_CARD = "space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset";
+const FIELD_LABEL = "text-[0.6rem] uppercase tracking-[0.35em] text-white/50";
+const INPUT_CLASS = "w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white placeholder:text-white/40 focus:border-neon-blue focus:outline-none";
+
 export function SocialClient({ userId, displayName, email }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
@@ -66,7 +70,6 @@ export function SocialClient({ userId, displayName, email }: Props) {
 
   useEffect(() => {
     void refreshAll();
-    // 初期マウント時のみ全体を読み込めば十分なため、依存配列は空に固定する
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -92,10 +95,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
     const PAGE_SIZE = 200;
     let all: CollectionItem[] = [];
     let offset = 0;
-
-    // すべての所持カードをフレンド送付候補として使えるよう、ページネーションを最後まで走査する
-    // エラーが出た場合は直前の状態を維持する
     let hasMore = true;
+
     while (hasMore) {
       const res = await fetch(`/api/collection?limit=${PAGE_SIZE}&offset=${offset}`);
       if (!res.ok) break;
@@ -118,9 +119,7 @@ export function SocialClient({ userId, displayName, email }: Props) {
       }
     }
 
-    if (all.length > 0) {
-      setCollection(all);
-    }
+    setCollection(all);
   }
 
   async function handleSendRequest(e: React.FormEvent) {
@@ -192,62 +191,106 @@ export function SocialClient({ userId, displayName, email }: Props) {
     }
   }
 
+  const formatTimestamp = (value: string) => {
+    return new Date(value).toLocaleString("ja-JP", {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   return (
     <div className="space-y-6 text-white">
-      {/* あなたのIDカード: フリー/ベーシックに近い深いブルー系グラデーション */}
-      <section className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#0b0416] via-[#1a0a22] to-[#050006] px-5 py-5 shadow-panel-inset">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-neon-yellow">YOUR ID</p>
-        <p className="mt-2 text-xs text-white/70">このIDを友だちに伝えると、フレンド申請を受け取れます。</p>
-        <div className="mt-3 space-y-1 text-sm">
-          <p>ニックネーム: <span className="font-medium">{displayName ?? "未設定"}</span></p>
-          <p>メールアドレス: <span className="font-medium">{email ?? "未設定"}</span></p>
-          <p className="break-all text-[11px] text-white/60">フレンドID: {userId}</p>
+      <section className={SECTION_CARD}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">SOCIAL PROFILE</p>
+            <p className="text-sm text-zinc-300">あなたのフレンドカード。IDを共有して仲間を招待しましょう。</p>
+          </div>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void refreshAll()}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-1 text-[0.65rem] uppercase tracking-[0.35em] text-white/70 transition hover:border-white/40 hover:text-white disabled:opacity-40"
+          >
+            最新化
+          </button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+            <p className={FIELD_LABEL}>Display</p>
+            <p className="font-display text-xl text-white">{displayName ?? "未設定"}</p>
+            <p className="text-xs text-white/60">ニックネーム</p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+            <p className={FIELD_LABEL}>Email</p>
+            <p className="text-sm text-white/90">{email ?? "未設定"}</p>
+            <p className="text-xs text-white/60">連絡先</p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+            <p className={FIELD_LABEL}>Friend ID</p>
+            <p className="font-mono text-[0.75rem] text-white/90 break-all">{userId}</p>
+            <p className="text-xs text-white/60">共有用</p>
+          </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {/* フレンド招待: ベーシックチケットに近いアンバー系 */}
-        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#2a1a02] via-[#3f2607] to-[#0b0502] px-5 py-5">
-          <h2 className="text-base font-semibold tracking-[0.08em]">フレンドを招待</h2>
-          <p className="mt-1 text-[11px] text-white/70">相手のフレンドIDを入力して申請します。</p>
-          <form onSubmit={handleSendRequest} className="mt-3 space-y-3 text-sm">
-            <input
-              value={targetUserId}
-              onChange={(e) => setTargetUserId(e.target.value)}
-              placeholder="相手のフレンドID"
-              className="w-full rounded-2xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder:text-white/40"
-            />
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className={SECTION_CARD}>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-yellow">INVITE FRIEND</p>
+            <p className="text-sm text-zinc-300">相手のフレンドIDを入力して申請します。</p>
+          </div>
+          <form onSubmit={handleSendRequest} className="space-y-4 text-sm">
+            <label className="space-y-2">
+              <span className={FIELD_LABEL}>Friend ID</span>
+              <input
+                value={targetUserId}
+                onChange={(e) => setTargetUserId(e.target.value)}
+                placeholder="IDを入力"
+                className={INPUT_CLASS}
+              />
+            </label>
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full bg-accent px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-hall-background disabled:opacity-60"
+              className="w-full rounded-full border border-white/15 bg-gradient-to-r from-[#7bf1ff]/40 via-[#8ae6ff]/30 to-[#fbc2eb]/30 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.35em] text-white transition hover:border-white/40 disabled:opacity-50"
             >
               フレンド申請を送る
             </button>
           </form>
         </div>
 
-        {/* 届いている申請: エピックチケットに近いローズ系 */}
-        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#2b0014] via-[#430029] to-[#070008] px-5 py-5">
-          <h2 className="text-base font-semibold tracking-[0.08em]">届いている申請</h2>
+        <div className={SECTION_CARD}>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-pink">REQUEST INBOX</p>
+            <p className="text-sm text-zinc-300">届いているフレンド申請</p>
+          </div>
           {requests.length === 0 ? (
-            <p className="mt-3 text-sm text-white/65">受信中の申請はありません。</p>
+            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-4 py-6 text-center text-sm text-white/70">
+              受信中の申請はありません。
+            </p>
           ) : (
-            <ul className="mt-3 space-y-2 text-sm">
+            <ul className="space-y-3 text-sm">
               {requests.map((req) => (
                 <li
                   key={req.id}
-                  className="flex items-center justify-between gap-2 rounded-2xl border border-white/10 bg-black/40 px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/5 px-4 py-3"
                 >
                   <div>
-                    <div className="text-sm font-medium">{req.from_display_name ?? req.from_email ?? req.from_user_id}</div>
-                    <div className="text-[11px] text-white/60">{new Date(req.created_at).toLocaleString("ja-JP")}</div>
+                    <p className="font-medium text-white">
+                      {req.from_display_name ?? req.from_email ?? req.from_user_id}
+                    </p>
+                    <p className="text-[0.65rem] uppercase tracking-[0.3em] text-white/60">
+                      {formatTimestamp(req.created_at)}
+                    </p>
                   </div>
                   <button
                     type="button"
                     disabled={loading}
                     onClick={() => void handleAcceptRequest(req.id)}
-                    className="rounded-full bg-accent px-3 py-1 text-[11px] font-semibold text-hall-background disabled:opacity-60"
+                    className="rounded-full border border-white/20 px-4 py-1 text-[0.65rem] uppercase tracking-[0.35em] text-white transition hover:border-white/40 disabled:opacity-40"
                   >
                     承認
                   </button>
@@ -258,56 +301,63 @@ export function SocialClient({ userId, displayName, email }: Props) {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {/* フレンド一覧: プレミアムチケットに近いパープル系 */}
-        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#1c0030] via-[#2f0150] to-[#05000a] px-5 py-5">
-          <h2 className="text-base font-semibold tracking-[0.08em]">フレンド一覧</h2>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className={SECTION_CARD}>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">FRIEND LIST</p>
+            <p className="text-sm text-zinc-300">交流中のフレンド一覧</p>
+          </div>
           {friends.length === 0 ? (
-            <p className="mt-3 text-sm text-white/65">まだフレンドがいません。</p>
+            <p className="rounded-2xl border border-dashed border-white/15 bg-white/5 px-4 py-6 text-center text-sm text-white/70">
+              まだフレンドがいません。
+            </p>
           ) : (
-            <ul className="mt-3 space-y-2 text-sm">
+            <ul className="space-y-2 text-sm">
               {friends.map((friend) => (
-                <li
-                  key={friend.id}
-                  className="rounded-2xl border border-white/10 bg-black/40 px-3 py-2"
-                >
-                  <div className="text-sm font-medium">{friend.display_name ?? friend.email ?? friend.id}</div>
-                  <div className="text-[11px] text-white/60">
-                    フレンドID: <span className="break-all">{friend.id}</span>
-                  </div>
+                <li key={friend.id} className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
+                  <p className="font-medium text-white">
+                    {friend.display_name ?? friend.email ?? friend.id}
+                  </p>
+                  <p className="text-[0.65rem] uppercase tracking-[0.3em] text-white/60">
+                    ID: <span className="break-all text-white/70">{friend.id}</span>
+                  </p>
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        {/* カード送付: EXチケットに近いグリーン系 */}
-        <div className="rounded-3xl border border-white/12 bg-gradient-to-br from-[#032415] via-[#064030] to-[#010b06] px-5 py-5">
-          <h2 className="text-base font-semibold tracking-[0.08em]">カードを贈る</h2>
-          <p className="mt-1 text-[11px] text-white/70">手元のカードを1枚選んで、フレンドにプレゼントできます。</p>
-          <form onSubmit={handleSendCard} className="mt-3 space-y-3 text-sm">
-            <div>
-              <label className="text-[11px] text-white/65">送るカード</label>
+        <div className={SECTION_CARD}>
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-neon-green">SEND CARD</p>
+            <p className="text-sm text-zinc-300">シリアル付きカードをプレゼント</p>
+          </div>
+          <form onSubmit={handleSendCard} className="space-y-4 text-sm">
+            <label className="space-y-2">
+              <span className={FIELD_LABEL}>Card</span>
               <select
                 value={selectedInventoryId}
                 onChange={(e) => setSelectedInventoryId(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-black"
+                className={INPUT_CLASS}
               >
                 <option value="">選択してください</option>
-                {collection.map((item) => (
-                  <option key={item.inventory_id} value={item.inventory_id}>
-                    {item.star_level ? '★'.repeat(Math.max(1, Math.min(item.star_level, 12))) + ' ' : ''}
-                    {item.card_name} / #{item.serial_number}
-                  </option>
-                ))}
+                {collection.map((item) => {
+                  const stars = item.star_level ? "★".repeat(Math.max(1, Math.min(item.star_level, 12))) + " " : "";
+                  return (
+                    <option key={item.inventory_id} value={item.inventory_id}>
+                      {stars}
+                      {item.card_name} / #{item.serial_number}
+                    </option>
+                  );
+                })}
               </select>
-            </div>
-            <div>
-              <label className="text-[11px] text-white/65">送り先フレンド</label>
+            </label>
+            <label className="space-y-2">
+              <span className={FIELD_LABEL}>Friend</span>
               <select
                 value={selectedFriendId}
                 onChange={(e) => setSelectedFriendId(e.target.value)}
-                className="mt-1 w-full rounded-2xl border border-white/15 bg-black/40 px-3 py-2 text-sm text-black"
+                className={INPUT_CLASS}
               >
                 <option value="">選択してください</option>
                 {friends.map((friend) => (
@@ -316,11 +366,11 @@ export function SocialClient({ userId, displayName, email }: Props) {
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
             <button
               type="submit"
               disabled={loading || !selectedInventoryId || !selectedFriendId}
-              className="w-full rounded-full bg-accent px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-hall-background disabled:opacity-60"
+              className="w-full rounded-full border border-white/15 bg-gradient-to-r from-[#32f0c9]/30 via-[#7bf1ff]/25 to-[#fbc2eb]/30 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.35em] text-white transition hover:border-white/40 disabled:opacity-40"
             >
               カードを送付する
             </button>
@@ -329,7 +379,9 @@ export function SocialClient({ userId, displayName, email }: Props) {
       </section>
 
       {message && (
-        <p className="text-sm text-accent">{message}</p>
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-r from-[#7bf1ff]/20 via-transparent to-[#fbc2eb]/25 px-4 py-3 text-sm text-white">
+          {message}
+        </div>
       )}
     </div>
   );
