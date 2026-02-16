@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
 import type { Tables } from '@/types/database';
+import { CharacterForm } from './character-form';
 
 type GachaCharacterRow = Tables<'gacha_characters'>;
 type GachaRtpRow = Tables<'gacha_rtp_config'>;
@@ -197,123 +198,41 @@ export default async function CharacterRtpPage({
 
 
       <div className="space-y-4">
-        {entries.map(([characterId, { character, rtp }]) => {
-          const totalRtp =
-            (Number(rtp?.rarity_n ?? 0) +
-              Number(rtp?.rarity_r ?? 0) +
-              Number(rtp?.rarity_sr ?? 0) +
-              Number(rtp?.rarity_ssr ?? 0) +
-              Number(rtp?.rarity_ur ?? 0) +
-              Number(rtp?.rarity_lr ?? 0)) || 0;
-
-          return (
-            <form
-              key={characterId}
-              action={updateCharacterConfig}
-              className="space-y-4 rounded-3xl border border-accent/25 bg-card/70 p-6 shadow-library-card"
-            >
-              <input type="hidden" name="characterId" value={characterId} />
-              <input type="hidden" name="characterName" value={character.character_name} />
-
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Character</p>
-                  <h2 className="text-xl font-bold">{character.character_name}</h2>
-                  <p className="text-xs text-secondary">ID: {characterId}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      defaultChecked={character.is_active}
-                      className="h-4 w-4 rounded border-accent/40 bg-transparent"
-                    />
-                    <span>ガチャ対象に含める</span>
-                  </label>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-secondary">出現比率</span>
-                    <input
-                      type="number"
-                      name="weight"
-                      min={0}
-                      step={1}
-                      defaultValue={character.weight ?? 0}
-                      className="w-20 rounded-xl border border-accent/30 bg-black/30 px-2 py-1 text-right text-sm"
-                    />
-                    <span className="text-secondary">pt</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Rarity Distribution</p>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    {([
-                      ['N', rtp?.rarity_n ?? 35],
-                      ['R', rtp?.rarity_r ?? 25],
-                      ['SR', rtp?.rarity_sr ?? 20],
-                      ['SSR', rtp?.rarity_ssr ?? 12],
-                      ['UR', rtp?.rarity_ur ?? 6],
-                      ['LR', rtp?.rarity_lr ?? 2],
-                    ] as const).map(([label, value]) => (
-                      <label key={label} className="flex items-center justify-between gap-2 rounded-xl bg-black/20 px-3 py-2">
-                        <span className="font-medium">{label}</span>
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="number"
-                            name={`rarity_${label}`}
-                            min={0}
-                            max={100}
-                            step={1}
-                            defaultValue={Number(value)}
-                            className="w-20 rounded-lg border border-accent/30 bg-black/40 px-2 py-1 text-right text-xs"
-                          />
-                          <span className="text-[11px] text-secondary">%</span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                  <p className="text-xs text-secondary">合計: {totalRtp.toFixed(1)}%</p>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Donden</p>
-                  <div className="space-y-2 rounded-xl bg-black/20 p-4 text-sm">
-                    <label className="flex items-center justify-between gap-2">
-                      <span>どんでん返し発生率</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          name="dondenRate"
-                          min={0}
-                          max={100}
-                          step={1}
-                          defaultValue={Number(rtp?.donden_rate ?? 15)}
-                          className="w-20 rounded-lg border border-accent/30 bg-black/40 px-2 py-1 text-right text-xs"
-                        />
-                        <span className="text-[11px] text-secondary">%</span>
-                      </div>
-                    </label>
-                    <p className="text-xs text-secondary">
-                      reversal video &amp; dondenRoutes を持つカードのみが対象になります。
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="rounded-2xl bg-emerald-400/80 px-4 py-2 text-sm font-semibold text-slate-950"
-                >
-                  このキャラクターの設定を保存
-                </button>
-              </div>
-            </form>
-          );
-        })}
+        {entries.map(([characterId, { character, rtp }]) => (
+          <CharacterForm
+            key={characterId}
+            characterId={characterId}
+            characterName={character.character_name}
+            isActive={character.is_active}
+            weight={Number(character.weight ?? 0)}
+            rtpN={Number(rtp?.rarity_n ?? 35)}
+            rtpR={Number(rtp?.rarity_r ?? 25)}
+            rtpSR={Number(rtp?.rarity_sr ?? 20)}
+            rtpSSR={Number(rtp?.rarity_ssr ?? 12)}
+            rtpUR={Number(rtp?.rarity_ur ?? 6)}
+            rtpLR={Number(rtp?.rarity_lr ?? 2)}
+            dondenRate={Number(rtp?.donden_rate ?? 15)}
+            action={updateCharacterConfig}
+          />
+        ))}
+      </div>
+      
+      <div className="mt-8 rounded-2xl border border-accent/20 bg-card/50 p-4">
+        <details>
+          <summary className="cursor-pointer text-sm font-semibold text-accent">🔍 デバッグ情報</summary>
+          <div className="mt-4 space-y-2 text-xs font-mono">
+            <p>総キャラクター数: {entries.length}</p>
+            <p>有効なキャラクター: {gachaCharacters.filter(c => c.is_active).length}</p>
+            <pre className="overflow-auto rounded bg-black/40 p-2">
+              {JSON.stringify(gachaCharacters.map(c => ({
+                id: c.character_id,
+                name: c.character_name,
+                active: c.is_active,
+                weight: c.weight
+              })), null, 2)}
+            </pre>
+          </div>
+        </details>
       </div>
     </div>
   );
