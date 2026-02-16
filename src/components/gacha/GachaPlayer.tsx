@@ -575,8 +575,10 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
         {phase === 'COUNTDOWN' && countdownImagePath && countdownStep ? (
           <>
             <CountdownImage 
+              key={`countdown-step-${countdownIndex}`}
               imagePath={countdownImagePath}
               color={countdownStep.color}
+              stepIndex={countdownIndex}
             />
             {showCountdownFlash && countdownEffect && (
               <CountdownFlash intensity={countdownEffect.flashIntensity} />

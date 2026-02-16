@@ -14,41 +14,36 @@ export function getCountdownImagePath(color: CdColor, index: number): string {
 }
 
 /**
- * カウントダウンの色に基づくエフェクト設定
+ * カウントダウン共通アニメーション（奥から浮かび上がる）
  */
+export const FLOAT_IN_ANIMATION = {
+  scale: [0.45, 1.08, 1],
+  opacity: [0, 1],
+  duration: 0.52,
+  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+};
+
 export interface CountdownEffect {
-  scale: number[];
   glow: string;
   flashIntensity: number;
-  shake: boolean;
-  particles: boolean;
-  duration: number;
 }
-
-const FLOAT_IN_BASE: Omit<CountdownEffect, 'glow'> = {
-  scale: [0.45, 1.05, 1],
-  flashIntensity: 0.25,
-  shake: false,
-  particles: false,
-  duration: 0.5,
-};
 
 export const COUNTDOWN_EFFECTS: Record<CdColor, CountdownEffect> = {
   green: {
-    ...FLOAT_IN_BASE,
     glow: 'rgba(120, 255, 180, 0.45)',
+    flashIntensity: 0.18,
   },
   blue: {
-    ...FLOAT_IN_BASE,
     glow: 'rgba(120, 200, 255, 0.55)',
+    flashIntensity: 0.24,
   },
   red: {
-    ...FLOAT_IN_BASE,
     glow: 'rgba(255, 150, 150, 0.65)',
+    flashIntensity: 0.32,
   },
   rainbow: {
-    ...FLOAT_IN_BASE,
-    glow: 'rgba(255, 230, 150, 0.75)',
+    glow: 'rgba(255, 230, 150, 0.78)',
+    flashIntensity: 0.45,
   },
 };
 
