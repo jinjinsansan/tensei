@@ -33,12 +33,11 @@ create table if not exists public.gacha_global_config (
 
 insert into public.gacha_characters (character_id, character_name, is_active, weight)
 values
-  ('kenta', '健太', true, 60),
-  ('shoichi', '昭一', false, 40)
+  ('kenta', '健太', true, 50),
+  ('shoichi', '昭一', true, 50)
 on conflict (character_id) do update
 set character_name = excluded.character_name,
-    is_active = excluded.is_active,
-    weight = excluded.weight,
+    -- is_active と weight は既存値を保持（初回のみ適用）
     updated_at = now();
 
 insert into public.gacha_rtp_config (character_id, loss_rate, rarity_n, rarity_r, rarity_sr, rarity_ssr, rarity_ur, rarity_lr, donden_rate)
