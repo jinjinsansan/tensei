@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -152,7 +153,7 @@ export function HowToPlayScreen() {
       {/* ③ カウントダウンはドキドキタイム */}
       <div className="space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neon-yellow text-lg font-bold text-black">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neon-yellow text-lg font-bold text-white">
             3
           </div>
           <h2 className="font-display text-2xl text-white">カウントダウンはドキドキタイム</h2>
@@ -164,38 +165,58 @@ export function HowToPlayScreen() {
         </p>
 
         {/* カウントダウン演出のイメージ */}
-        <div className="mt-6 rounded-2xl border border-neon-yellow/30 bg-gradient-to-br from-yellow-950/40 to-transparent p-6">
-          <div className="flex items-center justify-center gap-4 text-center">
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-400 bg-green-950/50 text-2xl font-bold text-green-300">
-                4
-              </div>
-              <p className="text-xs text-zinc-400">緑</p>
-            </div>
-            <div className="text-2xl text-zinc-600">→</div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-blue-400 bg-blue-950/50 text-2xl font-bold text-blue-300">
-                3
-              </div>
-              <p className="text-xs text-zinc-400">青</p>
-            </div>
-            <div className="text-2xl text-zinc-600">→</div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-red-400 bg-red-950/50 text-2xl font-bold text-red-300">
-                2
-              </div>
-              <p className="text-xs text-zinc-400">赤</p>
-            </div>
-            <div className="text-2xl text-zinc-600">→</div>
-            <div className="flex flex-col items-center gap-2">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-neon-pink bg-pink-950/50 text-2xl font-bold text-neon-pink">
-                1
-              </div>
-              <p className="text-xs text-zinc-400">虹</p>
-            </div>
+        <div className="mt-6 space-y-6 rounded-2xl border border-neon-yellow/30 bg-gradient-to-br from-yellow-950/40 to-transparent p-6">
+          <div className="flex flex-col items-stretch gap-5 lg:flex-row lg:items-center">
+            {[{
+              number: '4',
+              label: '緑スタート',
+              color: 'green',
+              src: '/images/countdown/cd_green_916_1.png',
+            }, {
+              number: '3',
+              label: '青で加速',
+              color: 'blue',
+              src: '/images/countdown/cd_blue_916_4.png',
+            }, {
+              number: '2',
+              label: '赤で激アツ',
+              color: 'red',
+              src: '/images/countdown/cd_red_916_6.png',
+            }, {
+              number: '1',
+              label: '虹で確定級',
+              color: 'rainbow',
+              src: '/images/countdown/cd_rainbow_916_8.png',
+            }].map((step, index, arr) => (
+              <Fragment key={step.number}>
+                <div className="flex flex-1 flex-col items-center gap-3 text-center">
+                  <div className="w-full overflow-hidden rounded-2xl border border-white/15 bg-black/40 shadow-[0_20px_45px_rgba(0,0,0,0.4)]">
+                    <div className="relative mx-auto h-48 w-full max-w-[220px]">
+                      <Image
+                        src={step.src}
+                        alt={`カウントダウン${step.number}`}
+                        fill
+                        sizes="220px"
+                        className="object-cover"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.5em] text-zinc-500">STEP {step.number}</p>
+                    <p className="text-sm font-semibold text-white">{step.label}</p>
+                  </div>
+                </div>
+                {index < arr.length - 1 ? (
+                  <div className="flex items-center justify-center text-xl text-zinc-500 lg:text-2xl" aria-hidden="true">
+                    <span className="lg:hidden">↓</span>
+                    <span className="hidden lg:inline">→</span>
+                  </div>
+                ) : null}
+              </Fragment>
+            ))}
           </div>
-          
-          <div className="mt-6 text-center">
+
+          <div className="text-center">
             <p className="text-xl font-bold text-neon-yellow">プチュン♪</p>
             <p className="mt-2 text-sm text-zinc-400">この音が聞こえたら当たり確定！</p>
           </div>
@@ -221,24 +242,40 @@ export function HowToPlayScreen() {
         <div className="mt-6 space-y-3">
           <div className="rounded-2xl border border-orange-400/30 bg-gradient-to-br from-orange-950/40 to-transparent p-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-2xl font-bold text-white">
-                健
+              <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-orange-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                <Image
+                  src="/kenta_cards/card01_convenience.png"
+                  alt="健太のアイコン"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1">
                 <p className="font-display text-xl text-orange-300">健太</p>
-                <p className="text-xs text-zinc-400">21歳の大学生。様々な来世が待っている</p>
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  22歳大学生、コンビニエンスストアの深夜バイトの毎日。来月の家賃も厳しい日々の暮らしにある日転生チャンスが訪れる。
+                </p>
               </div>
             </div>
           </div>
 
           <div className="rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-950/40 to-transparent p-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-400 to-purple-600 text-2xl font-bold text-white">
-                昭
+              <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-purple-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                <Image
+                  src="/shoichi_cards/shoichi_card01_fish.png"
+                  alt="正一のアイコン"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
               </div>
               <div className="flex-1">
-                <p className="font-display text-xl text-purple-300">昭一</p>
-                <p className="text-xs text-zinc-400">50歳のサラリーマン。第二の人生を夢見て</p>
+                <p className="font-display text-xl text-purple-300">正一</p>
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  58歳　冴えないサラリーマン。チビハゲデブ独身の4重苦の人生。もう何もかも諦めかけていた時に転生チャンスが訪れる。
+                </p>
               </div>
             </div>
           </div>
