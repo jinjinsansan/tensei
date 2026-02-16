@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { Fragment, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 
 type Props = {
@@ -9,6 +9,16 @@ type Props = {
 } & ComponentPropsWithoutRef<'button'>;
 
 export function RoundMetalButton({ label, subLabel, className, disabled, ...props }: Props) {
+  const normalizedLabel =
+    typeof label === 'string' && label.includes('\n')
+      ? label.split('\n').map((segment, index, segments) => (
+          <Fragment key={`segment-${index}`}>
+            {segment}
+            {index < segments.length - 1 ? <br /> : null}
+          </Fragment>
+        ))
+      : label;
+
   return (
     <button
       type="button"
@@ -23,7 +33,7 @@ export function RoundMetalButton({ label, subLabel, className, disabled, ...prop
       <div className="absolute inset-3 rounded-full border border-zinc-600 bg-gradient-to-b from-zinc-200 via-zinc-400 to-zinc-500 shadow-[inset_0_3px_6px_rgba(255,255,255,0.85),inset_0_-3px_6px_rgba(0,0,0,0.55),0_6px_12px_rgba(0,0,0,0.6)]" />
       <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
         <span className="relative z-10 whitespace-pre-line font-display text-base font-bold uppercase tracking-[0.25em] text-zinc-800 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
-          {label}
+          {normalizedLabel}
         </span>
         {subLabel ? (
           <span className="relative z-10 mt-1 text-[10px] font-bold uppercase tracking-[0.3em] text-zinc-700">{subLabel}</span>
