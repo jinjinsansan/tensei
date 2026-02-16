@@ -138,26 +138,29 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     return gachaResult.rarity;
   }, [gachaResult]);
 
-  const standbySelection: StandbySelection | null = useMemo(() => {
+  // STANDBY色の選択は一度だけ実行し、結果を保持（lazy initialization）
+  const [standbySelection] = useState<StandbySelection | null>(() => {
     if (!hintRarity) return null;
     return chooseStandbyWithProbabilities(hintRarity, presentation.standby);
-  }, [hintRarity, presentation]);
+  });
 
   const standbyVideo = standbySelection?.videoPath ?? buildCommonAssetPath('standby', 'blackstandby.mp4');
   const lossCardImage = gachaResult.lossCardImagePath ?? buildCommonAssetPath('loss_card.png');
   const puchunVideo = buildCommonAssetPath('puchun', 'puchun.mp4');
 
-  const countdownSelection: CountdownSelection | null = useMemo(() => {
+  // カウントダウンパターンの選択も一度だけ実行し、結果を保持（lazy initialization）
+  const [countdownSelection] = useState<CountdownSelection | null>(() => {
     if (!hintRarity) return null;
     return chooseCountdownPatternWithProbabilities(hintRarity, presentation.countdown);
-  }, [hintRarity, presentation]);
+  });
 
   const countdownVideos = useMemo(
     () => countdownSelection?.pattern.steps.map((step) => getCountdownVideoPath(step)) ?? [],
     [countdownSelection],
   );
 
-  const titleSelection: TitleVideoSelection | null = useMemo(() => {
+  // タイトル動画の選択も一度だけ実行し、結果を保持（lazy initialization）
+  const [titleSelection] = useState<TitleVideoSelection | null>(() => {
     if (gachaResult.isLoss || !character) return null;
     const availableCardIds = character.cards.map((card) => card.cardId);
     if (!availableCardIds.length) return null;
@@ -166,7 +169,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
         ? gachaResult.dondenFromCardId
         : gachaResult.cardId;
     return chooseTitleVideo(realCardId, availableCardIds, presentation.titleHintRate);
-  }, [character, gachaResult, presentation.titleHintRate]);
+  });
 
   const titleVideoSrc = useMemo(() => {
     if (!character || !titleSelection) return null;
