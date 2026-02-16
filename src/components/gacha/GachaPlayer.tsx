@@ -8,11 +8,10 @@ import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button
 import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
 import { CardReveal } from '@/components/gacha/CardReveal';
 import { CountdownImage } from '@/components/gacha/effects/CountdownImage';
-import { CountdownFlash } from '@/components/gacha/effects/CountdownFlash';
 import { claimGachaResult } from '@/lib/api/gacha';
 
 import { chooseCountdownPatternWithProbabilities, type CountdownSelection } from '@/lib/gacha/common/countdown-selector';
-import { getCountdownImagePath, COUNTDOWN_EFFECTS } from '@/lib/gacha/common/countdown-images';
+import { getCountdownImagePath } from '@/lib/gacha/common/countdown-images';
 import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
 import { chooseTitleVideo } from '@/lib/gacha/common/title-video-selector';
 import type {
@@ -121,32 +120,11 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const [serialNumber, setSerialNumber] = useState<number | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
-  const [showCountdownFlash, setShowCountdownFlash] = useState(false);
   const hasClaimedRef = useRef(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastPlayedVideoKeyRef = useRef<string | null>(null);
   const countdownImageCacheRef = useRef<HTMLImageElement[]>([]);
-  const countdownFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerCountdownFlash = useCallback(() => {
-    if (countdownFlashTimerRef.current) {
-      clearTimeout(countdownFlashTimerRef.current);
-    }
-    setShowCountdownFlash(true);
-    countdownFlashTimerRef.current = setTimeout(() => {
-      setShowCountdownFlash(false);
-      countdownFlashTimerRef.current = null;
-    }, 200);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (countdownFlashTimerRef.current) {
-        clearTimeout(countdownFlashTimerRef.current);
-      }
-    };
-  }, []);
 
   const presentation = usePresentationConfig();
 
@@ -489,23 +467,17 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const handleAdvance = useCallback(() => {
     if (isControlsLocked(phase, videoReady)) return;
     
-    // COUNTDOWN中およびSTANDBY→COUNTDOWN移行時に効果音＋フラッシュ
+    // COUNTDOWN中およびSTANDBY→COUNTDOWN移行時に効果音を確実に再生
     if (phase === 'COUNTDOWN' || (phase === 'STANDBY' && countdownTotal > 0)) {
       playCountdownHit();
-      triggerCountdownFlash();
     }
     
     setVideoReady(false);
     progressPhase();
-  }, [phase, videoReady, progressPhase, triggerCountdownFlash, countdownTotal]);
+  }, [phase, videoReady, progressPhase, countdownTotal]);
 
   const handleSkip = useCallback(() => {
     if (phase === 'CARD_REVEAL') return;
-    if (countdownFlashTimerRef.current) {
-      clearTimeout(countdownFlashTimerRef.current);
-      countdownFlashTimerRef.current = null;
-    }
-    setShowCountdownFlash(false);
     setVideoReady(false);
     startPhase('CARD_REVEAL');
   }, [phase, startPhase]);
@@ -585,7 +557,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   // カウントダウン静止画の表示データ
   const countdownStep = countdownSteps[countdownIndex];
   const countdownImagePath = countdownImageSources[countdownIndex] ?? null;
-  const countdownEffect = countdownStep ? COUNTDOWN_EFFECTS[countdownStep.color] : null;
 
   // デバッグログ
   if (phase === 'COUNTDOWN' && countdownStep) {
@@ -612,11 +583,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
               key={`countdown-step-${countdownIndex}`}
               imagePath={countdownImagePath}
               color={countdownStep.color}
-              stepIndex={countdownIndex}
             />
-            {showCountdownFlash && countdownEffect && (
-              <CountdownFlash intensity={countdownEffect.flashIntensity} />
-            )}
           </>
         ) : signedPhaseVideoSrc ? (
           <div className="relative h-full w-full overflow-hidden">
