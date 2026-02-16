@@ -1,23 +1,22 @@
 import { randomFloat, pickRandom, pickByWeight } from '@/lib/utils/random';
 import { getServiceSupabase } from '@/lib/supabase/service';
 import {
-  fetchActiveCharacters,
   fetchCardsByCharacter,
   fetchChanceScenes,
-  fetchGachaConfig,
+  fetchCharacterRtpConfig,
+  fetchGachaCharactersConfig,
+  fetchGachaGlobalConfig,
   fetchPreStories,
   fetchScenarios,
   insertGachaResult,
   insertGachaHistory,
 } from '@/lib/data/gacha';
-import { drawStar } from '@/lib/gacha/rtp';
-import type { CharacterWeight } from '@/lib/gacha/config';
 import type { StoryPayload, VideoSegment, GachaEngineResult } from '@/lib/gacha/types';
 import type { Json, Tables } from '@/types/database';
-import type { GachaResult, Rarity } from '@/lib/gacha/common/types';
+import type { CharacterId, GachaResult, Rarity } from '@/lib/gacha/common/types';
 import { buildCommonAssetPath } from '@/lib/gacha/assets';
 import { getCharacter } from '@/lib/gacha/characters';
-import { mapCardDbIdToModuleId, mapCharacterDbIdToModuleId } from '@/lib/gacha/characters/mapping';
+import { mapCardDbIdToModuleId, mapCharacterModuleIdToDbId } from '@/lib/gacha/characters/mapping';
 
 type GenerateOptions = {
   sessionId: string;
@@ -88,20 +87,6 @@ export async function generateGuestGachaPlay(configSlug = 'default'): Promise<Ga
     card: scenario.card,
     character: scenario.character,
   };
-}
-
-function pickCharacterByWeight(
-  characters: Tables<'characters'>[],
-  weights: CharacterWeight[],
-) {
-  const weighted = characters.map((character) => {
-    const weight = weights.find((entry) => entry.characterId === character.id)?.weight ?? 1;
-    return { ...character, weight };
-  });
-  const selected = pickByWeight(weighted);
-  const { weight: _weight, ...rest } = selected;
-  void _weight;
-  return rest;
 }
 
 function groupByPattern<T extends { pattern: string }>(rows: T[]): T[][] {
@@ -211,14 +196,13 @@ function mapToSegment(
 
 function buildGachaResult(params: {
   story: StoryPayload;
-  supabaseCharacter: Tables<'characters'>;
   supabaseCard: Tables<'cards'>;
   hadReversal: boolean;
-  moduleCharacterId: string | null;
+  moduleCharacterId: CharacterId;
 }): GachaResult {
-  const { story, supabaseCharacter, supabaseCard, hadReversal, moduleCharacterId } = params;
-  const characterId = moduleCharacterId ?? supabaseCharacter.id;
-  const characterModule = moduleCharacterId ? getCharacter(moduleCharacterId) : null;
+  const { story, supabaseCard, hadReversal, moduleCharacterId } = params;
+  const characterId = moduleCharacterId;
+  const characterModule = getCharacter(moduleCharacterId) ?? null;
   const moduleCardId = mapCardDbIdToModuleId(supabaseCard.id);
   const moduleCard = moduleCardId && characterModule
     ? characterModule.cards.find((card) => card.cardId === moduleCardId)
@@ -257,83 +241,76 @@ function coerceRarity(value: string | null | undefined): Rarity {
   }
   return 'N';
 }
-
-async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, configSlug: string): Promise<ScenarioPayload> {
-  const [config, characters] = await Promise.all([
-    fetchGachaConfig(supabase, configSlug),
-    fetchActiveCharacters(supabase),
+async function resolveScenario(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  _configSlug: string,
+): Promise<ScenarioPayload> {
+  // 1. 共通ハズレ率 & キャラクター設定を取得
+  void _configSlug;
+  const [globalConfig, gachaCharacters] = await Promise.all([
+    fetchGachaGlobalConfig(supabase),
+    fetchGachaCharactersConfig(supabase),
   ]);
 
-  if (!characters.length) {
-    throw new Error('No active characters configured.');
+  const activeCharacters = gachaCharacters.filter((c) => c.isActive && c.weight > 0);
+  if (!activeCharacters.length) {
+    throw new Error('有効なガチャキャラクターが設定されていません。');
   }
 
-  const character = pickCharacterByWeight(characters, config.characterWeights);
-  const cards = await fetchCardsByCharacter(supabase, character.id);
-  if (!cards.length) {
-    throw new Error(`Character ${character.name} has no active cards.`);
-  }
-
-  // ハズレ用カード（転生失敗）があれば抽選プールから除外し、さらに max_supply / current_supply で在庫が尽きたカードも除外
-  const lossCard = cards.find((card) => card.card_name === '転生失敗');
-  const basePlayableCards = lossCard ? cards.filter((card) => card.id !== lossCard.id) : cards;
-  const supplyFiltered = basePlayableCards.filter((card) => {
-    const max = card.max_supply;
-    const current = card.current_supply;
-    if (max == null) return true;
-    if (current == null) return true;
-    return current < max;
-  });
-
-  // max_supply が設定されているカードは current_supply >= max_supply になった時点で抽選対象から完全に外す
-  const playableCards = supplyFiltered;
-  if (!playableCards.length) {
-    throw new Error(`Character ${character.name} has no playable cards.`);
-  }
-
-  // まず★レベルを抽選（ハズレでも統計用に記録しておく）
-  const star = drawStar(config.rtp);
-  const starCards = playableCards.filter((card) => card.star_level === star);
-  const selectableCards = starCards.length ? starCards : playableCards;
-  const selectedCard = pickRandom(selectableCards);
-  const lossRoll = randomFloat();
-  const isLoss = lossRoll < config.lossRate;
+  // 2. LOSS / 当たり判定（仕様: lossRate は 0〜100）
+  const isLoss = randomFloat() * 100 < globalConfig.lossRate;
 
   if (isLoss) {
-    // 完全ハズレルート: シナリオは空、ハズレカードのみ表示
-    const awardCard = lossCard ?? selectedCard;
+    // 仕様上はキャラ抽選を行わないが、DB上は健太のLOSSカードを使って記録する
+    const kentaDbId = mapCharacterModuleIdToDbId('kenta');
+    if (!kentaDbId) {
+      throw new Error('Kenta character mapping is missing.');
+    }
+
+    const cards = await fetchCardsByCharacter(supabase, kentaDbId);
+    if (!cards.length) {
+      throw new Error('LOSS処理用のカードが見つかりません。');
+    }
+
+    const lossCard = cards.find((card) => card.card_name === '転生失敗') ?? cards[0];
 
     const story: StoryPayload = {
-      starLevel: star,
+      starLevel: lossCard.star_level ?? 0,
       hadReversal: false,
-      characterId: character.id,
-      cardId: awardCard.id,
+      characterId: kentaDbId,
+      cardId: lossCard.id,
       preStory: [],
       chance: [],
       mainStory: [],
       reversalStory: [],
       finalCard: {
-        id: awardCard.id,
-        card_name: awardCard.card_name,
-        rarity: awardCard.rarity,
-        star_level: awardCard.star_level,
-        card_image_url: awardCard.card_image_url,
-        has_reversal: awardCard.has_reversal,
+        id: lossCard.id,
+        card_name: lossCard.card_name,
+        rarity: lossCard.rarity,
+        star_level: lossCard.star_level,
+        card_image_url: lossCard.card_image_url,
+        has_reversal: lossCard.has_reversal,
       },
     };
 
-    const moduleCharacterId = mapCharacterDbIdToModuleId(character.id);
-    const characterId = moduleCharacterId ?? character.id;
+    const { data: characterRow, error } = await supabase
+      .from('characters')
+      .select('*')
+      .eq('id', kentaDbId)
+      .limit(1)
+      .single();
+    if (error || !characterRow) {
+      throw error ?? new Error('Kenta character row not found.');
+    }
 
     const gachaResult: GachaResult = {
       isLoss: true,
-      characterId,
+      characterId: 'kenta', // LOSS時は参照しないがデフォルトとして保持
       cardId: 'loss',
       rarity: 'N',
-      starRating: star,
+      starRating: 0,
       cardName: '転生失敗',
       cardTitle: 'この来世は見つかりませんでした...',
-      // プチュン映像なしのハズレカードは、来世ガチャのロゴカードを使用する（public 配下の静的画像）
       cardImagePath: '/raise-gacha-logo.png',
       lossCardImagePath: LOSS_CARD_PATH,
       isDonden: false,
@@ -345,47 +322,127 @@ async function resolveScenario(supabase: ReturnType<typeof getServiceSupabase>, 
     return {
       story,
       gachaResult,
-      card: awardCard,
-      character,
-      star,
+      card: lossCard,
+      character: characterRow as Tables<'characters'>,
+      star: story.starLevel,
       hadReversal: false,
     };
   }
 
-  const reversalRate = config.reversalRates[star] ?? 0;
-  const hadReversal = Boolean(selectedCard.has_reversal) && randomFloat() < reversalRate;
+  // 3. キャラクター抽選（gacha_characters.weight に基づく）
+  const selectedCharacterConfig = pickByWeight(activeCharacters.map((c) => ({ ...c })));
+  const moduleCharacterId = selectedCharacterConfig.characterId;
+
+  const characterDbId = mapCharacterModuleIdToDbId(moduleCharacterId);
+  if (!characterDbId) {
+    throw new Error(`Character mapping not found for module id: ${moduleCharacterId}`);
+  }
+
+  const { data: supabaseCharacterRow, error: characterError } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('id', characterDbId)
+    .limit(1)
+    .single();
+  if (characterError || !supabaseCharacterRow) {
+    throw characterError ?? new Error('Character row not found');
+  }
+
+  const supabaseCharacter = supabaseCharacterRow as Tables<'characters'>;
+
+  // 4. キャラ別RTP取得 & レア度抽選
+  const rtp = await fetchCharacterRtpConfig(supabase, moduleCharacterId);
+  const rarity = drawRarity(rtp.rarityDistribution);
+
+  // 5. カードプール取得（max_supply / current_supply を考慮）
+  const cards = await fetchCardsByCharacter(supabase, characterDbId);
+  if (!cards.length) {
+    throw new Error(`Character ${supabaseCharacter.name} has no active cards.`);
+  }
+
+  const lossCard = cards.find((card) => card.card_name === '転生失敗');
+  const basePlayableCards = lossCard ? cards.filter((card) => card.id !== lossCard.id) : cards;
+  const supplyFiltered = basePlayableCards.filter((card) => {
+    const max = card.max_supply;
+    const current = card.current_supply;
+    if (max == null) return true;
+    if (current == null) return true;
+    return current < max;
+  });
+
+  const playableCards = supplyFiltered;
+  if (!playableCards.length) {
+    throw new Error(`Character ${supabaseCharacter.name} has no playable cards.`);
+  }
+
+  const rarityMatched = playableCards.filter((card) => coerceRarity(card.rarity) === rarity);
+  const selectableCards = rarityMatched.length ? rarityMatched : playableCards;
+  const selectedCard = pickRandom(selectableCards);
+
+  const star = selectedCard.star_level;
+
+  // 6. どんでん返し判定（キャラ別 dondenRate）
+  const characterModule = getCharacter(moduleCharacterId);
+  const moduleCardId = mapCardDbIdToModuleId(selectedCard.id);
+  const hasDondenRoute = Boolean(
+    moduleCardId && characterModule?.dondenRoutes?.some((route) => route.toCardId === moduleCardId),
+  );
+
+  const hadReversal = hasDondenRoute && randomFloat() * 100 < rtp.dondenRate;
 
   const [preStories, chanceScenes, scenarioRows] = await Promise.all([
-    fetchPreStories(supabase, character.id),
-    fetchChanceScenes(supabase, character.id),
+    fetchPreStories(supabase, characterDbId),
+    fetchChanceScenes(supabase, characterDbId),
     fetchScenarios(supabase, selectedCard.id),
   ]);
 
   const story = buildStoryPayload({
     starLevel: star,
     hadReversal,
-    characterId: character.id,
+    characterId: characterDbId,
     card: selectedCard,
     preStories,
     chanceScenes,
     scenarioRows,
   });
 
-  const moduleCharacterId = mapCharacterDbIdToModuleId(character.id);
   const gachaResult = buildGachaResult({
     story,
-    supabaseCharacter: character,
     supabaseCard: selectedCard,
     hadReversal,
-    moduleCharacterId,
+    moduleCharacterId: moduleCharacterId as CharacterId,
   });
 
   return {
     story,
     gachaResult,
     card: selectedCard,
-    character,
+    character: supabaseCharacter,
     star,
     hadReversal,
   };
+}
+
+function drawRarity(distribution: Record<Rarity, number>): Rarity {
+  const entries: [Rarity, number][] = [
+    ['N', distribution.N ?? 0],
+    ['R', distribution.R ?? 0],
+    ['SR', distribution.SR ?? 0],
+    ['SSR', distribution.SSR ?? 0],
+    ['UR', distribution.UR ?? 0],
+    ['LR', distribution.LR ?? 0],
+  ];
+
+  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+  if (total <= 0) {
+    return 'N';
+  }
+
+  const roll = randomFloat() * total;
+  let cumulative = 0;
+  for (const [rarity, value] of entries) {
+    cumulative += value;
+    if (roll <= cumulative) return rarity;
+  }
+  return entries[entries.length - 1][0];
 }

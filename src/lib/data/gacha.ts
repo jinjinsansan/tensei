@@ -2,6 +2,7 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database, Tables, TablesInsert } from '@/types/database';
 import { parseGachaConfig, type ParsedGachaConfig } from '@/lib/gacha/config';
+import type { Rarity } from '@/lib/gacha/common/types';
 
 type DbClient = SupabaseClient<Database>;
 
@@ -21,6 +22,95 @@ export async function fetchGachaConfig(client: DbClient, slug = 'default'): Prom
   handleError(error);
   if (!data) throw new Error('Missing gacha_config row');
   return parseGachaConfig(data as Tables<'gacha_config'>);
+}
+
+// v2: 共通ハズレ率（gacha_global_config）
+export async function fetchGachaGlobalConfig(client: DbClient): Promise<{ lossRate: number }> {
+  const { data, error } = await client.from('gacha_global_config').select('*').limit(1).single();
+  handleError(error);
+  if (!data) {
+    return { lossRate: 60 };
+  }
+  const row = data as Tables<'gacha_global_config'>;
+  return { lossRate: Number(row.loss_rate ?? 60) };
+}
+
+export type GachaCharacterConfig = {
+  characterId: string; // 'kenta' | 'shoichi' ...
+  characterName: string;
+  isActive: boolean;
+  weight: number;
+};
+
+// v2: キャラクター出現率設定（gacha_characters）
+export async function fetchGachaCharactersConfig(client: DbClient): Promise<GachaCharacterConfig[]> {
+  const { data, error } = await client
+    .from('gacha_characters')
+    .select('*')
+    .order('created_at', { ascending: true });
+  handleError(error);
+  const rows = (data ?? []) as Tables<'gacha_characters'>[];
+  return rows.map((row) => ({
+    characterId: row.character_id,
+    characterName: row.character_name,
+    isActive: row.is_active,
+    weight: Number(row.weight ?? 0),
+  }));
+}
+
+export type CharacterRtpConfig = {
+  characterId: string;
+  lossRate: number; // 0-100
+  rarityDistribution: Record<Rarity, number>;
+  dondenRate: number; // 0-100
+};
+
+// v2: キャラ別RTP設定（gacha_rtp_config）
+export async function fetchCharacterRtpConfig(
+  client: DbClient,
+  characterId: string,
+): Promise<CharacterRtpConfig> {
+  const { data, error } = await client
+    .from('gacha_rtp_config')
+    .select('*')
+    .eq('character_id', characterId)
+    .limit(1)
+    .single();
+  handleError(error);
+
+  if (!data) {
+    // フォールバック: 仕様書のデフォルト値
+    return {
+      characterId,
+      lossRate: 60,
+      rarityDistribution: {
+        N: 35,
+        R: 25,
+        SR: 20,
+        SSR: 12,
+        UR: 6,
+        LR: 2,
+      },
+      dondenRate: 15,
+    };
+  }
+
+  const row = data as Tables<'gacha_rtp_config'>;
+  const rarityDistribution: Record<Rarity, number> = {
+    N: Number(row.rarity_n ?? 0),
+    R: Number(row.rarity_r ?? 0),
+    SR: Number(row.rarity_sr ?? 0),
+    SSR: Number(row.rarity_ssr ?? 0),
+    UR: Number(row.rarity_ur ?? 0),
+    LR: Number(row.rarity_lr ?? 0),
+  };
+
+  return {
+    characterId: row.character_id,
+    lossRate: Number(row.loss_rate ?? 60),
+    rarityDistribution,
+    dondenRate: Number(row.donden_rate ?? 15),
+  };
 }
 
 export type GachaSummaryStats = {

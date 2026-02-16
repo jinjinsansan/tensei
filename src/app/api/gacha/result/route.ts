@@ -125,7 +125,7 @@ function createFallbackGachaResult(
   const cardModuleId = mapCardDbIdToModuleId(card.id);
   return {
     isLoss: false,
-    characterId: characterModuleId ?? resultRow.character_id ?? 'unknown',
+    characterId: (characterModuleId as GachaResult['characterId']) ?? 'kenta',
     cardId: cardModuleId ?? card.id,
     rarity: (card.rarity as GachaResult['rarity']) ?? 'N',
     starRating: card.star_level ?? resultRow.star_level ?? 1,

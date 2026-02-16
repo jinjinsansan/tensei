@@ -66,6 +66,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
 
   useEffect(() => {
     void refreshAll();
+    // 初期マウント時のみ全体を読み込めば十分なため、依存配列は空に固定する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function refreshAll() {

@@ -1,5 +1,6 @@
 const CHARACTER_DB_TO_MODULE_ID: Record<string, string> = {
   '11111111-1111-4111-8111-111111111111': 'kenta',
+  '11111111-1111-4111-8111-111111111112': 'shoichi',
 };
 
 const CHARACTER_MODULE_TO_DB_ID = Object.fromEntries(
@@ -7,6 +8,7 @@ const CHARACTER_MODULE_TO_DB_ID = Object.fromEntries(
 );
 
 const CARD_DB_TO_MODULE_ID: Record<string, string> = {
+  // 健太
   '22222222-1111-4111-8111-111111111111': 'card01_convenience',
   '22222222-1111-4111-8111-111111111112': 'card02_warehouse',
   '22222222-1111-4111-8111-111111111113': 'card03_youtuber',
@@ -19,6 +21,19 @@ const CARD_DB_TO_MODULE_ID: Record<string, string> = {
   '22222222-1111-4111-8111-111111111120': 'card10_rockstar',
   '22222222-1111-4111-8111-111111111121': 'card11_demon_king',
   '22222222-1111-4111-8111-111111111122': 'card12_hero',
+  // 昭一
+  '33333333-1111-4111-8111-333333333331': 'card01_fish',
+  '33333333-1111-4111-8111-333333333332': 'card02_train',
+  '33333333-1111-4111-8111-333333333333': 'card03_host',
+  '33333333-1111-4111-8111-333333333334': 'card04_rehire',
+  '33333333-1111-4111-8111-333333333335': 'card05_bear',
+  '33333333-1111-4111-8111-333333333336': 'card06_ikemen',
+  '33333333-1111-4111-8111-333333333337': 'card07_beach_bar',
+  '33333333-1111-4111-8111-333333333338': 'card08_revenge_boss',
+  '33333333-1111-4111-8111-333333333339': 'card09_youth_love',
+  '33333333-1111-4111-8111-333333333340': 'card10_happy_family',
+  '33333333-1111-4111-8111-333333333341': 'card11_pilot',
+  '33333333-1111-4111-8111-333333333342': 'card12_investor',
 };
 
 const CARD_MODULE_TO_DB_ID = Object.fromEntries(

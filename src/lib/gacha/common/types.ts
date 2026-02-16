@@ -17,9 +17,12 @@ export interface CountdownPattern {
 
 export type StandbyColor = 'black' | 'white' | 'yellow' | 'red' | 'blue' | 'rainbow';
 
+// v2: マルチキャラクターID
+export type CharacterId = 'kenta' | 'shoichi';
+
 export interface GachaResult {
   isLoss: boolean;
-  characterId: string;
+  characterId: CharacterId;
   cardId: string;
   rarity: Rarity;
   starRating: number;
@@ -52,7 +55,7 @@ export interface TitleVideoSelection {
 }
 
 export interface CharacterModule {
-  characterId: string;
+  characterId: CharacterId;
   characterName: string;
   cards: CardDefinition[];
   preScenePatterns: PreScenePattern[];

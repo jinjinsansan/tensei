@@ -2,8 +2,8 @@ import Link from "next/link";
 
 const cards = [
   {
-    title: "キャラクター管理",
-    description: "新しいキャラクターの追加や期待度の調整を行います。",
+    title: "キャラクター別設定",
+    description: "キャラクターごとの出現比率・RTP・どんでん返し率を管理します。",
     href: "/admin/characters",
   },
   {
@@ -12,9 +12,14 @@ const cards = [
     href: "/admin/cards",
   },
   {
-    title: "ガチャ設定",
-    description: "RTP・リバーサル率・キャラクター比率を編集します。",
-    href: "/admin/settings",
+    title: "共通ハズレ率設定",
+    description: "全キャラクター共通のLOSS率を編集します。",
+    href: "/admin/global",
+  },
+  {
+    title: "演出確率設定",
+    description: "STANDBY色・カウントダウン・タイトルヒント率を調整します。",
+    href: "/admin/presentation",
   },
   {
     title: "カード在庫 / シリアル検索",

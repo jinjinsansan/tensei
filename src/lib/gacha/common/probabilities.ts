@@ -1,10 +1,10 @@
 import type { Grade, Rarity, StandbyColor } from '@/lib/gacha/common/types';
 
-type ProbabilityRecord<T extends string> = Record<T, number>;
+export type ProbabilityRecord<T extends string> = Record<T, number>;
 
 const DEFAULT_TOTAL = 100;
 
-function pickByProbability<T extends string>(table: ProbabilityRecord<T>): T {
+export function pickByProbability<T extends string>(table: ProbabilityRecord<T>): T {
   const entries = Object.entries(table) as [T, number][];
   const total = entries.reduce((sum, [, weight]) => sum + weight, 0) || DEFAULT_TOTAL;
   const roll = Math.random() * total;
@@ -36,12 +36,20 @@ export const GRADE_PROBABILITIES: Record<Rarity, ProbabilityRecord<Grade>> = {
   LR: { E1: 3, E2: 7, E3: 10, E4: 35, E5: 45 },
 };
 
-export function selectStandbyColor(rarity: Rarity): StandbyColor {
-  return pickByProbability(STANDBY_PROBABILITIES[rarity]);
+export function selectStandbyColor(
+  rarity: Rarity,
+  override?: Record<Rarity, ProbabilityRecord<StandbyColor>>,
+): StandbyColor {
+  const table = override ?? STANDBY_PROBABILITIES;
+  return pickByProbability(table[rarity]);
 }
 
-export function selectCountdownGrade(rarity: Rarity): Grade {
-  return pickByProbability(GRADE_PROBABILITIES[rarity]);
+export function selectCountdownGrade(
+  rarity: Rarity,
+  override?: Record<Rarity, ProbabilityRecord<Grade>>,
+): Grade {
+  const table = override ?? GRADE_PROBABILITIES;
+  return pickByProbability(table[rarity]);
 }
 
 export function selectByWeights(weights: number[], offset = 0): number {

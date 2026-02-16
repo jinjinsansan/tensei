@@ -393,6 +393,79 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['gacha_config']['Row']>;
         Relationships: [];
       };
+      gacha_characters: {
+        Row: {
+          id: string;
+          character_id: string;
+          character_name: string;
+          is_active: boolean;
+          weight: number;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          character_id: string;
+          character_name: string;
+          is_active?: boolean;
+          weight?: number;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['gacha_characters']['Row']>;
+        Relationships: [];
+      };
+      gacha_rtp_config: {
+        Row: {
+          id: string;
+          character_id: string;
+          loss_rate: number;
+          rarity_n: number;
+          rarity_r: number;
+          rarity_sr: number;
+          rarity_ssr: number;
+          rarity_ur: number;
+          rarity_lr: number;
+          donden_rate: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          character_id: string;
+          loss_rate?: number;
+          rarity_n?: number;
+          rarity_r?: number;
+          rarity_sr?: number;
+          rarity_ssr?: number;
+          rarity_ur?: number;
+          rarity_lr?: number;
+          donden_rate?: number;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['gacha_rtp_config']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'gacha_rtp_config_character_id_fkey';
+            columns: ['character_id'];
+            referencedRelation: 'gacha_characters';
+            referencedColumns: ['character_id'];
+          }
+        ];
+      };
+      gacha_global_config: {
+        Row: {
+          id: string;
+          loss_rate: number;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          loss_rate?: number;
+          updated_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['gacha_global_config']['Row']>;
+        Relationships: [];
+      };
       gacha_history: {
         Row: {
           id: string;

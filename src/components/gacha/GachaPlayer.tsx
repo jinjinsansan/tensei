@@ -10,11 +10,11 @@ import { CardReveal } from '@/components/gacha/CardReveal';
 import { claimGachaResult } from '@/lib/api/gacha';
 
 import {
-  chooseCountdownPattern,
+  chooseCountdownPatternWithProbabilities,
   getCountdownVideoPath,
   type CountdownSelection,
 } from '@/lib/gacha/common/countdown-selector';
-import { chooseStandby, type StandbySelection } from '@/lib/gacha/common/standby-selector';
+import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
 import { chooseTitleVideo } from '@/lib/gacha/common/title-video-selector';
 import type {
   CdColor,
@@ -34,6 +34,7 @@ import {
 } from '@/lib/gacha/haptics';
 import { playCountdownHit, primeCountdownHit } from '@/lib/gacha/sfx';
 import { useSignedAssetResolver } from '@/lib/gacha/client-assets';
+import { usePresentationConfig } from '@/lib/gacha/client-presentation';
 
 type Props = {
   gachaResult: GachaResult | null;
@@ -57,7 +58,6 @@ const PHASE_META: Record<GachaPhase, { subtitle: string; title: string }> = {
 };
 
 const PRE_SCENE_PATTERNS = ['A', 'B', 'C', 'D'] as const;
-const AUTO_PHASES: GachaPhase[] = ['PUCHUN', 'TITLE_VIDEO', 'CHANCE_SCENE', 'MAIN_SCENE', 'DONDEN_SCENE'];
 
 function isIOS() {
   if (typeof navigator === 'undefined') return false;
@@ -126,6 +126,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
 
+  const presentation = usePresentationConfig();
+
   const character = useMemo(() => getCharacter(gachaResult.characterId) ?? null, [gachaResult.characterId]);
 
   const hintRarity: Rarity | null = useMemo(() => {
@@ -138,8 +140,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const standbySelection: StandbySelection | null = useMemo(() => {
     if (!hintRarity) return null;
-    return chooseStandby(hintRarity);
-  }, [hintRarity]);
+    return chooseStandbyWithProbabilities(hintRarity, presentation.standby);
+  }, [hintRarity, presentation]);
 
   const standbyVideo = standbySelection?.videoPath ?? buildCommonAssetPath('standby', 'blackstandby.mp4');
   const lossCardImage = gachaResult.lossCardImagePath ?? buildCommonAssetPath('loss_card.png');
@@ -147,8 +149,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const countdownSelection: CountdownSelection | null = useMemo(() => {
     if (!hintRarity) return null;
-    return chooseCountdownPattern(hintRarity);
-  }, [hintRarity]);
+    return chooseCountdownPatternWithProbabilities(hintRarity, presentation.countdown);
+  }, [hintRarity, presentation]);
 
   const countdownVideos = useMemo(
     () => countdownSelection?.pattern.steps.map((step) => getCountdownVideoPath(step)) ?? [],
@@ -163,8 +165,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       gachaResult.isDonden && gachaResult.dondenFromCardId
         ? gachaResult.dondenFromCardId
         : gachaResult.cardId;
-    return chooseTitleVideo(realCardId, availableCardIds);
-  }, [character, gachaResult]);
+    return chooseTitleVideo(realCardId, availableCardIds, presentation.titleHintRate);
+  }, [character, gachaResult, presentation.titleHintRate]);
 
   const titleVideoSrc = useMemo(() => {
     if (!character || !titleSelection) return null;
@@ -474,7 +476,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     dondenIndex,
   });
 
-  const shouldAutoAdvanceOnEnd = AUTO_PHASES.includes(phase);
   const signedPhaseVideoSrc = resolveAssetSrc(phaseVideo?.src ?? null);
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
   const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
@@ -524,8 +525,15 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     );
   }
 
+  const phaseMeta = PHASE_META[phase];
+
   return (
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
+    <div
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-black"
+      aria-label={phaseMeta ? `${phaseMeta.subtitle} ${phaseMeta.title}` : undefined}
+      data-phase={phase}
+      data-phase-details={details ?? undefined}
+    >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
         {/* カウントダウン用の全動画をオフスクリーンで preload して、iPhone 実機でのラグを軽減 */}
         <div className="pointer-events-none absolute -z-10 h-0 w-0 overflow-hidden">

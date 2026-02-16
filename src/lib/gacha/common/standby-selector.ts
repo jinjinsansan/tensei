@@ -1,5 +1,5 @@
 import { buildCommonAssetPath } from '@/lib/gacha/assets';
-import { selectStandbyColor } from '@/lib/gacha/common/probabilities';
+import { selectStandbyColor, type ProbabilityRecord } from '@/lib/gacha/common/probabilities';
 import type { Rarity, StandbyColor } from '@/lib/gacha/common/types';
 
 const STANDBY_VIDEO_PATHS: Record<StandbyColor, string> = {
@@ -18,6 +18,17 @@ export type StandbySelection = {
 
 export function chooseStandby(rarity: Rarity): StandbySelection {
   const color = selectStandbyColor(rarity);
+  return {
+    color,
+    videoPath: getStandbyVideoPath(color),
+  };
+}
+
+export function chooseStandbyWithProbabilities(
+  rarity: Rarity,
+  table: Record<Rarity, ProbabilityRecord<StandbyColor>>,
+): StandbySelection {
+  const color = selectStandbyColor(rarity, table);
   return {
     color,
     videoPath: getStandbyVideoPath(color),
