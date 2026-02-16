@@ -264,7 +264,7 @@ export function HowToPlayScreen() {
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-purple-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                 <Image
-                  src="/shoichi_cards/shoichi_card01_fish.png"
+                  src="/shoichi_cards/shoichi_card06_ikemen.png"
                   alt="正一のアイコン"
                   fill
                   sizes="64px"
