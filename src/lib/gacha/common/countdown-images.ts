@@ -25,38 +25,30 @@ export interface CountdownEffect {
   duration: number;
 }
 
+const FLOAT_IN_BASE: Omit<CountdownEffect, 'glow'> = {
+  scale: [0.45, 1.05, 1],
+  flashIntensity: 0.25,
+  shake: false,
+  particles: false,
+  duration: 0.5,
+};
+
 export const COUNTDOWN_EFFECTS: Record<CdColor, CountdownEffect> = {
   green: {
-    scale: [0.8, 1],
-    glow: 'rgba(0, 255, 0, 0.3)',
-    flashIntensity: 0.1,
-    shake: false,
-    particles: false,
-    duration: 0.3,
+    ...FLOAT_IN_BASE,
+    glow: 'rgba(120, 255, 180, 0.45)',
   },
   blue: {
-    scale: [0.7, 1.1, 1],
-    glow: 'rgba(0, 150, 255, 0.5)',
-    flashIntensity: 0.2,
-    shake: false,
-    particles: false,
-    duration: 0.4,
+    ...FLOAT_IN_BASE,
+    glow: 'rgba(120, 200, 255, 0.55)',
   },
   red: {
-    scale: [0.5, 1.2, 1],
-    glow: 'rgba(255, 50, 50, 0.7)',
-    flashIntensity: 0.3,
-    shake: true,
-    particles: false,
-    duration: 0.45,
+    ...FLOAT_IN_BASE,
+    glow: 'rgba(255, 150, 150, 0.65)',
   },
   rainbow: {
-    scale: [0.3, 1.3, 1],
-    glow: 'rgba(255, 215, 0, 0.9)',
-    flashIntensity: 0.5,
-    shake: true,
-    particles: true,
-    duration: 0.5,
+    ...FLOAT_IN_BASE,
+    glow: 'rgba(255, 230, 150, 0.75)',
   },
 };
 
