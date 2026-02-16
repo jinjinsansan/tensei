@@ -32,7 +32,6 @@ import {
   triggerDondenVibration,
   triggerPuchunVibration,
 } from '@/lib/gacha/haptics';
-import { playCountdownHit, primeCountdownHit } from '@/lib/gacha/sfx';
 import { useSignedAssetResolver } from '@/lib/gacha/client-assets';
 import { usePresentationConfig } from '@/lib/gacha/client-presentation';
 
@@ -324,8 +323,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       countdownColorRef.current = null;
       return;
     }
-    // iOS 実機での遅延を減らすため、ここで事前に Audio 要素だけ用意しておく
-    primeCountdownHit();
     const nextStep = countdownSelection?.pattern.steps[countdownIndex];
     if (!nextStep) return;
     const prevColor = countdownColorRef.current;
@@ -445,12 +442,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const handleAdvance = useCallback(() => {
     if (isControlsLocked(phase, videoReady)) return;
-    
-    // COUNTDOWNフェーズでは効果音を即座に再生（動画のonPlayを待たない）
-    if (phase === 'COUNTDOWN') {
-      playCountdownHit();
-    }
-    
     setVideoReady(false);
     progressPhase();
   }, [phase, videoReady, progressPhase]);
