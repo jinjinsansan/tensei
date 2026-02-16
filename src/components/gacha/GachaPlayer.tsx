@@ -58,11 +58,6 @@ const PHASE_META: Record<GachaPhase, { subtitle: string; title: string }> = {
 
 const PRE_SCENE_PATTERNS = ['A', 'B', 'C', 'D'] as const;
 
-function isIOS() {
-  if (typeof navigator === 'undefined') return false;
-  return /iP(hone|od|ad)/.test(navigator.userAgent);
-}
-
 function isControlsLocked(phase: GachaPhase, videoReady: boolean) {
   // CARD_REVEAL 以外のフェーズでは、動画の再生開始まではボタンをロックする
   return phase !== 'CARD_REVEAL' && !videoReady;
