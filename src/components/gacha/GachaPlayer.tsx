@@ -11,10 +11,7 @@ import { CountdownImage } from '@/components/gacha/effects/CountdownImage';
 import { CountdownFlash } from '@/components/gacha/effects/CountdownFlash';
 import { claimGachaResult } from '@/lib/api/gacha';
 
-import {
-  chooseCountdownPatternWithProbabilities,
-  type CountdownSelection,
-} from '@/lib/gacha/common/countdown-selector';
+import { chooseCountdownPatternWithProbabilities, type CountdownSelection } from '@/lib/gacha/common/countdown-selector';
 import { getCountdownImagePath, COUNTDOWN_EFFECTS } from '@/lib/gacha/common/countdown-images';
 import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
 import { chooseTitleVideo } from '@/lib/gacha/common/title-video-selector';
@@ -130,7 +127,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastPlayedVideoKeyRef = useRef<string | null>(null);
   const countdownImageCacheRef = useRef<HTMLImageElement[]>([]);
-  const countdownInitialSoundRef = useRef(false);
   const countdownFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const triggerCountdownFlash = useCallback(() => {
@@ -366,7 +362,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   useEffect(() => {
     if (phase !== 'COUNTDOWN') {
       countdownColorRef.current = null;
-      countdownInitialSoundRef.current = false;
       return;
     }
     // iOS 実機での遅延を減らすため、ここで事前に Audio 要素だけ用意しておく
@@ -380,14 +375,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     // 静止画なので即座にvideoReadyをtrueに設定（ボタン有効化）
     setVideoReady(true);
   }, [phase, countdownIndex, countdownSteps]);
-
-  useEffect(() => {
-    if (phase !== 'COUNTDOWN') return;
-    if (countdownInitialSoundRef.current) return;
-    countdownInitialSoundRef.current = true;
-    playCountdownHit();
-    triggerCountdownFlash();
-  }, [phase, triggerCountdownFlash]);
 
   useEffect(() => {
     if (prevPhaseRef.current === phase) return;
@@ -502,15 +489,15 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const handleAdvance = useCallback(() => {
     if (isControlsLocked(phase, videoReady)) return;
     
-    // COUNTDOWNフェーズでは効果音+フラッシュを即座に実行
-    if (phase === 'COUNTDOWN') {
-      playCountdownHit(); // 効果音を即座に再生
+    // COUNTDOWN中およびSTANDBY→COUNTDOWN移行時に効果音＋フラッシュ
+    if (phase === 'COUNTDOWN' || (phase === 'STANDBY' && countdownTotal > 0)) {
+      playCountdownHit();
       triggerCountdownFlash();
     }
     
     setVideoReady(false);
     progressPhase();
-  }, [phase, videoReady, progressPhase, triggerCountdownFlash]);
+  }, [phase, videoReady, progressPhase, triggerCountdownFlash, countdownTotal]);
 
   const handleSkip = useCallback(() => {
     if (phase === 'CARD_REVEAL') return;

@@ -22,15 +22,20 @@ export function playCountdownHit() {
     console.log('[SFX] Skipping sound (too soon after previous play)');
     return;
   }
-  
-  lastPlayTime = now;
-  
+
   const audio = getCountdownAudio();
   if (!audio) {
     console.warn('[SFX] audio is null');
     return;
   }
-  void audio.play().catch(() => undefined);
+  void audio
+    .play()
+    .then(() => {
+      lastPlayTime = now;
+    })
+    .catch((err) => {
+      console.warn('[SFX] audio play failed', err);
+    });
 }
 
 // 事前に Audio 要素だけ作っておきたい場合に使用
