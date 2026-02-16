@@ -168,7 +168,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!countdownImageSources.length) return;
-    const controller = new AbortController();
     const loadPromises = countdownImageSources.map((src) => {
       const img = new window.Image();
       img.src = src;
@@ -186,7 +185,6 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     void Promise.all(loadPromises);
     return () => {
       countdownImageCacheRef.current = [];
-      controller.abort();
     };
   }, [countdownImageSources]);
 
