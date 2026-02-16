@@ -125,6 +125,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const hasClaimedRef = useRef(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
+  const lastPlayedVideoKeyRef = useRef<string | null>(null);
 
   const presentation = usePresentationConfig();
 
@@ -491,6 +492,10 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     .map((src) => resolveAssetSrc(src) ?? src)
     .filter((src): src is string => Boolean(src));
   const handlePhaseVideoPlay = useCallback(() => {
+    // 同じ動画で既に再生済みの場合は何もしない（onPlayの重複発火を防ぐ）
+    if (lastPlayedVideoKeyRef.current === phaseVideoKey) return;
+    lastPlayedVideoKeyRef.current = phaseVideoKey;
+    
     setVideoReady(true);
     if (phase === 'COUNTDOWN') {
       // iPhone 実機では映像描画がわずかに遅れるため、音をほんの少し遅らせて同期感を高める
@@ -502,7 +507,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
         playCountdownHit();
       }
     }
-  }, [phase]);
+  }, [phase, phaseVideoKey]);
 
   // CARD_REVEAL フェーズになったら CardReveal を表示
   if (phase === 'CARD_REVEAL') {
