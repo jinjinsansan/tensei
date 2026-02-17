@@ -319,7 +319,7 @@ export function CollectionList() {
           <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">COLLECTION</p>
           <p className="text-xs text-zinc-400">表示中 {filtered.length} 枚</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4">
           {filtered.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-white/15 bg-black/30 px-6 py-10 text-center text-sm text-zinc-400">
               該当するカードがありません
