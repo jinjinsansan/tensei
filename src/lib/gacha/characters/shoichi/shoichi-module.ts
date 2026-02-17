@@ -15,7 +15,7 @@ const CHANCE_SCENES = ['A', 'B', 'C', 'D'].map((patternId) => ({ patternId }));
 
 const SHOICHI_MODULE: CharacterModule = {
   characterId: 'shoichi',
-  characterName: '昭一',
+  characterName: '正一',
   cards: SHOICHI_CARDS,
   preScenePatterns: PRE_SCENE_PATTERNS,
   chanceScenes: CHANCE_SCENES,

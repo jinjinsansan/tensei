@@ -1,7 +1,7 @@
--- ⚠️ 緊急修正: 昭一キャラクターを有効化する
+-- ⚠️ 緊急修正: 正一キャラクターを有効化する
 -- このSQLをSupabase SQL Editorで実行してください
 
--- 1. 昭一を有効化
+-- 1. 正一を有効化
 UPDATE gacha_characters
 SET 
   is_active = true,
@@ -23,7 +23,7 @@ ORDER BY character_id;
 -- character_id | character_name | is_active | weight
 -- -------------|----------------|-----------|-------
 -- kenta        | 健太           | true      | 50-60
--- shoichi      | 昭一           | true      | 50
+-- shoichi      | 正一           | true      | 50
 
 -- 3. RTP設定も確認
 SELECT 
@@ -33,7 +33,7 @@ SELECT
 FROM gacha_rtp_config
 ORDER BY character_id;
 
--- 4. （オプション）健太と昭一の比率を50:50にする場合
+-- 4. （オプション）健太と正一の比率を50:50にする場合
 UPDATE gacha_characters
 SET weight = 50, updated_at = now()
 WHERE character_id IN ('kenta', 'shoichi');

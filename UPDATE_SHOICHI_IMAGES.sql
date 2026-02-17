@@ -1,4 +1,4 @@
--- 昭一のカード画像URLを正しいパスに更新する
+-- 正一のカード画像URLを正しいパスに更新する
 
 UPDATE public.cards 
 SET card_image_url = '/shoichi_cards/shoichi_card01_fish.png'

@@ -34,7 +34,7 @@ create table if not exists public.gacha_global_config (
 insert into public.gacha_characters (character_id, character_name, is_active, weight)
 values
   ('kenta', '健太', true, 50),
-  ('shoichi', '昭一', true, 50)
+  ('shoichi', '正一', true, 50)
 on conflict (character_id) do update
 set character_name = excluded.character_name,
     -- is_active と weight は既存値を保持（初回のみ適用）

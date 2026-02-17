@@ -107,14 +107,14 @@ export function HowToPlayScreen() {
             </div>
           </div>
 
-          {/* 昭一編の画像 */}
+          {/* 正一編の画像 */}
           <div className="rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-950/40 to-transparent p-4">
-            <p className="mb-3 font-display text-lg text-purple-300">昭一編</p>
+            <p className="mb-3 font-display text-lg text-purple-300">正一編</p>
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
                   src="/shoichi_cards/shoichi_card01_fish.png"
-                  alt="昭一カード1"
+                  alt="正一カード1"
                   width={120}
                   height={160}
                   className="h-full w-full object-cover"
@@ -123,7 +123,7 @@ export function HowToPlayScreen() {
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
                   src="/shoichi_cards/shoichi_card06_ikemen.png"
-                  alt="昭一カード2"
+                  alt="正一カード2"
                   width={120}
                   height={160}
                   className="h-full w-full object-cover"
@@ -132,7 +132,7 @@ export function HowToPlayScreen() {
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
                   src="/shoichi_cards/shoichi_card12_investor.png"
-                  alt="昭一カード3"
+                  alt="正一カード3"
                   width={120}
                   height={160}
                   className="h-full w-full object-cover"

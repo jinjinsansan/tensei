@@ -11,7 +11,7 @@ type GachaRtpRow = Tables<'gacha_rtp_config'>;
 
 const BUILTIN_CHARACTERS: { id: string; name: string }[] = [
   { id: 'kenta', name: '健太' },
-  { id: 'shoichi', name: '昭一' },
+  { id: 'shoichi', name: '正一' },
 ];
 
 async function updateCharacterConfig(formData: FormData) {
