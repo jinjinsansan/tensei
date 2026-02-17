@@ -117,7 +117,7 @@ export function VerifyOwnershipClient() {
       <div className="space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neon-blue text-lg font-bold text-white">
-            🔍
+            1
           </div>
           <h2 className="font-display text-2xl text-white">シリアルナンバー検索</h2>
         </div>
@@ -128,18 +128,18 @@ export function VerifyOwnershipClient() {
 
         <form onSubmit={handleSearch} className="mt-6 space-y-4">
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-white">
-              <span className="text-xs uppercase tracking-[0.35em] text-white/60">CARD</span>
+            <label className="block text-sm font-medium">
+              <span className="text-xs uppercase tracking-[0.35em] text-neon-purple">CARD</span>
             </label>
             <select
               value={selectedCardId}
               onChange={(e) => setSelectedCardId(e.target.value)}
-              className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white focus:border-neon-blue focus:outline-none"
+              className="w-full rounded-2xl border border-neon-purple/30 bg-gradient-to-br from-purple-950/40 to-transparent px-4 py-3 text-sm text-white focus:border-neon-purple focus:outline-none"
               required
             >
               <option value="">カードを選択してください</option>
               {cards.map((card) => (
-                <option key={card.id} value={card.id}>
+                <option key={card.id} value={card.id} className="bg-black">
                   {card.person_name ? `${card.person_name} - ` : ""}
                   {card.name}
                 </option>
@@ -148,8 +148,8 @@ export function VerifyOwnershipClient() {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-white">
-              <span className="text-xs uppercase tracking-[0.35em] text-white/60">SERIAL NUMBER</span>
+            <label className="block text-sm font-medium">
+              <span className="text-xs uppercase tracking-[0.35em] text-neon-blue">SERIAL NUMBER</span>
             </label>
             <input
               type="number"
@@ -157,7 +157,7 @@ export function VerifyOwnershipClient() {
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
               placeholder="001"
-              className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-neon-blue focus:outline-none"
+              className="w-full rounded-2xl border border-neon-blue/30 bg-gradient-to-br from-blue-950/40 to-transparent px-4 py-3 text-sm text-white placeholder:text-white/40 focus:border-neon-blue focus:outline-none"
               required
             />
           </div>
@@ -184,8 +184,8 @@ export function VerifyOwnershipClient() {
           {result.found ? (
             <>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-lg font-bold text-white">
-                  ✓
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-lg font-bold text-white">
+                  2
                 </div>
                 <h2 className="font-display text-2xl text-white">登録カード発見</h2>
               </div>
@@ -232,19 +232,19 @@ export function VerifyOwnershipClient() {
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">Serial</p>
-                      <p className="mt-1 font-display text-xl text-white">
+                    <div className="rounded-2xl border border-neon-purple/30 bg-gradient-to-br from-purple-950/40 to-transparent p-4">
+                      <p className="text-xs uppercase tracking-[0.35em] text-neon-purple/80">Serial</p>
+                      <p className="mt-1 font-display text-xl text-neon-purple">
                         #{String(result.serial_number).padStart(3, "0")}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">獲得日時</p>
-                      <p className="mt-1 text-sm text-white">{formattedObtainedAt}</p>
+                    <div className="rounded-2xl border border-neon-blue/30 bg-gradient-to-br from-blue-950/40 to-transparent p-4">
+                      <p className="text-xs uppercase tracking-[0.35em] text-neon-blue/80">獲得日時</p>
+                      <p className="mt-1 text-sm text-neon-blue">{formattedObtainedAt}</p>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+                  <div className="rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-950/40 to-transparent p-4">
                     <p className="text-xs uppercase tracking-[0.35em] text-emerald-300">OWNER</p>
                     {result.is_own ? (
                       <p className="mt-2 font-display text-xl text-emerald-200">
@@ -272,13 +272,13 @@ export function VerifyOwnershipClient() {
           ) : (
             <>
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-600 text-lg font-bold text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-red-700 text-lg font-bold text-white">
                   ✗
                 </div>
                 <h2 className="font-display text-2xl text-white">カードが見つかりません</h2>
               </div>
 
-              <div className="rounded-2xl border border-dashed border-white/20 bg-white/5 px-6 py-8 text-center">
+              <div className="rounded-2xl border border-dashed border-red-400/30 bg-gradient-to-br from-red-950/40 to-transparent px-6 py-8 text-center">
                 <p className="text-sm text-zinc-300">
                   指定されたカードとシリアルナンバーの組み合わせは、データベースに登録されていません。
                 </p>
@@ -295,20 +295,20 @@ export function VerifyOwnershipClient() {
       <div className="space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-neon-yellow text-lg font-bold text-black">
-            💡
+            2
           </div>
           <h2 className="font-display text-2xl text-white">この機能について</h2>
         </div>
 
         <div className="space-y-3 text-sm leading-relaxed text-zinc-300">
           <p>
-            カード画像は誰でも保存・複製できますが、<strong className="text-white">データベースに登録された所有者だけが本物</strong>です。
+            カード画像は誰でも保存・複製できますが、<strong className="text-neon-yellow">データベースに登録された所有者だけが本物</strong>です。
           </p>
           <p>
             この検索機能を使うことで、画像を見せられたときに「本当にその人が所有しているのか」を確認できます。
           </p>
-          <p className="text-xs text-zinc-500">
-            ※ 所有者情報はプライバシー保護のため、IDの一部のみ表示されます。ログイン中のユーザーが所有者の場合のみ「あなたが所有しています」と表示されます。
+          <p className="rounded-2xl border border-neon-blue/20 bg-gradient-to-br from-blue-950/20 to-transparent px-4 py-3 text-xs text-zinc-400">
+            💡 所有者情報はプライバシー保護のため、IDの一部のみ表示されます。ログイン中のユーザーが所有者の場合のみ「あなたが所有しています」と表示されます。
           </p>
         </div>
       </div>

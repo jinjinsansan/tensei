@@ -38,9 +38,9 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString("ja-JP", { month: "short", day: "numeric" });
 }
 
-const SECTION_CARD = "space-y-4 rounded-3xl border border-white/12 bg-black/20 p-6";
+const SECTION_CARD = "space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset";
 const LINK_CARD =
-  "group relative overflow-hidden rounded-3xl border border-white/15 bg-white/5 p-5 transition hover:border-white/40 hover:bg-white/10";
+  "group relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-white/5 to-transparent p-5 transition hover:border-neon-purple/50 hover:from-neon-purple/10 hover:to-transparent";
 
 type MenuScreenProps = {
   snapshot: MainAppSnapshot;
@@ -60,20 +60,20 @@ export function MenuScreen({ snapshot }: MenuScreenProps) {
           <p className="text-sm text-zinc-400">来世ガチャの各セクションへ一括アクセスする管理ホールです。</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Total Tickets</p>
-            <p className="font-display text-3xl text-white">{totalTickets}</p>
-            <p className="text-xs text-white/70">FREE {freeTicket}</p>
+          <div className="rounded-2xl border border-neon-pink/30 bg-gradient-to-br from-pink-950/40 to-transparent px-4 py-3">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-neon-pink/80">Total Tickets</p>
+            <p className="font-display text-3xl text-neon-pink">{totalTickets}</p>
+            <p className="text-xs text-zinc-400">FREE {freeTicket}</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Last Login</p>
-            <p className="font-display text-2xl text-white">{formatDate(snapshot.user?.lastLoginAt)}</p>
-            <p className="text-xs text-white/70">最終アクセス</p>
+          <div className="rounded-2xl border border-neon-blue/30 bg-gradient-to-br from-blue-950/40 to-transparent px-4 py-3">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-neon-blue/80">Last Login</p>
+            <p className="font-display text-2xl text-neon-blue">{formatDate(snapshot.user?.lastLoginAt)}</p>
+            <p className="text-xs text-zinc-400">最終アクセス</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Status</p>
-            <p className="font-display text-2xl text-white">ACTIVE</p>
-            <p className="text-xs text-white/70">アカウント有効</p>
+          <div className="rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-emerald-950/40 to-transparent px-4 py-3">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-emerald-400/80">Status</p>
+            <p className="font-display text-2xl text-emerald-300">ACTIVE</p>
+            <p className="text-xs text-zinc-400">アカウント有効</p>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function MenuScreen({ snapshot }: MenuScreenProps) {
               <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">{section.title}</p>
               <p className="text-sm text-zinc-400">関連メニューへのショートカット</p>
             </div>
-            <span className="rounded-full border border-white/15 px-3 py-1 text-[0.6rem] uppercase tracking-[0.35em] text-white/60">
+            <span className="rounded-full border border-neon-purple/30 bg-neon-purple/10 px-3 py-1 text-[0.6rem] uppercase tracking-[0.35em] text-neon-purple">
               {section.links.length} Links
             </span>
           </div>
@@ -98,7 +98,13 @@ export function MenuScreen({ snapshot }: MenuScreenProps) {
                     <p className="text-sm text-white/70">{link.description}</p>
                   </div>
                   {link.badge && (
-                    <span className="rounded-full border border-white/20 px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] text-white/80">
+                    <span className={`rounded-full border px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] ${
+                      link.badge === 'NEW' 
+                        ? 'border-neon-yellow/30 bg-neon-yellow/10 text-neon-yellow' 
+                        : link.badge === 'SOON'
+                        ? 'border-neon-blue/30 bg-neon-blue/10 text-neon-blue'
+                        : 'border-zinc-500/30 bg-zinc-500/10 text-zinc-400'
+                    }`}>
                       {link.badge}
                     </span>
                   )}
