@@ -131,21 +131,143 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
     [entry.id, selectedFriend],
   );
 
-  const handleDownload = useCallback(() => {
+  const handleDownload = useCallback(async () => {
     if (!resolvedImage) return;
     setDownloadState("pending");
+    
     try {
+      // Canvas で画像合成
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Canvas not supported");
+      }
+
+      // 画像を読み込み
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Image load failed"));
+        img.src = resolvedImage;
+      });
+
+      // Canvas サイズを設定（画像サイズに合わせる）
+      canvas.width = img.width;
+      canvas.height = img.height;
+
+      // 背景画像を描画
+      ctx.drawImage(img, 0, 0);
+
+      // 半透明の黒背景をカード下部に追加
+      const overlayHeight = Math.floor(img.height * 0.35);
+      const gradient = ctx.createLinearGradient(0, img.height - overlayHeight, 0, img.height);
+      gradient.addColorStop(0, "rgba(0, 0, 0, 0.5)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0.9)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, img.height - overlayHeight, img.width, overlayHeight);
+
+      // フォント設定
+      const fontSize = Math.floor(img.width / 20);
+      const smallFontSize = Math.floor(fontSize * 0.65);
+      const padding = Math.floor(img.width / 25);
+      
+      // レアリティバッジ（左上）
+      ctx.font = `bold ${smallFontSize}px sans-serif`;
+      ctx.fillStyle = "#fbbf24";
+      ctx.fillText(entry.rarity, padding, padding + smallFontSize);
+
+      // ★の数（右上）
+      if (stars) {
+        ctx.fillStyle = "#fbbf24";
+        const starsWidth = ctx.measureText(stars).width;
+        ctx.fillText(stars, img.width - starsWidth - padding, padding + smallFontSize);
+      }
+
+      // カード名（下部）
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(entry.cardName, padding, img.height - overlayHeight + fontSize + padding);
+
+      // 説明文（カード名の下）
+      if (entry.description) {
+        ctx.font = `${smallFontSize}px sans-serif`;
+        ctx.fillStyle = "#e5e5e5";
+        const maxWidth = img.width - padding * 2;
+        const words = entry.description.split("");
+        let line = "";
+        let y = img.height - overlayHeight + fontSize + padding + smallFontSize + padding / 2;
+        const lineHeight = smallFontSize * 1.4;
+        let lineCount = 0;
+        const maxLines = 3;
+
+        for (let i = 0; i < words.length; i++) {
+          const testLine = line + words[i];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth && line !== "") {
+            if (lineCount < maxLines - 1) {
+              ctx.fillText(line, padding, y);
+              line = words[i];
+              y += lineHeight;
+              lineCount++;
+            } else {
+              ctx.fillText(line + "...", padding, y);
+              break;
+            }
+          } else {
+            line = testLine;
+          }
+        }
+        if (lineCount < maxLines && line !== "") {
+          ctx.fillText(line, padding, y);
+        }
+      }
+
+      // シリアルナンバー（右下）
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.fillStyle = "#a78bfa";
+      const serialText = formattedSerial;
+      const serialWidth = ctx.measureText(serialText).width;
+      ctx.fillText(serialText, img.width - serialWidth - padding, img.height - padding);
+
+      // Canvas を Blob に変換
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error("Failed to create blob"));
+        }, "image/png");
+      });
+
+      // Web Share API が使える場合（主にモバイル）
+      if (navigator.share && navigator.canShare) {
+        const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: entry.cardName,
+            text: `${entry.cardName}を獲得しました！`,
+            files: [file],
+          });
+          setDownloadState("idle");
+          return;
+        }
+      }
+
+      // 通常のダウンロード
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = resolvedImage;
+      link.href = url;
       link.download = `${entry.cardName || "card"}.png`;
       document.body.appendChild(link);
       link.click();
       link.remove();
+      URL.revokeObjectURL(url);
       setDownloadState("idle");
-    } catch {
+    } catch (error) {
+      console.error("Download failed:", error);
       setDownloadState("error");
     }
-  }, [entry.cardName, resolvedImage]);
+  }, [entry.cardName, entry.rarity, entry.description, resolvedImage, stars, formattedSerial]);
 
   return (
     <div className="space-y-8">

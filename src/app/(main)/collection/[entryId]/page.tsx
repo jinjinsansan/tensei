@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 import { CollectionDetailClient } from "@/components/collection/collection-detail-client";
 import { getSessionWithSnapshot } from "@/lib/app/session";
@@ -13,6 +14,65 @@ type PageProps = {
     entryId: string;
   }>;
 };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { entryId } = await params;
+  const supabase = getServiceSupabase();
+  
+  try {
+    const context = await getSessionWithSnapshot(supabase).catch(() => null);
+    if (!context) {
+      return {
+        title: "カード詳細 | 来世ガチャ",
+      };
+    }
+
+    const entry = await fetchCollectionEntryById(supabase, context.user.id, entryId);
+    
+    if (!entry || !entry.cards) {
+      return {
+        title: "カード詳細 | 来世ガチャ",
+      };
+    }
+
+    const shareUrl = await buildShareUrl(entry.id);
+    const cardName = entry.cards.name;
+    const description = entry.cards.description ?? `${cardName}を獲得しました！`;
+    const imageUrl = entry.cards.image_url;
+    
+    // 画像の絶対URLを生成（OGPには絶対URLが必要）
+    const absoluteImageUrl = imageUrl ? await buildAbsoluteImageUrl(imageUrl) : null;
+
+    return {
+      title: `${cardName} | 来世ガチャ`,
+      description,
+      openGraph: {
+        title: `${cardName} | 来世ガチャ`,
+        description,
+        url: shareUrl,
+        images: absoluteImageUrl ? [
+          {
+            url: absoluteImageUrl,
+            width: 1200,
+            height: 630,
+            alt: cardName,
+          },
+        ] : [],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${cardName} | 来世ガチャ`,
+        description,
+        images: absoluteImageUrl ? [absoluteImageUrl] : [],
+      },
+    };
+  } catch {
+    return {
+      title: "カード詳細 | 来世ガチャ",
+    };
+  }
+}
 
 export default async function CollectionEntryPage({ params }: PageProps) {
   const { entryId } = await params;
@@ -76,4 +136,33 @@ async function buildShareUrl(entryId: string) {
   }
 
   return `/collection/${entryId}`;
+}
+
+async function buildAbsoluteImageUrl(imagePath: string | null): Promise<string | null> {
+  if (!imagePath) return null;
+  
+  // 既に絶対URLの場合はそのまま返す
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+    return imagePath;
+  }
+
+  // サイトのベースURLを取得
+  const env = getPublicEnv();
+  const explicitBase = env.NEXT_PUBLIC_SITE_URL ?? env.NEXT_PUBLIC_APP_URL ?? "";
+  const normalized = explicitBase ? explicitBase.replace(/\/$/, "") : "";
+  
+  if (normalized) {
+    return `${normalized}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
+  }
+
+  // ヘッダーから推測
+  const hdrs = await headers();
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
+  
+  if (host) {
+    return `${proto}://${host}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
+  }
+
+  return imagePath;
 }
