@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { fetchAuthedContext } from "@/lib/app/session";
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { emitCollectionEventToEdge } from "@/lib/cloudflare/collection-cache";
+import { buildCollectionEntryFromInventory } from "@/lib/collection/supabase";
+import { fetchCardById } from "@/lib/data/gacha";
 
 export async function POST(req: Request) {
   try {
@@ -46,9 +49,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "カードが見つからないか、あなたの所有ではありません" }, { status: 404 });
     }
 
+    // カード情報を取得
+    const card = await fetchCardById(supabase, inventoryRow.card_id);
+
+    // TODO: 送信者側キャッシュ削除用（将来実装）
+    // const { count: senderOtherCopies } = await supabase
+    //   .from("card_inventory")
+    //   .select("id", { count: "exact", head: true })
+    //   .eq("app_user_id", fromUserId)
+    //   .eq("card_id", inventoryRow.card_id)
+    //   .neq("id", cardInventoryId);
+
+    // 受信者が既にこのカードを持っているかチェック
+    const { count: receiverExistingCopies } = await supabase
+      .from("card_inventory")
+      .select("id", { count: "exact", head: true })
+      .eq("app_user_id", toUserId)
+      .eq("card_id", inventoryRow.card_id);
+
     const { error: updateError } = await supabase
       .from("card_inventory")
-      .update({ app_user_id: toUserId })
+      .update({ app_user_id: toUserId, obtained_at: new Date().toISOString() })
       .eq("id", cardInventoryId)
       .eq("app_user_id", fromUserId);
 
@@ -64,6 +85,31 @@ export async function POST(req: Request) {
 
     if (transferError) {
       throw new Error(transferError.message);
+    }
+
+    // TODO: 送信者のキャッシュからカードを削除する処理
+    // Cloudflare Worker側で削除イベント（delete event）のサポートが必要
+    // 実装時は senderOtherCopies を使って distinctOwnedDelta を計算
+    // distinctOwnedDelta: 他のコピーがなければ -1、あれば 0
+    
+    // 受信者のキャッシュを更新（カードを追加）
+    const { data: updatedInventory } = await supabase
+      .from("card_inventory")
+      .select("*")
+      .eq("id", cardInventoryId)
+      .single();
+
+    if (updatedInventory) {
+      const entry = buildCollectionEntryFromInventory(updatedInventory, card);
+      // distinctOwnedDelta: 既に持っていれば 0、新規なら +1
+      const receiverDistinctDelta = (receiverExistingCopies ?? 0) > 0 ? 0 : 1;
+      
+      // 受信者側にカードを追加
+      void emitCollectionEventToEdge(toUserId, {
+        entry,
+        totalOwnedDelta: 1,
+        distinctOwnedDelta: receiverDistinctDelta,
+      });
     }
 
     return NextResponse.json({ ok: true });
