@@ -8,6 +8,7 @@ import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 
 
 type CollectionItem = {
+  id: string;
   card_id: string;
   serial_number: number;
   obtained_at: string | null;
@@ -347,8 +348,8 @@ export function CollectionList() {
 
               return (
                 <Link
-                  key={`${item.card_id}-${item.serial_number}`}
-                  href={`/collection/${item.card_id}`}
+                  key={item.id}
+                  href={`/collection/${item.id}`}
                   className="group relative overflow-hidden rounded-3xl border border-white/12 bg-black/40 p-4 shadow-panel-inset transition hover:border-white/40"
                 >
                   <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${rarityGradient} opacity-70`} />

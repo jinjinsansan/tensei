@@ -42,6 +42,43 @@ export async function fetchCollectionSnapshot(
   };
 }
 
+export async function fetchCollectionEntryById(
+  client: DbClient,
+  userId: string,
+  entryId: string,
+): Promise<CollectionEntry | null> {
+  const { data, error } = await client
+    .from('card_inventory')
+    .select(
+      `id, card_id, serial_number, obtained_at,
+       cards:card_inventory_card_id_fkey (
+         id,
+         card_name,
+         rarity,
+         star_level,
+         description,
+         card_image_url,
+         max_supply,
+         current_supply,
+         person_name,
+         card_style
+       )`,
+    )
+    .eq('id', entryId)
+    .eq('app_user_id', userId)
+    .maybeSingle();
+
+  if (error && error.code !== 'PGRST116') {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return mapInventoryRowToEntry(data as InventoryRow);
+}
+
 export async function hasUserCollectedCard(
   client: DbClient,
   userId: string,
