@@ -76,6 +76,7 @@ export async function POST(request: Request) {
 
       const entry = buildCollectionEntryFromInventory(inventoryRow, card);
       void emitCollectionEventToEdge(user.id, {
+        type: 'add',
         entry,
         totalOwnedDelta: 1,
         distinctOwnedDelta: alreadyOwnedBeforeAward ? 0 : 1,

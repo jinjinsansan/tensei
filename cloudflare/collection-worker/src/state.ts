@@ -9,7 +9,7 @@ export class CollectionState {
 
   constructor(private readonly state: DurableObjectState) {
     this.state.blockConcurrencyWhile(async () => {
-      this.snapshot = await this.state.storage.get<CollectionSnapshot>('snapshot');
+      this.snapshot = (await this.state.storage.get<CollectionSnapshot>('snapshot')) ?? null;
     });
   }
 
@@ -55,12 +55,19 @@ export class CollectionState {
     }
 
     const event = validateEvent(body);
-    const entry = event.entry;
-    this.snapshot.collection = [entry, ...this.snapshot.collection.filter((item) => item.id !== entry.id)].sort(
-      (a, b) => new Date(b.obtained_at).getTime() - new Date(a.obtained_at).getTime(),
-    );
+    
+    if (event.type === 'add') {
+      const entry = event.entry;
+      this.snapshot.collection = [entry, ...this.snapshot.collection.filter((item) => item.id !== entry.id)].sort(
+        (a, b) => new Date(b.obtained_at).getTime() - new Date(a.obtained_at).getTime(),
+      );
+    } else if (event.type === 'remove') {
+      this.snapshot.collection = this.snapshot.collection.filter((item) => item.id !== event.inventoryId);
+    }
+    
     this.snapshot.totalOwned += event.totalOwnedDelta ?? 0;
     this.snapshot.distinctOwned += event.distinctOwnedDelta ?? 0;
+    if (this.snapshot.totalOwned < 0) this.snapshot.totalOwned = 0;
     if (this.snapshot.distinctOwned < 0) this.snapshot.distinctOwned = 0;
     if (this.snapshot.distinctOwned > this.snapshot.totalAvailable) {
       this.snapshot.distinctOwned = this.snapshot.totalAvailable;
@@ -116,8 +123,17 @@ function validateEvent(body: unknown): CollectionEdgeEvent {
     throw new Error('Invalid event payload');
   }
   const event = (body as { event?: CollectionEdgeEvent }).event;
-  if (!event || typeof event !== 'object' || !event.entry) {
-    throw new Error('Event entry missing');
+  if (!event || typeof event !== 'object') {
+    throw new Error('Event missing');
+  }
+  if (!('type' in event) || (event.type !== 'add' && event.type !== 'remove')) {
+    throw new Error('Event type must be "add" or "remove"');
+  }
+  if (event.type === 'add' && !('entry' in event)) {
+    throw new Error('Add event requires entry');
+  }
+  if (event.type === 'remove' && !('inventoryId' in event)) {
+    throw new Error('Remove event requires inventoryId');
   }
   return event;
 }

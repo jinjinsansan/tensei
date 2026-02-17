@@ -52,13 +52,13 @@ export async function POST(req: Request) {
     // カード情報を取得
     const card = await fetchCardById(supabase, inventoryRow.card_id);
 
-    // TODO: 送信者側キャッシュ削除用（将来実装）
-    // const { count: senderOtherCopies } = await supabase
-    //   .from("card_inventory")
-    //   .select("id", { count: "exact", head: true })
-    //   .eq("app_user_id", fromUserId)
-    //   .eq("card_id", inventoryRow.card_id)
-    //   .neq("id", cardInventoryId);
+    // 送信者がこのカードの他のコピーを持っているかチェック
+    const { count: senderOtherCopies } = await supabase
+      .from("card_inventory")
+      .select("id", { count: "exact", head: true })
+      .eq("app_user_id", fromUserId)
+      .eq("card_id", inventoryRow.card_id)
+      .neq("id", cardInventoryId);
 
     // 受信者が既にこのカードを持っているかチェック
     const { count: receiverExistingCopies } = await supabase
@@ -87,10 +87,14 @@ export async function POST(req: Request) {
       throw new Error(transferError.message);
     }
 
-    // TODO: 送信者のキャッシュからカードを削除する処理
-    // Cloudflare Worker側で削除イベント（delete event）のサポートが必要
-    // 実装時は senderOtherCopies を使って distinctOwnedDelta を計算
-    // distinctOwnedDelta: 他のコピーがなければ -1、あれば 0
+    // 送信者のキャッシュからカードを削除
+    const senderDistinctDelta = (senderOtherCopies ?? 0) > 0 ? 0 : -1;
+    void emitCollectionEventToEdge(fromUserId, {
+      type: 'remove',
+      inventoryId: cardInventoryId,
+      totalOwnedDelta: -1,
+      distinctOwnedDelta: senderDistinctDelta,
+    });
     
     // 受信者のキャッシュを更新（カードを追加）
     const { data: updatedInventory } = await supabase
@@ -106,6 +110,7 @@ export async function POST(req: Request) {
       
       // 受信者側にカードを追加
       void emitCollectionEventToEdge(toUserId, {
+        type: 'add',
         entry,
         totalOwnedDelta: 1,
         distinctOwnedDelta: receiverDistinctDelta,

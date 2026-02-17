@@ -41,8 +41,16 @@ export type CollectionResponse = {
   };
 };
 
-export type CollectionEdgeEvent = {
-  entry: CollectionEntry;
-  totalOwnedDelta?: number;
-  distinctOwnedDelta?: number;
-};
+export type CollectionEdgeEvent = 
+  | {
+      type: 'add';
+      entry: CollectionEntry;
+      totalOwnedDelta?: number;
+      distinctOwnedDelta?: number;
+    }
+  | {
+      type: 'remove';
+      inventoryId: string;
+      totalOwnedDelta?: number;
+      distinctOwnedDelta?: number;
+    };
