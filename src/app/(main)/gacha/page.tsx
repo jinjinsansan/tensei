@@ -82,7 +82,7 @@ export default async function GachaPage() {
                   </div>
                 </div>
                 <p className="text-sm leading-relaxed text-white/85">
-                  20代のコンビニ店員、50代の冴えないサラリーマン、主人公達に転生チャンスが訪れる！果たして望む来世を手に入れることが出来るのか？
+                  コンビニエンスストアの深夜バイトで働く22歳健太。チビハゲデブ独身の4重苦の58歳　冴えないサラリーマン正一。たくさんの主人公達に転生チャンスが訪れる！果たして望む来世を手に入れることが出来るのか？
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs text-white/75">
                   <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">

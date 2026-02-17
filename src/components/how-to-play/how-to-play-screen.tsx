@@ -113,11 +113,12 @@ export function HowToPlayScreen() {
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/shoichi_cards/shoichi_card01_fish.png"
-                  alt="正一カード1"
+                  src="/shoichi_cards/shoichi_card02_train.png"
+                  alt="正一カード 満員電車"
                   width={120}
                   height={160}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover object-center"
+                  style={{ objectPosition: 'center' }}
                 />
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">

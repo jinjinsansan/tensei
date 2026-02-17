@@ -203,76 +203,123 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       // 背景画像を描画
       ctx.drawImage(img, 0, 0);
 
-      // 半透明の黒背景をカード下部に追加
-      const overlayHeight = Math.floor(img.height * 0.35);
-      const gradient = ctx.createLinearGradient(0, img.height - overlayHeight, 0, img.height);
-      gradient.addColorStop(0, "rgba(0, 0, 0, 0.5)");
-      gradient.addColorStop(1, "rgba(0, 0, 0, 0.9)");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, img.height - overlayHeight, img.width, overlayHeight);
+      const borderWidth = Math.max(4, Math.floor(img.width * 0.012));
+      const padding = Math.max(12, Math.floor(img.width / 28));
+      const innerWidth = img.width - borderWidth * 2;
 
-      // フォント設定
-      const fontSize = Math.floor(img.width / 20);
-      const smallFontSize = Math.floor(fontSize * 0.65);
-      const padding = Math.floor(img.width / 25);
-      
-      // レアリティバッジ（左上）
-      ctx.font = `bold ${smallFontSize}px sans-serif`;
-      ctx.fillStyle = "#fbbf24";
-      ctx.fillText(entry.rarity, padding, padding + smallFontSize);
+      // 外枠
+      ctx.lineWidth = borderWidth;
+      const frameGradient = ctx.createLinearGradient(0, 0, img.width, img.height);
+      frameGradient.addColorStop(0, "rgba(255,215,128,0.9)");
+      frameGradient.addColorStop(0.5, "rgba(168,134,255,0.8)");
+      frameGradient.addColorStop(1, "rgba(255,249,198,0.9)");
+      ctx.strokeStyle = frameGradient;
+      ctx.strokeRect(borderWidth / 2, borderWidth / 2, img.width - borderWidth, img.height - borderWidth);
 
-      // ★の数（右上）
+      // 上部ヘッダー
+      const headerHeight = Math.floor(img.height * 0.12);
+      const headerGradient = ctx.createLinearGradient(borderWidth, borderWidth, borderWidth, borderWidth + headerHeight);
+      headerGradient.addColorStop(0, "rgba(20,20,25,0.95)");
+      headerGradient.addColorStop(1, "rgba(10,10,15,0.8)");
+      ctx.fillStyle = headerGradient;
+      ctx.fillRect(borderWidth, borderWidth, innerWidth, headerHeight);
+
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(borderWidth, borderWidth + headerHeight - 2, innerWidth, 2);
+
+      const headerFont = Math.floor(headerHeight * 0.45);
+      ctx.font = `600 ${headerFont}px 'Inter', 'Noto Sans JP', sans-serif`;
+      ctx.fillStyle = "#fcd34d";
+      ctx.fillText(entry.rarity, borderWidth + padding, borderWidth + headerHeight - headerFont * 0.4);
+
       if (stars) {
-        ctx.fillStyle = "#fbbf24";
-        const starsWidth = ctx.measureText(stars).width;
-        ctx.fillText(stars, img.width - starsWidth - padding, padding + smallFontSize);
+        const starFont = Math.floor(headerFont * 0.9);
+        ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
+        ctx.fillStyle = "#fde68a";
+        const starWidth = ctx.measureText(stars).width;
+        ctx.fillText(stars, img.width - padding - starWidth, borderWidth + headerHeight - headerFont * 0.4);
       }
 
-      // カード名（下部）
-      ctx.font = `bold ${fontSize}px sans-serif`;
+      // 下部フッター
+      const footerHeight = Math.floor(img.height * 0.3);
+      const footerY = img.height - footerHeight - borderWidth;
+      const footerGradient = ctx.createLinearGradient(0, footerY, 0, footerY + footerHeight);
+      footerGradient.addColorStop(0, "rgba(0,0,0,0.02)");
+      footerGradient.addColorStop(0.35, "rgba(0,0,0,0.6)");
+      footerGradient.addColorStop(1, "rgba(0,0,0,0.95)");
+      ctx.fillStyle = footerGradient;
+      ctx.fillRect(borderWidth, footerY, innerWidth, footerHeight);
+
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.fillRect(borderWidth, footerY, innerWidth, 2);
+
+      // タイトル
+      const titleFont = Math.floor(img.width / 18);
+      ctx.font = `700 ${titleFont}px 'Noto Sans JP', 'Inter', sans-serif`;
       ctx.fillStyle = "#ffffff";
-      ctx.fillText(entry.cardName, padding, img.height - overlayHeight + fontSize + padding);
+      const titleY = footerY + padding + titleFont;
+      ctx.fillText(entry.cardName, borderWidth + padding, titleY);
 
-      // 説明文（カード名の下）
-      if (entry.description) {
-        ctx.font = `${smallFontSize}px sans-serif`;
+      // 説明テキスト折り返し
+      const bodyFont = Math.floor(titleFont * 0.55);
+      const lineHeight = bodyFont * 1.5;
+      const maxWidth = innerWidth - padding * 2;
+      const maxLines = 3;
+      const drawWrappedText = (text: string, startY: number) => {
+        ctx.font = `${bodyFont}px 'Noto Sans JP', 'Inter', sans-serif`;
         ctx.fillStyle = "#e5e5e5";
-        const maxWidth = img.width - padding * 2;
-        const chars = entry.description.split("");
+        const chars = text.split("");
         let line = "";
-        let y = img.height - overlayHeight + fontSize + padding + smallFontSize + padding / 2;
-        const lineHeight = smallFontSize * 1.4;
+        let y = startY;
         let lineCount = 0;
-        const maxLines = 3;
-
         for (let i = 0; i < chars.length; i++) {
           const testLine = line + chars[i];
-          const metrics = ctx.measureText(testLine);
-          if (metrics.width > maxWidth && line !== "") {
-            if (lineCount < maxLines - 1) {
-              ctx.fillText(line, padding, y);
-              line = chars[i];
-              y += lineHeight;
-              lineCount++;
-            } else {
-              ctx.fillText(line + "...", padding, y);
-              break;
+          if (ctx.measureText(testLine).width > maxWidth && line !== "") {
+            ctx.fillText(line, borderWidth + padding, y);
+            line = chars[i];
+            y += lineHeight;
+            lineCount++;
+            if (lineCount >= maxLines - 1) {
+              ctx.fillText(`${line}${i < chars.length - 1 ? "..." : ""}`, borderWidth + padding, y);
+              return y + lineHeight;
             }
           } else {
             line = testLine;
           }
         }
-        if (lineCount < maxLines && line !== "") {
-          ctx.fillText(line, padding, y);
+        if (line) {
+          ctx.fillText(line, borderWidth + padding, y);
+          y += lineHeight;
         }
+        return y;
+      };
+
+      if (entry.description) {
+        drawWrappedText(entry.description, titleY + padding);
       }
 
-      // シリアルナンバー（右下）
-      ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.fillStyle = "#a78bfa";
-      const serialText = formattedSerial;
-      const serialWidth = ctx.measureText(serialText).width;
-      ctx.fillText(serialText, img.width - serialWidth - padding, img.height - padding);
+      // シリアル番号（カード番号風）
+      const serialFont = Math.floor(titleFont * 0.6);
+      ctx.font = `700 ${serialFont}px 'Inter', sans-serif`;
+      ctx.fillStyle = "#c4b5fd";
+      const serialWidth = ctx.measureText(formattedSerial).width;
+      ctx.fillText(formattedSerial, img.width - padding - serialWidth, footerY + footerHeight - padding);
+
+      // 人名・スタイルなどラベル
+      const metaFont = Math.floor(bodyFont * 0.75);
+      ctx.font = `600 ${metaFont}px 'Inter', sans-serif`;
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      const metaTexts = [entry.personName, entry.cardStyle].filter(Boolean) as string[];
+      if (metaTexts.length > 0) {
+        let metaX = borderWidth + padding;
+        const metaY = footerY + footerHeight - padding - serialFont - Math.floor(metaFont * 1.4);
+        for (const text of metaTexts) {
+          const label = `● ${text}`;
+          const width = ctx.measureText(label).width + padding;
+          ctx.fillText(label, metaX, metaY);
+          metaX += width;
+        }
+      }
 
       // Canvas を Blob に変換
       const blob = await new Promise<Blob>((resolve, reject) => {
@@ -322,7 +369,16 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       }
       setDownloadState("error");
     }
-  }, [entry.cardName, entry.rarity, entry.description, resolvedImage, stars, formattedSerial]);
+  }, [
+    entry.cardName,
+    entry.rarity,
+    entry.description,
+    entry.personName,
+    entry.cardStyle,
+    resolvedImage,
+    stars,
+    formattedSerial,
+  ]);
 
   return (
     <div className="space-y-8">
