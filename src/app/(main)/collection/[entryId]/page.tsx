@@ -43,7 +43,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const imageUrl = entry.cards.image_url;
     
     // 画像の絶対URLを生成（OGPには絶対URLが必要）
-    const absoluteImageUrl = imageUrl ? await buildAbsoluteImageUrl(imageUrl) : null;
+    // metadataBaseがルートレイアウトで設定されているため、相対URLは自動的に絶対URLに変換される
+    // ただし、署名付きURLなど既に絶対URLの場合はそのまま使用
+    const ogImageUrl = imageUrl ? await buildAbsoluteImageUrl(imageUrl) : null;
 
     return {
       title: `${cardName} | 来世ガチャ`,
@@ -52,21 +54,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         title: `${cardName} | 来世ガチャ`,
         description,
         url: shareUrl,
-        images: absoluteImageUrl ? [
+        images: ogImageUrl ? [
           {
-            url: absoluteImageUrl,
+            url: ogImageUrl,
             width: 1200,
             height: 630,
             alt: cardName,
           },
         ] : [],
         type: "website",
+        siteName: "来世ガチャ",
       },
       twitter: {
         card: "summary_large_image",
         title: `${cardName} | 来世ガチャ`,
         description,
-        images: absoluteImageUrl ? [absoluteImageUrl] : [],
+        images: ogImageUrl ? [ogImageUrl] : [],
       },
     };
   } catch {

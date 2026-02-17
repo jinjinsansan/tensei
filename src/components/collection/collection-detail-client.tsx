@@ -147,16 +147,25 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         
-        if (navigator.share && navigator.canShare) {
+        // モバイルデバイスの判定（タッチスクリーンと画面幅で判定）
+        const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && 
+                         window.innerWidth <= 768;
+        
+        if (isMobile && navigator.share && navigator.canShare) {
           const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
           if (navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: entry.cardName,
-              text: `${entry.cardName}を獲得しました！`,
-              files: [file],
-            });
-            setDownloadState("idle");
-            return;
+            try {
+              await navigator.share({
+                title: entry.cardName,
+                text: `${entry.cardName}を獲得しました！`,
+                files: [file],
+              });
+              setDownloadState("idle");
+              return;
+            } catch {
+              // ユーザーがキャンセルした場合などは通常ダウンロードにフォールバック
+              console.log("Share cancelled or failed, falling back to download");
+            }
           }
         }
         
@@ -273,17 +282,26 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
         }, "image/png");
       });
 
+      // モバイルデバイスの判定
+      const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && 
+                       window.innerWidth <= 768;
+      
       // Web Share API が使える場合（主にモバイル）
-      if (navigator.share && navigator.canShare) {
+      if (isMobile && navigator.share && navigator.canShare) {
         const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
         if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title: entry.cardName,
-            text: `${entry.cardName}を獲得しました！`,
-            files: [file],
-          });
-          setDownloadState("idle");
-          return;
+          try {
+            await navigator.share({
+              title: entry.cardName,
+              text: `${entry.cardName}を獲得しました！`,
+              files: [file],
+            });
+            setDownloadState("idle");
+            return;
+          } catch {
+            // ユーザーがキャンセルした場合などは通常ダウンロードにフォールバック
+            console.log("Share cancelled or failed, falling back to download");
+          }
         }
       }
 
