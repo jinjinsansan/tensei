@@ -9,6 +9,7 @@ const sections = [
       { title: "ホーム", description: "最新ガチャとチケット残高", href: "/home" },
       { title: "ガチャ一覧", description: "単発・連続ガチャ", href: "/gacha" },
       { title: "コレクション", description: "所持カード管理", href: "/collection" },
+      { title: "所有者検証", description: "シリアルナンバーから本物を確認", href: "/verify-ownership", badge: "NEW" },
     ],
   },
   {

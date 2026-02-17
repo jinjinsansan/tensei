@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { CollectionList } from "@/components/collection/collection-list";
 
 export default function CollectionPage() {
@@ -8,6 +10,15 @@ export default function CollectionPage() {
         <h1 className="font-display text-4xl text-white">カードコレクション</h1>
         <p className="text-sm text-zinc-300">ガチャで獲得したカードとシリアルのアーカイブ。</p>
       </div>
+
+      {/* 所有者検証リンク */}
+      <Link
+        href="/verify-ownership"
+        className="block rounded-full border border-neon-yellow bg-neon-yellow/10 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-neon-yellow/20"
+      >
+        🔍 所有者検証データベース - シリアルナンバーから本物を確認
+      </Link>
+
       <CollectionList />
     </section>
   );
