@@ -1,3 +1,4 @@
+import { AdminCard, AdminPageHero, AdminSectionTitle, AdminSubCard } from '@/components/admin/admin-ui';
 import { fetchGachaCardLeaderboard, fetchGachaConfig, fetchGachaStarCounts, fetchGachaSummaryStats } from '@/lib/data/gacha';
 import { getServiceSupabase } from '@/lib/supabase/service';
 
@@ -30,91 +31,86 @@ export default async function AdminStatsPage() {
   const lastPlay = summary.lastPlay ? new Date(summary.lastPlay).toLocaleString('ja-JP') : '---';
 
   return (
-    <div className="space-y-6 text-primary">
-      <div className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Statistics</p>
-        <h1 className="text-3xl font-bold">統計ダッシュボード</h1>
-        <p className="text-sm text-secondary">ガチャ結果の傾向と実績RTPを確認できます。</p>
-      </div>
+    <div className="space-y-6 text-white">
+      <AdminPageHero
+        eyebrow="Statistics"
+        title="統計ダッシュボード"
+        description="ガチャ結果の傾向と実績RTPを俯瞰します。"
+      />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">総ガチャ数</p>
-          <p className="mt-2 text-3xl font-semibold">{totalPlays.toLocaleString()}</p>
-          <p className="text-xs text-secondary">最後の記録: {lastPlay}</p>
-        </div>
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">隠された章</p>
-          <p className="mt-2 text-3xl font-semibold">{summary.reversalCount.toLocaleString()}</p>
-          <p className="text-xs text-secondary">発動率 {formatPercent(reversalRate)}</p>
-        </div>
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">平均★</p>
-          <p className="mt-2 text-3xl font-semibold">{averageStar.toFixed(2)}</p>
-          <p className="text-xs text-secondary">理論値と差分 {Math.max(0, averageStar - 6).toFixed(2)}</p>
-        </div>
-        <div className="rounded-3xl border border-accent/25 bg-card/70 p-5 shadow-library-card">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">設定RTP総量</p>
-          <p className="mt-2 text-3xl font-semibold">{formatPercent(expectedRtp)}</p>
-          <p className="text-xs text-secondary">gacha_config.rtp_config の合計</p>
-        </div>
+        {[{
+          label: '総ガチャ数',
+          value: totalPlays.toLocaleString(),
+          extra: `最後の記録: ${lastPlay}`,
+        }, {
+          label: '隠された章',
+          value: summary.reversalCount.toLocaleString(),
+          extra: `発動率 ${formatPercent(reversalRate)}`,
+        }, {
+          label: '平均★',
+          value: averageStar.toFixed(2),
+          extra: `理論値との差 ${Math.max(0, averageStar - 6).toFixed(2)}`,
+        }, {
+          label: '設定RTP総量',
+          value: formatPercent(expectedRtp),
+          extra: 'gacha_config.rtp_config の合計',
+        }].map((item) => (
+          <AdminSubCard key={item.label}>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">{item.label}</p>
+            <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
+            <p className="text-xs text-white/60">{item.extra}</p>
+          </AdminSubCard>
+        ))}
       </section>
 
-      <section className="rounded-3xl border border-accent/25 bg-card/70 p-6 shadow-library-card">
+      <AdminCard>
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Star Distribution</p>
-            <h2 className="text-2xl font-bold">星ごとの分布</h2>
-          </div>
-          <p className="text-xs text-secondary">実績 vs 設定</p>
+          <AdminSectionTitle title="星ごとの分布" description="実績 vs 設定" />
         </div>
-        <div className="mt-4 space-y-3">
+        <div className="mt-6 space-y-3">
           {distribution.map((slot) => (
             <div key={slot.starLevel} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <p className="font-medium">★{slot.starLevel}</p>
-                <div className="text-xs text-secondary">
+              <div className="flex items-center justify-between text-sm text-white/80">
+                <p className="font-medium text-white">★{slot.starLevel}</p>
+                <div className="text-xs text-white/60">
                   <span className="mr-3">実績 {slot.actualTotal.toLocaleString()} ({formatPercent(slot.actualRatio)})</span>
                   <span>設定 {formatPercent(slot.plan)}</span>
                 </div>
               </div>
-              <div className="relative h-2 w-full rounded-full bg-[#222222]/40">
+              <div className="relative h-2 w-full rounded-full bg-white/10">
                 <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-accent/30"
+                  className="absolute inset-y-0 left-0 rounded-full bg-white/20"
                   style={{ width: `${Math.min(100, slot.plan * 100)}%` }}
                   aria-hidden
                 />
                 <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-accent"
+                  className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#74f3ff] to-[#fbb1ff]"
                   style={{ width: `${Math.min(100, slot.actualRatio * 100)}%` }}
                 />
               </div>
             </div>
           ))}
         </div>
-      </section>
+      </AdminCard>
 
-      <section className="rounded-3xl border border-accent/25 bg-card/70 p-6 shadow-library-card">
+      <AdminCard>
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Top Cards</p>
-            <h2 className="text-2xl font-bold">人気の書</h2>
-          </div>
-          <p className="text-xs text-secondary">上位 {leaderboard.length} 枚</p>
+          <AdminSectionTitle title="人気カード" description={`上位 ${leaderboard.length} 枚`} />
         </div>
-        <div className="mt-4 space-y-2 text-sm">
-          {leaderboard.length === 0 && <p className="text-secondary">まだ統計データがありません。</p>}
+        <div className="mt-6 space-y-2 text-sm">
+          {leaderboard.length === 0 && <p className="text-white/60">まだ統計データがありません。</p>}
           {leaderboard.map((entry, index) => (
-            <div key={entry.cardId} className="flex items-center justify-between rounded-2xl border border-accent/20 bg-card/60 px-4 py-3">
+            <div key={entry.cardId} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
               <div>
-                <p className="font-medium">#{index + 1} {entry.cardName}</p>
-                <p className="text-xs text-secondary">★{entry.starLevel} / {entry.rarity}</p>
+                <p className="font-medium text-white">#{index + 1} {entry.cardName}</p>
+                <p className="text-xs text-white/60">★{entry.starLevel} / {entry.rarity}</p>
               </div>
-              <span className="text-lg font-semibold">{entry.total.toLocaleString()} 回</span>
+              <span className="text-lg font-semibold text-white">{entry.total.toLocaleString()} 回</span>
             </div>
           ))}
         </div>
-      </section>
+      </AdminCard>
     </div>
   );
 }

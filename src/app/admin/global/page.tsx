@@ -1,5 +1,6 @@
 import { revalidatePath } from 'next/cache';
 
+import { AdminCard, AdminPageHero, AdminSectionTitle } from '@/components/admin/admin-ui';
 import { getServiceSupabase } from '@/lib/supabase/service';
 
 async function updateGlobalLossRate(formData: FormData) {
@@ -34,35 +35,37 @@ export default async function GlobalConfigPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">共通ハズレ率設定</h1>
-        <p className="text-sm text-slate-300">全キャラクター共通のLOSS率を設定します（0〜100%）。</p>
-      </header>
+      <AdminPageHero
+        eyebrow="Global"
+        title="共通ハズレ率設定"
+        description="全キャラクターに効くLOSS率をひとつのスライダーで調整します。"
+      />
 
-      <form action={updateGlobalLossRate} className="space-y-4 rounded-3xl border border-white/15 bg-white/5 p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">ハズレ率（LOSS率）</h2>
-          <span className="text-2xl font-bold text-yellow-400">{currentLossRate}%</span>
-        </div>
-        <input
-          type="range"
-          name="lossRate"
-          min={0}
-          max={100}
-          step={1}
-          defaultValue={currentLossRate}
-          className="w-full"
-        />
-        <p className="text-xs text-slate-400">
-          0% = 全て当たり / 100% = 全てハズレ（仕様書推奨値: 60% 前後）
-        </p>
-        <button
-          type="submit"
-          className="mt-4 w-full rounded-2xl bg-emerald-400/80 px-4 py-3 text-sm font-semibold text-slate-950"
-        >
-          保存する
-        </button>
-      </form>
+      <AdminCard>
+        <AdminSectionTitle title="ハズレ率（LOSS率）" description="0% = 全て当たり / 100% = 全てハズレ" />
+        <form action={updateGlobalLossRate} className="mt-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white/70">現在の値</span>
+            <span className="text-3xl font-bold text-yellow-300">{currentLossRate}%</span>
+          </div>
+          <input
+            type="range"
+            name="lossRate"
+            min={0}
+            max={100}
+            step={1}
+            defaultValue={currentLossRate}
+            className="w-full accent-yellow-300"
+          />
+          <p className="text-xs text-white/60">仕様書の推奨値は 60% 前後です。</p>
+          <button
+            type="submit"
+            className="mt-2 w-full rounded-2xl bg-gradient-to-r from-[#7efde5] to-[#4dd8ff] px-4 py-3 text-sm font-semibold text-[#050505]"
+          >
+            保存する
+          </button>
+        </form>
+      </AdminCard>
     </div>
   );
 }

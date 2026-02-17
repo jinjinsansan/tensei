@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { AdminCard, AdminPageHero, AdminSectionTitle, AdminSubCard } from "@/components/admin/admin-ui";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
 type CdColor = 'green' | 'blue' | 'red' | 'gold' | 'rainbow' | 'white';
@@ -115,16 +116,16 @@ export default async function CountdownPatternsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">カウントダウンパターン管理</h1>
-        <p className="text-sm text-slate-300">既存パターンの編集、新規追加、有効/無効の切替ができます。</p>
-      </header>
+      <AdminPageHero
+        eyebrow="Countdown"
+        title="カウントダウンパターン管理"
+        description="パターンの有効化、新規作成、並びの調整をまとめて行えます。"
+      />
 
-      {/* 新規パターン追加 */}
-      <section className="rounded-3xl border border-emerald-400/30 bg-emerald-400/5 p-6">
-        <h2 className="mb-4 text-xl font-semibold">新規パターン追加</h2>
-        <form action={createPattern} className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+      <AdminCard>
+        <AdminSectionTitle title="新規パターン追加" description="4ステップの数字と色を組み合わせます" />
+        <form action={createPattern} className="mt-6 space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
             <label className="block text-sm">
               パターンID
               <input
@@ -132,7 +133,7 @@ export default async function CountdownPatternsPage() {
                 name="patternId"
                 required
                 placeholder="E1_01"
-                className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2"
+                className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.03] px-3 py-2 text-white placeholder:text-white/40 focus:border-white/60 focus:outline-none"
               />
             </label>
             <label className="block text-sm">
@@ -142,32 +143,40 @@ export default async function CountdownPatternsPage() {
                 name="name"
                 required
                 placeholder="最高数字緑"
-                className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2"
+                className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.03] px-3 py-2 text-white placeholder:text-white/40 focus:border-white/60 focus:outline-none"
               />
             </label>
             <label className="block text-sm">
               グレード
-              <select name="grade" required className="mt-1 w-full rounded-xl bg-white/10 px-3 py-2 text-black">
+              <select
+                name="grade"
+                required
+                className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-white/60"
+              >
                 {grades.map((g) => (
-                  <option key={g} value={g}>{g}</option>
+                  <option key={g} value={g}>
+                    {g}
+                  </option>
                 ))}
               </select>
             </label>
           </div>
 
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid gap-4 md:grid-cols-4">
             {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="space-y-2 rounded-xl border border-white/10 bg-white/5 p-3">
-                <p className="text-xs font-semibold">ステップ{step}</p>
+              <AdminSubCard key={step}>
+                <p className="text-xs font-semibold text-white/80">ステップ{step}</p>
                 <label className="block text-xs">
                   数字
                   <select
                     name={`step${step}_number`}
                     required
-                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm text-black"
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-white/[0.04] px-2 py-1 text-sm text-white focus:border-white/60"
                   >
                     {numbers.map((n) => (
-                      <option key={n} value={n}>{n}</option>
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
                     ))}
                   </select>
                 </label>
@@ -176,119 +185,125 @@ export default async function CountdownPatternsPage() {
                   <select
                     name={`step${step}_color`}
                     required
-                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm text-black"
+                    className="mt-1 w-full rounded-lg border border-white/15 bg-white/[0.04] px-2 py-1 text-sm text-white focus:border-white/60"
                   >
                     {colors.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
                   </select>
                 </label>
-              </div>
+              </AdminSubCard>
             ))}
           </div>
 
-          <button className="w-full rounded-2xl bg-emerald-400/80 px-6 py-3 font-semibold text-slate-950">
+          <button className="w-full rounded-2xl bg-gradient-to-r from-[#7efde5] to-[#53c9ff] px-6 py-3 font-semibold text-[#050505]">
             新規パターンを追加
           </button>
         </form>
-      </section>
+      </AdminCard>
 
-      {/* 既存パターン一覧 */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">既存パターン（{patterns?.length ?? 0}件）</h2>
-        {patterns?.map((pattern) => (
-          <div
-            key={pattern.pattern_id}
-            className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">
-                  {pattern.pattern_id} - {pattern.name}
-                </h3>
-                <p className="text-xs text-slate-400">グレード: {pattern.grade}</p>
+      <AdminCard>
+        <AdminSectionTitle title={`既存パターン（${patterns?.length ?? 0}件）`} description="必要に応じて編集・無効化できます" />
+        <div className="mt-6 space-y-4">
+          {patterns?.map((pattern) => (
+            <AdminSubCard key={pattern.pattern_id} className="space-y-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    {pattern.pattern_id} - {pattern.name}
+                  </h3>
+                  <p className="text-xs text-white/60">グレード: {pattern.grade}</p>
+                </div>
+                <form action={togglePattern} className="md:w-auto">
+                  <input type="hidden" name="patternId" value={pattern.pattern_id} />
+                  <input type="hidden" name="isActive" value={String(pattern.is_active)} />
+                  <button
+                    className={`rounded-full px-4 py-1 text-xs font-semibold transition ${
+                      pattern.is_active
+                        ? 'border border-emerald-300/50 bg-emerald-400/20 text-emerald-100'
+                        : 'border border-white/15 bg-white/[0.02] text-white/70'
+                    }`}
+                  >
+                    {pattern.is_active ? '有効' : '無効'}
+                  </button>
+                </form>
               </div>
-              <form action={togglePattern}>
+
+              <form action={updatePattern} className="space-y-3">
                 <input type="hidden" name="patternId" value={pattern.pattern_id} />
-                <input type="hidden" name="isActive" value={String(pattern.is_active)} />
-                <button
-                  className={`rounded-full px-4 py-1 text-xs font-semibold ${
-                    pattern.is_active
-                      ? "bg-emerald-400/80 text-slate-950"
-                      : "bg-slate-600/80 text-white"
-                  }`}
-                >
-                  {pattern.is_active ? "有効" : "無効"}
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <label className="block text-xs">
+                    名前
+                    <input
+                      type="text"
+                      name="name"
+                      defaultValue={pattern.name}
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-white/[0.03] px-2 py-1 text-sm text-white focus:border-white/60"
+                    />
+                  </label>
+                  <label className="block text-xs">
+                    グレード
+                    <select
+                      name="grade"
+                      defaultValue={pattern.grade}
+                      className="mt-1 w-full rounded-lg border border-white/15 bg-white/[0.03] px-2 py-1 text-sm text-white focus:border-white/60"
+                    >
+                      {grades.map((g) => (
+                        <option key={g} value={g}>
+                          {g}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-4">
+                  {Array.isArray(pattern.steps) && (pattern.steps as CountdownStep[]).map((step, idx) => (
+                    <div key={idx} className="space-y-2 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                      <p className="text-xs font-semibold text-white/80">ステップ{idx + 1}</p>
+                      <label className="block text-xs">
+                        数字
+                        <select
+                          name={`step${idx + 1}_number`}
+                          defaultValue={step.number}
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-white/[0.04] px-2 py-1 text-xs text-white focus:border-white/60"
+                        >
+                          {numbers.map((n) => (
+                            <option key={n} value={n}>
+                              {n}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block text-xs">
+                        色
+                        <select
+                          name={`step${idx + 1}_color`}
+                          defaultValue={step.color}
+                          className="mt-1 w-full rounded-lg border border-white/15 bg-white/[0.04] px-2 py-1 text-xs text-white focus:border-white/60"
+                        >
+                          {colors.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <button className="w-full rounded-xl bg-gradient-to-r from-[#6dd5ff] to-[#5efce8] px-4 py-2 text-sm font-semibold text-[#04161c]">
+                  変更を保存
                 </button>
               </form>
-            </div>
-
-            <form action={updatePattern} className="space-y-3">
-              <input type="hidden" name="patternId" value={pattern.pattern_id} />
-              
-              <div className="grid grid-cols-3 gap-3">
-                <label className="block text-xs">
-                  名前
-                  <input
-                    type="text"
-                    name="name"
-                    defaultValue={pattern.name}
-                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm"
-                  />
-                </label>
-                <label className="block text-xs">
-                  グレード
-                  <select
-                    name="grade"
-                    defaultValue={pattern.grade}
-                    className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-sm text-black"
-                  >
-                    {grades.map((g) => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                {Array.isArray(pattern.steps) && (pattern.steps as CountdownStep[]).map((step, idx) => (
-                  <div key={idx} className="space-y-2 rounded-lg border border-white/5 bg-white/5 p-2">
-                    <p className="text-xs font-semibold">ステップ{idx + 1}</p>
-                    <label className="block text-xs">
-                      数字
-                      <select
-                        name={`step${idx + 1}_number`}
-                        defaultValue={step.number}
-                        className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-xs text-black"
-                      >
-                        {numbers.map((n) => (
-                          <option key={n} value={n}>{n}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="block text-xs">
-                      色
-                      <select
-                        name={`step${idx + 1}_color`}
-                        defaultValue={step.color}
-                        className="mt-1 w-full rounded-lg bg-white/10 px-2 py-1 text-xs text-black"
-                      >
-                        {colors.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                ))}
-              </div>
-
-              <button className="w-full rounded-xl bg-blue-400/80 px-4 py-2 text-sm font-semibold text-slate-950">
-                変更を保存
-              </button>
-            </form>
-          </div>
-        ))}
-      </section>
+            </AdminSubCard>
+          ))}
+        </div>
+      </AdminCard>
     </div>
   );
 }

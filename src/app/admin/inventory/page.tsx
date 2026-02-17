@@ -1,3 +1,4 @@
+import { AdminCard, AdminPageHero, AdminSectionTitle } from "@/components/admin/admin-ui";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
 type InventoryRow = {
@@ -96,20 +97,22 @@ export default async function InventoryAdminPage({ searchParams }: any) {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold">カード在庫 / シリアル検索</h1>
-        <p className="text-sm text-slate-300">カードIDとシリアルナンバーから、現在の所持者を特定します。</p>
-      </header>
+      <AdminPageHero
+        eyebrow="Inventory"
+        title="カード在庫 / シリアル検索"
+        description="カード名とシリアルを入力して、現在の所持者や取得履歴を特定します。"
+      />
 
-      <section className="rounded-3xl bg-white/10 p-5">
-        <form className="grid gap-4 md:grid-cols-3">
+      <AdminCard>
+        <AdminSectionTitle title="検索条件" description="シリアル番号は必須です" />
+        <form className="mt-6 grid gap-4 md:grid-cols-3">
           <label className="text-sm md:col-span-2">
             カード名（あいまい検索）
             <input
               name="cardName"
               defaultValue={cardName}
               placeholder="例: コンビニ / 勇者 など"
-              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2"
+              className="mt-2 w-full rounded-2xl border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-white/60 focus:outline-none"
             />
           </label>
           <label className="text-sm">
@@ -120,26 +123,26 @@ export default async function InventoryAdminPage({ searchParams }: any) {
               min={1}
               defaultValue={serialRaw}
               required
-              className="mt-1 w-full rounded-2xl bg-white/10 px-3 py-2"
+              className="mt-2 w-full rounded-2xl border border-white/15 bg-white/[0.03] px-3 py-2 text-sm text-white focus:border-white/60 focus:outline-none"
             />
           </label>
           <div className="md:col-span-3">
-            <button className="w-full rounded-2xl bg-rose-400/80 px-4 py-3 font-semibold text-slate-950">
+            <button className="w-full rounded-2xl bg-gradient-to-r from-[#ffd86f] to-[#ff8bd5] px-4 py-3 font-semibold text-[#0c0c0c]">
               検索する
             </button>
           </div>
         </form>
-      </section>
+      </AdminCard>
 
       {serialRaw && (
-        <section className="rounded-3xl bg-white/10 p-5">
-          <h2 className="text-xl font-semibold">検索結果</h2>
+        <AdminCard>
+          <AdminSectionTitle title="検索結果" description={results.length ? undefined : "該当するシリアルが見つかりません"} />
           {results.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-200">該当するシリアルが見つかりませんでした。</p>
+            <p className="mt-4 text-sm text-white/70">該当するシリアルが見つかりませんでした。</p>
           ) : (
-            <div className="mt-4 overflow-x-auto text-sm">
+            <div className="mt-6 overflow-x-auto text-sm">
               <table className="min-w-full text-left">
-                <thead className="border-b border-white/10 text-xs uppercase tracking-[0.25em] text-slate-300">
+                <thead className="border-b border-white/10 text-xs uppercase tracking-[0.25em] text-white/60">
                   <tr>
                     <th className="py-2 pr-4">カード</th>
                     <th className="py-2 pr-4">レア</th>
@@ -151,36 +154,36 @@ export default async function InventoryAdminPage({ searchParams }: any) {
                 <tbody>
                   {results.map((row) => (
                     <tr key={row.id} className="border-b border-white/5 last:border-0">
-                      <td className="py-2 pr-4">
+                      <td className="py-3 pr-4">
                         {row.card ? (
                           <>
-                            <div className="font-medium">{row.card.name}</div>
-                            <div className="text-xs text-slate-300">★{row.card.star_level ?? "-"}</div>
+                            <div className="font-medium text-white">{row.card.name}</div>
+                            <div className="text-xs text-white/60">★{row.card.star_level ?? "-"}</div>
                           </>
                         ) : (
-                          <span className="text-xs text-slate-400">カード情報なし</span>
+                          <span className="text-xs text-white/50">カード情報なし</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4">{row.card?.rarity ?? "-"}</td>
-                      <td className="py-2 pr-4">#{row.serial_number}</td>
-                      <td className="py-2 pr-4">
+                      <td className="py-3 pr-4 text-white/80">{row.card?.rarity ?? "-"}</td>
+                      <td className="py-3 pr-4 text-white">#{row.serial_number}</td>
+                      <td className="py-3 pr-4">
                         {row.owner ? (
                           <>
-                            <div className="font-medium">{row.owner.display_name ?? row.owner.email ?? row.owner.id}</div>
-                            <div className="text-xs text-slate-400 break-all">{row.owner.id}</div>
+                            <div className="font-medium text-white">{row.owner.display_name ?? row.owner.email ?? row.owner.id}</div>
+                            <div className="break-all text-xs text-white/50">{row.owner.id}</div>
                           </>
                         ) : (
-                          <span className="text-xs text-slate-400">ユーザー情報なし</span>
+                          <span className="text-xs text-white/50">ユーザー情報なし</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4">{new Date(row.obtained_at).toLocaleString("ja-JP")}</td>
+                      <td className="py-3 pr-4 text-white/80">{new Date(row.obtained_at).toLocaleString("ja-JP")}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </AdminCard>
       )}
     </div>
   );

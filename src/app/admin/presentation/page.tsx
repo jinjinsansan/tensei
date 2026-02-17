@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { AdminCard, AdminPageHero, AdminSectionTitle, AdminSubCard } from "@/components/admin/admin-ui";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
 type Rarity = 'N' | 'R' | 'SR' | 'SSR' | 'UR' | 'LR';
@@ -119,18 +120,17 @@ export default async function PresentationPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-bold">演出確率設定</h1>
-        <p className="text-sm text-slate-300">STANDBY色、カウントダウングレード、タイトル動画ヒント率を調整します。</p>
-      </header>
+      <AdminPageHero
+        eyebrow="Presentation"
+        title="演出確率設定"
+        description="STANDBY色、カウントダウン、タイトルヒントの確率をコントロールします。"
+      />
 
-      {/* タイトル動画ヒント率 */}
-      <section className="space-y-4 rounded-3xl border border-white/15 bg-white/5 p-6">
-        <h2 className="text-xl font-semibold">タイトル動画ヒント率</h2>
-        <p className="text-sm text-slate-300">実際のカードのタイトル動画を表示する確率（60%推奨）</p>
-        <form action={updateTitleHintRate} className="space-y-4">
-          <label className="block">
-            <span className="text-sm">ヒント確率 (%)</span>
+      <AdminCard>
+        <AdminSectionTitle title="タイトル動画ヒント率" description="実際のカードタイトル動画を表示する確率" />
+        <form action={updateTitleHintRate} className="mt-6 space-y-4">
+          <label className="block text-sm">
+            ヒント確率 (%)
             <input
               type="number"
               name="hintRate"
@@ -138,90 +138,98 @@ export default async function PresentationPage() {
               max="100"
               step="1"
               defaultValue={
-                typeof titleConfig?.probabilities === 'object' && 
-                titleConfig?.probabilities && 
-                'hintRate' in titleConfig.probabilities 
-                  ? Number(titleConfig.probabilities.hintRate) 
+                typeof titleConfig?.probabilities === 'object' &&
+                titleConfig?.probabilities &&
+                'hintRate' in titleConfig.probabilities
+                  ? Number(titleConfig.probabilities.hintRate)
                   : 60
               }
-              className="mt-1 w-full rounded-2xl bg-white/10 px-4 py-2"
+              className="mt-2 w-full rounded-2xl border border-white/15 bg-white/[0.03] px-4 py-2 text-white focus:border-white/60 focus:outline-none"
             />
           </label>
-          <button className="rounded-2xl bg-emerald-400/80 px-6 py-2 font-semibold text-slate-950">
+          <button className="rounded-2xl bg-gradient-to-r from-[#7efde5] to-[#4dd8ff] px-6 py-2 font-semibold text-[#050505]">
             保存
           </button>
         </form>
-      </section>
+      </AdminCard>
 
-      {/* STANDBY色確率 */}
-      <section className="space-y-4 rounded-3xl border border-white/15 bg-white/5 p-6">
-        <h2 className="text-xl font-semibold">STANDBY色の確率</h2>
-        <p className="text-sm text-slate-300">各レア度ごとに6色の出現確率を設定（合計100%）</p>
-        {rarities.map((rarity) => {
-          const config = standbyConfigs?.find((c) => c.rarity === rarity);
-          const probs = (config?.probabilities as Record<string, number>) ?? {};
-          return (
-            <form key={rarity} action={updateStandbyProbabilities} className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <h3 className="font-semibold">レア度: {rarity}</h3>
-              <input type="hidden" name="rarity" value={rarity} />
-              <div className="grid grid-cols-3 gap-3">
-                {standbyColors.map((color) => (
-                  <label key={color} className="block text-sm">
-                    {color}
-                    <input
-                      type="number"
-                      name={color}
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      defaultValue={probs[color] ?? 0}
-                      className="mt-1 w-full rounded-xl bg-white/10 px-2 py-1 text-xs"
-                    />
-                  </label>
-                ))}
-              </div>
-              <button className="w-full rounded-xl bg-blue-400/80 px-4 py-2 text-sm font-semibold text-slate-950">
-                保存
-              </button>
-            </form>
-          );
-        })}
-      </section>
+      <AdminCard>
+        <AdminSectionTitle title="STANDBY色の確率" description="各レア度で6色の出現比率を調整" />
+        <div className="mt-6 space-y-4">
+          {rarities.map((rarity) => {
+            const config = standbyConfigs?.find((c) => c.rarity === rarity);
+            const probs = (config?.probabilities as Record<string, number>) ?? {};
+            return (
+              <AdminSubCard key={rarity}>
+                <form action={updateStandbyProbabilities} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">レア度: {rarity}</h3>
+                  </div>
+                  <input type="hidden" name="rarity" value={rarity} />
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {standbyColors.map((color) => (
+                      <label key={color} className="block text-sm">
+                        {color}
+                        <input
+                          type="number"
+                          name={color}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          defaultValue={probs[color] ?? 0}
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-white/[0.03] px-2 py-1 text-xs text-white focus:border-white/60"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <button className="w-full rounded-xl bg-gradient-to-r from-[#6dd5ff] to-[#5efce8] px-4 py-2 text-sm font-semibold text-[#04231c]">
+                    保存
+                  </button>
+                </form>
+              </AdminSubCard>
+            );
+          })}
+        </div>
+      </AdminCard>
 
-      {/* カウントダウングレード確率 */}
-      <section className="space-y-4 rounded-3xl border border-white/15 bg-white/5 p-6">
-        <h2 className="text-xl font-semibold">カウントダウングレードの確率</h2>
-        <p className="text-sm text-slate-300">各レア度ごとに5グレードの出現確率を設定（合計100%）</p>
-        {rarities.map((rarity) => {
-          const config = countdownConfigs?.find((c) => c.rarity === rarity);
-          const probs = (config?.probabilities as Record<string, number>) ?? {};
-          return (
-            <form key={rarity} action={updateCountdownProbabilities} className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-              <h3 className="font-semibold">レア度: {rarity}</h3>
-              <input type="hidden" name="rarity" value={rarity} />
-              <div className="grid grid-cols-5 gap-3">
-                {grades.map((grade) => (
-                  <label key={grade} className="block text-sm">
-                    {grade}
-                    <input
-                      type="number"
-                      name={grade}
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      defaultValue={probs[grade] ?? 0}
-                      className="mt-1 w-full rounded-xl bg-white/10 px-2 py-1 text-xs"
-                    />
-                  </label>
-                ))}
-              </div>
-              <button className="w-full rounded-xl bg-blue-400/80 px-4 py-2 text-sm font-semibold text-slate-950">
-                保存
-              </button>
-            </form>
-          );
-        })}
-      </section>
+      <AdminCard>
+        <AdminSectionTitle title="カウントダウングレードの確率" description="グレードE1〜E5の比率" />
+        <div className="mt-6 space-y-4">
+          {rarities.map((rarity) => {
+            const config = countdownConfigs?.find((c) => c.rarity === rarity);
+            const probs = (config?.probabilities as Record<string, number>) ?? {};
+            return (
+              <AdminSubCard key={rarity}>
+                <form action={updateCountdownProbabilities} className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">レア度: {rarity}</h3>
+                  </div>
+                  <input type="hidden" name="rarity" value={rarity} />
+                  <div className="grid gap-3 md:grid-cols-5">
+                    {grades.map((grade) => (
+                      <label key={grade} className="block text-sm">
+                        {grade}
+                        <input
+                          type="number"
+                          name={grade}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          defaultValue={probs[grade] ?? 0}
+                          className="mt-1 w-full rounded-xl border border-white/15 bg-white/[0.03] px-2 py-1 text-xs text-white focus:border-white/60"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <button className="w-full rounded-xl bg-gradient-to-r from-[#6dd5ff] to-[#5efce8] px-4 py-2 text-sm font-semibold text-[#04231c]">
+                    保存
+                  </button>
+                </form>
+              </AdminSubCard>
+            );
+          })}
+        </div>
+      </AdminCard>
     </div>
   );
 }

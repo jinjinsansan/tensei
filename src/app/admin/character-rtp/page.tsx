@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
+import { AdminCard, AdminPageHero } from '@/components/admin/admin-ui';
 import { getServiceSupabase } from '@/lib/supabase/service';
 import type { Tables } from '@/types/database';
 import { CharacterForm } from './character-form';
@@ -171,20 +172,20 @@ export default async function CharacterRtpPage({
 
   return (
     <div className="space-y-6">
-      <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">RTP</p>
-        <h1 className="text-2xl font-bold">キャラクター別RTP設定</h1>
-        <p className="text-sm text-secondary">キャラクターの出現比率とレアリティごとの出目、どんでん返し率を調整します。</p>
-      </header>
+      <AdminPageHero
+        eyebrow="Character RTP"
+        title="キャラクター別RTP設定"
+        description="キャラクターのウエイト、★別RTP、どんでん返し発生率を調整します。"
+      />
 
       {successFlag === 'true' && (
-        <div className="rounded-2xl border border-emerald-400/40 bg-emerald-950/40 p-4">
+        <div className="rounded-2xl border border-emerald-400/40 bg-emerald-400/10 p-4">
           <p className="text-sm font-semibold text-emerald-300">✅ 保存しました</p>
         </div>
       )}
 
       {errorType && (
-        <div className="rounded-2xl border border-red-400/40 bg-red-950/40 p-4">
+        <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-4">
           <p className="text-sm font-semibold text-red-300">❌ エラー</p>
           <p className="mt-1 text-xs text-red-200">
             {errorType === 'missing_character_id' && 'キャラクターIDが指定されていません。'}
@@ -195,7 +196,6 @@ export default async function CharacterRtpPage({
           </p>
         </div>
       )}
-
 
       <div className="space-y-4">
         {entries.map(([characterId, { character, rtp }]) => (
@@ -217,7 +217,7 @@ export default async function CharacterRtpPage({
         ))}
       </div>
       
-      <div className="mt-8 rounded-2xl border border-accent/20 bg-card/50 p-4">
+      <AdminCard>
         <details>
           <summary className="cursor-pointer text-sm font-semibold text-accent">🔍 デバッグ情報</summary>
           <div className="mt-4 space-y-2 text-xs font-mono">
@@ -233,7 +233,7 @@ export default async function CharacterRtpPage({
             </pre>
           </div>
         </details>
-      </div>
+      </AdminCard>
     </div>
   );
 }

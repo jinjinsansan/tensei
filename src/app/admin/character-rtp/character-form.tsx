@@ -50,15 +50,18 @@ export function CharacterForm({
   };
 
   return (
-    <form action={action} className="space-y-4 rounded-3xl border border-accent/25 bg-card/70 p-6 shadow-library-card">
+    <form
+      action={action}
+      className="space-y-5 rounded-3xl border border-white/12 bg-white/[0.04] p-6 shadow-[0_25px_90px_rgba(0,0,0,0.55)] backdrop-blur"
+    >
       <input type="hidden" name="characterId" value={characterId} />
       <input type="hidden" name="characterName" value={characterName} />
 
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Character</p>
-          <h2 className="text-xl font-bold">{characterName}</h2>
-          <p className="text-xs text-secondary">ID: {characterId}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Character</p>
+          <h2 className="text-xl font-bold text-white">{characterName}</h2>
+          <p className="text-xs text-white/60">ID: {characterId}</p>
         </div>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 text-sm">
@@ -66,32 +69,32 @@ export function CharacterForm({
               type="checkbox"
               name="isActive"
               defaultChecked={isActive}
-              className="h-4 w-4 rounded border-accent/40 bg-transparent"
+              className="h-4 w-4 rounded border-white/40 bg-transparent"
             />
             <span>ガチャ対象に含める</span>
           </label>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-secondary">出現比率</span>
+            <span className="text-white/60">出現比率</span>
             <input
               type="number"
               name="weight"
               min={0}
               step={1}
               defaultValue={weight}
-              className="w-20 rounded-xl border border-accent/30 bg-black/30 px-2 py-1 text-right text-sm"
+              className="w-20 rounded-xl border border-white/20 bg-white/[0.02] px-2 py-1 text-right text-sm text-white"
             />
-            <span className="text-secondary">pt</span>
+            <span className="text-white/60">pt</span>
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Rarity Distribution</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Rarity Distribution</p>
           <div className="grid grid-cols-2 gap-2 text-sm">
             {(['N', 'R', 'SR', 'SSR', 'UR', 'LR'] as const).map((label) => (
-              <label key={label} className="flex items-center justify-between gap-2 rounded-xl bg-black/20 px-3 py-2">
-                <span className="font-medium">{label}</span>
+              <label key={label} className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
+                <span className="font-medium text-white">{label}</span>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
@@ -101,21 +104,21 @@ export function CharacterForm({
                     step={1}
                     value={rarityValues[label]}
                     onChange={(e) => handleRarityChange(label, e.target.value)}
-                    className="w-20 rounded-lg border border-accent/30 bg-black/40 px-2 py-1 text-right text-xs"
+                    className="w-20 rounded-lg border border-white/20 bg-transparent px-2 py-1 text-right text-xs text-white"
                   />
-                  <span className="text-[11px] text-secondary">%</span>
+                  <span className="text-[11px] text-white/60">%</span>
                 </div>
               </label>
             ))}
           </div>
-          <p className={`text-xs ${isValidTotal ? 'text-secondary' : 'text-red-400 font-semibold'}`}>
+          <p className={`text-xs ${isValidTotal ? 'text-white/60' : 'text-red-400 font-semibold'}`}>
             合計: {totalRtp.toFixed(1)}% {!isValidTotal && '⚠️ 100%にしてください'}
           </p>
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-accent">Donden</p>
-          <div className="space-y-2 rounded-xl bg-black/20 p-4 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Donden</p>
+          <div className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-4 text-sm">
             <label className="flex items-center justify-between gap-2">
               <span>どんでん返し発生率</span>
               <div className="flex items-center gap-2">
@@ -126,12 +129,12 @@ export function CharacterForm({
                   max={100}
                   step={1}
                   defaultValue={dondenRate}
-                  className="w-20 rounded-lg border border-accent/30 bg-black/40 px-2 py-1 text-right text-xs"
+                  className="w-20 rounded-lg border border-white/20 bg-transparent px-2 py-1 text-right text-xs text-white"
                 />
-                <span className="text-[11px] text-secondary">%</span>
+                <span className="text-[11px] text-white/60">%</span>
               </div>
             </label>
-            <p className="text-xs text-secondary">
+            <p className="text-xs text-white/60">
               reversal video &amp; dondenRoutes を持つカードのみが対象になります。
             </p>
           </div>
@@ -139,7 +142,7 @@ export function CharacterForm({
       </div>
 
       {!isValidTotal && (
-        <div className="rounded-2xl border border-yellow-400/40 bg-yellow-950/40 p-3">
+        <div className="rounded-2xl border border-yellow-400/40 bg-yellow-400/10 p-3">
           <p className="text-xs font-semibold text-yellow-300">
             ⚠️ レアリティ分布の合計を100%にしてください（現在: {totalRtp.toFixed(1)}%）
           </p>
