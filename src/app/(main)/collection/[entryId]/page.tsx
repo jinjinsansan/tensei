@@ -9,19 +9,20 @@ import { getPublicEnv } from "@/lib/env";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     entryId: string;
-  };
+  }>;
 };
 
 export default async function CollectionEntryPage({ params }: PageProps) {
+  const { entryId } = await params;
   const supabase = getServiceSupabase();
   const context = await getSessionWithSnapshot(supabase).catch(() => null);
   if (!context) {
     notFound();
   }
 
-  const entry = await fetchCollectionEntryById(supabase, context.user.id, params.entryId);
+  const entry = await fetchCollectionEntryById(supabase, context.user.id, entryId);
 
   if (!entry || !entry.cards) {
     notFound();
