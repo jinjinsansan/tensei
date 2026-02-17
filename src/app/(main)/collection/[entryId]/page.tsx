@@ -35,13 +35,13 @@ export default async function CollectionEntryPage({ params }: PageProps) {
     cardId: entry.card_id,
     cardName: entry.cards.name,
     rarity: entry.cards.rarity,
-    starLevel: entry.cards.star_level,
-    description: entry.cards.description,
+    starLevel: entry.cards.star_level ?? null,
+    description: entry.cards.description ?? null,
     serialNumber: entry.serial_number,
-    obtainedAt: entry.obtained_at,
-    imageUrl: entry.cards.image_url,
-    personName: entry.cards.person_name,
-    cardStyle: entry.cards.card_style,
+    obtainedAt: entry.obtained_at ?? null,
+    imageUrl: entry.cards.card_image_url ?? entry.cards.image_url ?? null,
+    personName: entry.cards.person_name ?? null,
+    cardStyle: entry.cards.card_style ?? null,
   };
 
   return (
