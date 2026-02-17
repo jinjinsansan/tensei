@@ -253,7 +253,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     lossCardImage,
   ]);
 
-  const resolveAssetSrc = useSignedAssetResolver(assetSources);
+  const { resolveAssetSrc } = useSignedAssetResolver(assetSources);
 
   const ensureClaimed = useCallback((currentResultId?: string | null) => {
     if (!currentResultId || hasClaimedRef.current) return;

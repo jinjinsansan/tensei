@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+
 type CollectionItem = {
   card_id: string;
   serial_number: number;
@@ -66,6 +67,7 @@ const RARITY_GRADIENTS: Record<string, string> = {
   SSR: "from-[#2b0057]/80 via-transparent to-transparent",
   UR: "from-[#013824]/75 via-transparent to-transparent",
 };
+
 
 export function CollectionList() {
   const [data, setData] = useState<ApiResponse | null>(null);

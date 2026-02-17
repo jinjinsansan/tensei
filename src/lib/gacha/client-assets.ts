@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const SIGNING_ENABLED = process.env.NEXT_PUBLIC_GACHA_ASSET_SIGNING_MODE === 'signed';
 
@@ -14,14 +14,17 @@ export function useSignedAssetResolver(sources: readonly string[]) {
   }, [sources]);
 
   const [resolvedMap, setResolvedMap] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!SIGNING_ENABLED || uniqueSources.length === 0) {
       setResolvedMap({});
+      setLoading(false);
       return;
     }
 
     const controller = new AbortController();
+    setLoading(true);
 
     (async () => {
       try {
@@ -37,20 +40,26 @@ export function useSignedAssetResolver(sources: readonly string[]) {
         const data = (await response.json()) as { urls?: Record<string, string> };
         if (!controller.signal.aborted) {
           setResolvedMap(data.urls ?? {});
+          setLoading(false);
         }
       } catch (error) {
         if (controller.signal.aborted) return;
         console.error('Failed to fetch signed asset URLs', error);
         setResolvedMap({});
+        setLoading(false);
       }
     })();
 
     return () => controller.abort();
   }, [uniqueSources]);
 
-  return (path: string | null | undefined): string | null => {
+  const resolveAssetSrc = useCallback((path: string | null | undefined): string | null => {
     if (!path) return null;
     if (!SIGNING_ENABLED) return path;
     return resolvedMap[path] ?? null;
-  };
+  }, [resolvedMap]);
+
+  const isSigning = SIGNING_ENABLED && uniqueSources.length > 0 && loading;
+
+  return { resolveAssetSrc, isSigning } as const;
 }
