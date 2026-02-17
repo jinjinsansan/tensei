@@ -37,9 +37,9 @@ function formatDate(value?: string | null) {
   return new Date(value).toLocaleString("ja-JP", { month: "short", day: "numeric" });
 }
 
-const SECTION_CARD = "space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset";
+const SECTION_CARD = "space-y-4 rounded-3xl border border-white/12 bg-black/20 p-6";
 const LINK_CARD =
-  "group relative overflow-hidden rounded-3xl border border-white/12 bg-black/30 p-5 shadow-panel-inset transition hover:border-white/40";
+  "group relative overflow-hidden rounded-3xl border border-white/15 bg-white/5 p-5 transition hover:border-white/40 hover:bg-white/10";
 
 type MenuScreenProps = {
   snapshot: MainAppSnapshot;
@@ -91,7 +91,6 @@ export function MenuScreen({ snapshot }: MenuScreenProps) {
           <div className="space-y-3">
             {section.links.map((link) => (
               <Link key={link.href} href={link.href} className={LINK_CARD}>
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition group-hover:opacity-40" />
                 <div className="relative z-10 flex items-center justify-between gap-4">
                   <div>
                     <p className="font-display text-lg text-white">{link.title}</p>

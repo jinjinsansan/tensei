@@ -119,7 +119,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const hasClaimedRef = useRef(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
-  const lastPlayedVideoKeyRef = useRef<string | null>(null);
+  const lastReadyVideoKeyRef = useRef<string | null>(null);
 
   const presentation = usePresentationConfig();
 
@@ -484,16 +484,12 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const controlsLocked = hasPhaseVideo && isControlsLocked(phase, videoReady);
   const skipDisabled = phase === 'CARD_REVEAL';
   const disableNext = phase === 'CARD_REVEAL' || controlsLocked;
-  const handlePhaseVideoPlay = useCallback(() => {
-    // 同じ動画で既に再生済みの場合は何もしない（onPlayの重複発火を防ぐ）
-    if (lastPlayedVideoKeyRef.current === phaseVideoKey) {
+  const handlePhaseVideoReady = useCallback(() => {
+    if (lastReadyVideoKeyRef.current === phaseVideoKey) {
       return;
     }
-    
-    lastPlayedVideoKeyRef.current = phaseVideoKey;
+    lastReadyVideoKeyRef.current = phaseVideoKey;
     setVideoReady(true);
-    
-    // COUNTDOWNの効果音はhandleAdvanceで既に再生済みなので、ここでは何もしない
   }, [phaseVideoKey]);
 
   // CARD_REVEAL フェーズになったら CardReveal を表示
@@ -542,7 +538,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
               preload="auto"
               loop={phaseVideoLoop}
               playsInline
-              onPlay={handlePhaseVideoPlay}
+              onPlay={handlePhaseVideoReady}
+              onLoadedData={handlePhaseVideoReady}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
