@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
+
 
 type CollectionItem = {
   card_id: string;
@@ -67,6 +69,8 @@ const RARITY_GRADIENTS: Record<string, string> = {
   SSR: "from-[#2b0057]/80 via-transparent to-transparent",
   UR: "from-[#013824]/75 via-transparent to-transparent",
 };
+
+const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
 
 
 export function CollectionList() {
@@ -142,6 +146,15 @@ export function CollectionList() {
 
     return { persons, styles, rarities };
   }, [data]);
+
+  const signableSources = useMemo(() => {
+    if (!data) return [];
+    return data.collection
+      .map((item) => item.cards?.image_url)
+      .filter((src): src is string => Boolean(src) && isSignableAsset(src));
+  }, [data]);
+
+  const { resolveAssetSrc, isSigning } = useSignedAssetResolver(signableSources);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -328,6 +341,10 @@ export function CollectionList() {
                   })
                 : null;
 
+              const shouldSign = isSignableAsset(card.image_url);
+              const resolvedImage = shouldSign ? resolveAssetSrc(card.image_url) : card.image_url;
+              const isAwaitingImage = shouldSign && Boolean(card.image_url) && !resolvedImage && isSigning;
+
               return (
                 <Link
                   key={`${item.card_id}-${item.serial_number}`}
@@ -337,15 +354,24 @@ export function CollectionList() {
                   <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${rarityGradient} opacity-70`} />
                   <div className="relative z-10 flex gap-4">
                     <div className="relative h-20 w-20 flex-shrink-0">
-                      {card.image_url ? (
+                      {resolvedImage ? (
                         <Image
-                          src={card.image_url}
+                          src={resolvedImage}
                           alt={card.name}
                           fill
                           sizes="80px"
                           unoptimized
+                          onError={(event) => {
+                            if (event.currentTarget.src !== FALLBACK_CARD_IMAGE) {
+                              event.currentTarget.src = FALLBACK_CARD_IMAGE;
+                            }
+                          }}
                           className="rounded-2xl object-cover shadow-[0_15px_25px_rgba(0,0,0,0.45)]"
                         />
+                      ) : card.image_url ? (
+                        <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
+                          {isAwaitingImage ? "LOADING" : "NO IMAGE"}
+                        </div>
                       ) : (
                         <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
                           NO IMAGE
@@ -409,4 +435,21 @@ export function CollectionList() {
       </section>
     </div>
   );
+}
+
+function isSignableAsset(path?: string | null): path is string {
+  if (!path) return false;
+  let normalized = path.trim();
+  if (!normalized) return false;
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    try {
+      const url = new URL(normalized);
+      normalized = url.pathname;
+    } catch {
+      // fall back to original string
+    }
+  }
+
+  normalized = normalized.replace(/^\/+/g, '');
+  return normalized.startsWith('common/') || normalized.startsWith('characters/');
 }
