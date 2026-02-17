@@ -12,12 +12,15 @@ export default function CollectionPage() {
       </div>
 
       {/* 所有者検証リンク */}
-      <Link
-        href="/verify-ownership"
-        className="block rounded-full border border-neon-yellow bg-neon-yellow/10 px-6 py-3 text-center text-sm font-semibold text-white transition hover:bg-neon-yellow/20"
-      >
-        🔍 所有者検証データベース - シリアルナンバーから本物を確認
-      </Link>
+      <div className="relative flex justify-center">
+        <div className="absolute inset-0 h-16 w-64 rounded-full bg-gradient-to-r from-[#ffe29f]/20 via-[#ffa99f]/20 to-[#fbc2eb]/20 blur-3xl" />
+        <Link
+          href="/verify-ownership"
+          className="relative inline-flex items-center justify-center rounded-full border border-white/15 bg-gradient-to-r from-[#ffe29f] via-[#ffa99f] to-[#fbc2eb] px-10 py-3 text-sm font-semibold uppercase tracking-[0.35em] text-[#201327] shadow-[0_20px_45px_rgba(0,0,0,0.45),inset_0_4px_0_rgba(255,255,255,0.75),inset_0_-4px_0_rgba(0,0,0,0.25)] transition hover:scale-[1.02] active:scale-[0.98]"
+        >
+          所有者データベース検索
+        </Link>
+      </div>
 
       <CollectionList />
     </section>
