@@ -136,7 +136,42 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
     setDownloadState("pending");
     
     try {
-      // Canvas で画像合成
+      // 署名付きURL（R2）の場合は画像合成をスキップして元画像をダウンロード
+      // R2はCORSヘッダーを返さないため、Canvasで操作するとtaintedエラーが発生する
+      const isSignedUrl = resolvedImage.includes('r2.cloudflarestorage.com') || 
+                          resolvedImage.includes('X-Amz-Signature');
+      
+      if (isSignedUrl) {
+        // 署名付きURLの場合は元画像をそのままダウンロード
+        const response = await fetch(resolvedImage);
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: entry.cardName,
+              text: `${entry.cardName}を獲得しました！`,
+              files: [file],
+            });
+            setDownloadState("idle");
+            return;
+          }
+        }
+        
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${entry.cardName || "card"}.png`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setDownloadState("idle");
+        return;
+      }
+
+      // Canvas で画像合成（publicフォルダ内の画像のみ）
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) {
@@ -145,7 +180,6 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
 
       // 画像を読み込み
       const img = new window.Image();
-      img.crossOrigin = "anonymous";
       
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
@@ -195,20 +229,20 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
         ctx.font = `${smallFontSize}px sans-serif`;
         ctx.fillStyle = "#e5e5e5";
         const maxWidth = img.width - padding * 2;
-        const words = entry.description.split("");
+        const chars = entry.description.split("");
         let line = "";
         let y = img.height - overlayHeight + fontSize + padding + smallFontSize + padding / 2;
         const lineHeight = smallFontSize * 1.4;
         let lineCount = 0;
         const maxLines = 3;
 
-        for (let i = 0; i < words.length; i++) {
-          const testLine = line + words[i];
+        for (let i = 0; i < chars.length; i++) {
+          const testLine = line + chars[i];
           const metrics = ctx.measureText(testLine);
           if (metrics.width > maxWidth && line !== "") {
             if (lineCount < maxLines - 1) {
               ctx.fillText(line, padding, y);
-              line = words[i];
+              line = chars[i];
               y += lineHeight;
               lineCount++;
             } else {
@@ -265,6 +299,9 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       setDownloadState("idle");
     } catch (error) {
       console.error("Download failed:", error);
+      if (error instanceof DOMException && error.name === 'SecurityError') {
+        console.error("CORS security error - image may be from a different origin");
+      }
       setDownloadState("error");
     }
   }, [entry.cardName, entry.rarity, entry.description, resolvedImage, stars, formattedSerial]);

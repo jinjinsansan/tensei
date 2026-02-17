@@ -15,6 +15,8 @@ type PageProps = {
   }>;
 };
 
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { entryId } = await params;
   const supabase = getServiceSupabase();
