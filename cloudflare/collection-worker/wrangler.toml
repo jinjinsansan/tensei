@@ -1,0 +1,12 @@
+name = "collection-worker"
+main = "src/index.ts"
+compatibility_date = "2024-02-17"
+
+[durable_objects]
+bindings = [
+  { name = "COLLECTION_STATE", class_name = "CollectionState" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["CollectionState"]

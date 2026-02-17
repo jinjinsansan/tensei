@@ -9,11 +9,13 @@ import {
   insertCardInventoryEntry,
 } from '@/lib/data/gacha';
 import { fetchAuthedContext } from '@/lib/app/session';
+import { buildCollectionEntryFromInventory, hasUserCollectedCard } from '@/lib/collection/supabase';
 import type { StoryPayload } from '@/lib/gacha/types';
 import type { GachaResult } from '@/lib/gacha/common/types';
 import type { Tables } from '@/types/database';
 import { buildCommonAssetPath } from '@/lib/gacha/assets';
 import { mapCardDbIdToModuleId, mapCharacterDbIdToModuleId } from '@/lib/gacha/characters/mapping';
+import { emitCollectionEventToEdge } from '@/lib/cloudflare/collection-cache';
 
 type ResultRequest = {
   resultId: string;
@@ -44,7 +46,12 @@ export async function POST(request: Request) {
     let serialNumber: number | null = null;
     let inventoryId: string | null = null;
 
+    const card = await fetchCardById(supabase, cardId);
+
+    let alreadyOwnedBeforeAward = true;
+
     if (!resultRow.card_awarded) {
+      alreadyOwnedBeforeAward = await hasUserCollectedCard(supabase, user.id, cardId);
       const { data: serialData, error: serialError } = await supabase
         .rpc('next_card_serial', { target_card_id: cardId });
       if (serialError || typeof serialData !== 'number') {
@@ -66,6 +73,13 @@ export async function POST(request: Request) {
         gacha_result_id: resultRow.id,
       });
       resultRow = await completeGachaResult(supabase, resultRow.id);
+
+      const entry = buildCollectionEntryFromInventory(inventoryRow, card);
+      void emitCollectionEventToEdge(user.id, {
+        entry,
+        totalOwnedDelta: 1,
+        distinctOwnedDelta: alreadyOwnedBeforeAward ? 0 : 1,
+      });
     } else {
       const { data: inventoryRow } = await supabase
         .from('card_inventory')
@@ -79,7 +93,6 @@ export async function POST(request: Request) {
       }
     }
 
-    const card = await fetchCardById(supabase, cardId);
     const story = resultRow.scenario_snapshot as StoryPayload;
     const storedGachaResult = (resultRow.metadata as { gachaResult?: GachaResult } | null)?.gachaResult;
     const gachaResult = storedGachaResult ?? createFallbackGachaResult(resultRow, card);
