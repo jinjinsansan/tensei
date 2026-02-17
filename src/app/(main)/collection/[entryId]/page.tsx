@@ -28,7 +28,7 @@ export default async function CollectionEntryPage({ params }: PageProps) {
     notFound();
   }
 
-  const shareUrl = buildShareUrl(entry.id);
+  const shareUrl = await buildShareUrl(entry.id);
 
   const detailEntry = {
     id: entry.id,
@@ -39,7 +39,7 @@ export default async function CollectionEntryPage({ params }: PageProps) {
     description: entry.cards.description ?? null,
     serialNumber: entry.serial_number,
     obtainedAt: entry.obtained_at ?? null,
-    imageUrl: entry.cards.card_image_url ?? entry.cards.image_url ?? null,
+    imageUrl: entry.cards.image_url ?? null,
     personName: entry.cards.person_name ?? null,
     cardStyle: entry.cards.card_style ?? null,
   };
@@ -60,7 +60,7 @@ export default async function CollectionEntryPage({ params }: PageProps) {
   );
 }
 
-function buildShareUrl(entryId: string) {
+async function buildShareUrl(entryId: string) {
   const env = getPublicEnv();
   const explicitBase = env.NEXT_PUBLIC_SITE_URL ?? env.NEXT_PUBLIC_APP_URL ?? "";
   const normalized = explicitBase ? explicitBase.replace(/\/$/, "") : "";
@@ -68,7 +68,7 @@ function buildShareUrl(entryId: string) {
     return `${normalized}/collection/${entryId}`;
   }
 
-  const hdrs = headers();
+  const hdrs = await headers();
   const proto = hdrs.get("x-forwarded-proto") ?? "https";
   const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
   if (host) {

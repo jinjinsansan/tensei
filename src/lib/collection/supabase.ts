@@ -186,7 +186,7 @@ async function fetchAllInventory(client: DbClient, userId: string) {
       totalOwned = count;
     }
 
-    const mappedRows = (data ?? []).map(mapInventoryRowToEntry);
+    const mappedRows = (data ?? []).map((row) => mapInventoryRowToEntry(row as InventoryRow));
     entries.push(...mappedRows);
 
     if (!data || data.length < INVENTORY_BATCH_SIZE) {
