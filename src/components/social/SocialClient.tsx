@@ -67,6 +67,7 @@ export function SocialClient({ userId, displayName, email }: Props) {
   const [selectedInventoryId, setSelectedInventoryId] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     void refreshAll();
@@ -200,6 +201,18 @@ export function SocialClient({ userId, displayName, email }: Props) {
     });
   };
 
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(label);
+      setTimeout(() => setCopiedId(null), 2000);
+      setMessage(`${label}をコピーしました`);
+    } catch (error) {
+      console.error("Copy failed:", error);
+      setMessage("コピーに失敗しました");
+    }
+  }
+
   return (
     <div className="space-y-6 text-white">
       <section className={SECTION_CARD}>
@@ -218,20 +231,37 @@ export function SocialClient({ userId, displayName, email }: Props) {
           </button>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-            <p className={FIELD_LABEL}>Display</p>
-            <p className="font-display text-xl text-white">{displayName ?? "未設定"}</p>
-            <p className="text-xs text-white/60">ニックネーム</p>
+          <div className="rounded-2xl border border-neon-purple/30 bg-gradient-to-br from-purple-950/40 to-transparent px-4 py-3">
+            <p className={FIELD_LABEL}>
+              <span className="text-neon-purple">Display</span>
+            </p>
+            <p className="font-display text-xl text-neon-purple">{displayName ?? "未設定"}</p>
+            <p className="text-xs text-zinc-400">ニックネーム</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-            <p className={FIELD_LABEL}>Email</p>
-            <p className="text-sm text-white/90">{email ?? "未設定"}</p>
-            <p className="text-xs text-white/60">連絡先</p>
+          <div className="rounded-2xl border border-neon-blue/30 bg-gradient-to-br from-blue-950/40 to-transparent px-4 py-3">
+            <p className={FIELD_LABEL}>
+              <span className="text-neon-blue">Email</span>
+            </p>
+            <p className="text-sm text-neon-blue">{email ?? "未設定"}</p>
+            <p className="text-xs text-zinc-400">連絡先</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-            <p className={FIELD_LABEL}>Friend ID</p>
-            <p className="font-mono text-[0.75rem] text-white/90 break-all">{userId}</p>
-            <p className="text-xs text-white/60">共有用</p>
+          <div className="rounded-2xl border border-neon-yellow/30 bg-gradient-to-br from-yellow-950/40 to-transparent px-4 py-3">
+            <p className={FIELD_LABEL}>
+              <span className="text-neon-yellow">Friend ID</span>
+            </p>
+            <div className="mt-1 space-y-2">
+              <p className="font-mono text-xs text-white/90 break-all">
+                {userId.substring(0, 8)}...{userId.substring(userId.length - 4)}
+              </p>
+              <button
+                type="button"
+                onClick={() => void copyToClipboard(userId, "フレンドID")}
+                className="w-full rounded-full border border-neon-yellow/50 bg-neon-yellow/10 px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-neon-yellow transition hover:bg-neon-yellow/20"
+              >
+                {copiedId === "フレンドID" ? "✓ コピー済み" : "📋 IDをコピー"}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-zinc-400">このIDを共有してフレンド申請を受け付けます</p>
           </div>
         </div>
       </section>
@@ -245,17 +275,34 @@ export function SocialClient({ userId, displayName, email }: Props) {
           <form onSubmit={handleSendRequest} className="space-y-4 text-sm">
             <label className="space-y-2">
               <span className={FIELD_LABEL}>Friend ID</span>
-              <input
-                value={targetUserId}
-                onChange={(e) => setTargetUserId(e.target.value)}
-                placeholder="IDを入力"
-                className={INPUT_CLASS}
-              />
+              <div className="flex gap-2">
+                <input
+                  value={targetUserId}
+                  onChange={(e) => setTargetUserId(e.target.value)}
+                  placeholder="IDを入力またはペースト"
+                  className={`${INPUT_CLASS} flex-1`}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      setTargetUserId(text.trim());
+                      setMessage("IDをペーストしました");
+                    } catch {
+                      setMessage("ペーストに失敗しました");
+                    }
+                  }}
+                  className="rounded-2xl border border-neon-blue/30 bg-gradient-to-br from-blue-950/40 to-transparent px-4 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-neon-blue transition hover:from-blue-950/60"
+                >
+                  📋
+                </button>
+              </div>
             </label>
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full border border-white/15 bg-gradient-to-r from-[#7bf1ff]/40 via-[#8ae6ff]/30 to-[#fbc2eb]/30 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.35em] text-white transition hover:border-white/40 disabled:opacity-50"
+              className="w-full rounded-full border border-neon-yellow/50 bg-neon-yellow/10 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-neon-yellow/20 disabled:opacity-50"
             >
               フレンド申請を送る
             </button>
@@ -314,13 +361,24 @@ export function SocialClient({ userId, displayName, email }: Props) {
           ) : (
             <ul className="space-y-2 text-sm">
               {friends.map((friend) => (
-                <li key={friend.id} className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3">
-                  <p className="font-medium text-white">
-                    {friend.display_name ?? friend.email ?? friend.id}
-                  </p>
-                  <p className="text-[0.65rem] uppercase tracking-[0.3em] text-white/60">
-                    ID: <span className="break-all text-white/70">{friend.id}</span>
-                  </p>
+                <li key={friend.id} className="rounded-2xl border border-white/15 bg-gradient-to-br from-white/5 to-transparent px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <p className="font-medium text-white">
+                        {friend.display_name ?? friend.email ?? friend.id}
+                      </p>
+                      <p className="text-[0.65rem] uppercase tracking-[0.3em] text-white/60">
+                        ID: <span className="break-all text-white/70 font-mono">{friend.id.substring(0, 8)}...{friend.id.substring(friend.id.length - 4)}</span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void copyToClipboard(friend.id, friend.display_name ?? "フレンドID")}
+                      className="rounded-full border border-white/20 px-3 py-1 text-[0.6rem] uppercase tracking-[0.3em] text-white/70 transition hover:border-neon-blue/50 hover:text-neon-blue"
+                    >
+                      {copiedId === (friend.display_name ?? "フレンドID") ? "✓" : "📋"}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
