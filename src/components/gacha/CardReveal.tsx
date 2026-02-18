@@ -145,10 +145,10 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
 
         <div className="relative mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link
-            href="/gacha"
+            href="/collection"
             className="w-full rounded-full border border-white/20 bg-white/10 px-6 py-3 text-center text-xs font-semibold uppercase tracking-[0.3em] text-white shadow-lg transition hover:bg-white/20 sm:w-auto"
           >
-            ガチャホールへ戻る
+            コレクションページへ
           </Link>
           <button
             type="button"
