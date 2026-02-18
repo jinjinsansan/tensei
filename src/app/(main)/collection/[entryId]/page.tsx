@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { CollectionDetailClient } from "@/components/collection/collection-detail-client";
-import { fetchAuthedContext } from "@/lib/app/session";
+import { fetchAuthedContext, getSessionWithSnapshot } from "@/lib/app/session";
 import { fetchCollectionEntryById } from "@/lib/collection/supabase";
 import { getPublicEnv } from "@/lib/env";
 import { getServiceSupabase } from "@/lib/supabase/service";
