@@ -11,6 +11,7 @@ import {
   createReferralCodeForUser,
 } from '@/lib/data/referrals';
 import { ReferralCopyButton } from '@/components/referral/referral-copy-button';
+import type { Tables } from '@/types/database';
 
 async function createReferralLinkAction() {
   'use server';
@@ -34,7 +35,7 @@ export default async function ReferralPage() {
     fetchReferralStats(supabase, context.user.id),
     supabase
       .from('friends')
-      .select('friend_user_id, created_at, friend:friend_user_id ( display_name, email )')
+      .select('id, user_id, friend_user_id, created_at, friend:friend_user_id ( display_name, email )')
       .eq('user_id', context.user.id)
       .order('created_at', { ascending: false })
       .limit(12),
@@ -42,7 +43,11 @@ export default async function ReferralPage() {
   if (friendRows.error) {
     throw new Error(friendRows.error.message);
   }
-  const friendList = (friendRows.data ?? []).map((row) => ({
+  type FriendRow = Pick<Tables<'friends'>, 'id' | 'user_id' | 'friend_user_id' | 'created_at'> & {
+    friend?: Pick<Tables<'app_users'>, 'display_name' | 'email'> | null;
+  };
+  const rawFriendRows = ((friendRows.data ?? []) as unknown as FriendRow[]);
+  const friendList = rawFriendRows.map((row) => ({
     id: row.friend_user_id,
     name: row.friend?.display_name ?? '名無しさん',
     email: row.friend?.email ?? null,
