@@ -201,8 +201,9 @@ async function fetchCardTransfers(client: DbClient, userId: string, limit: numbe
   return rows.map((row) => {
     const direction: 'sent' | 'received' = row.from_user_id === userId ? 'sent' : 'received';
     const counterpart = direction === 'sent' ? row.to_user : row.from_user;
+    const counterpartId = counterpart?.id ?? (direction === 'sent' ? row.to_user_id : row.from_user_id) ?? 'unknown';
     const counterpartLabel =
-      counterpart?.display_name?.trim() || counterpart?.email?.trim() || (direction === 'sent' ? row.to_user_id : row.from_user_id);
+      counterpart?.display_name?.trim() || counterpart?.email?.trim() || counterpartId;
 
     return {
       id: row.id,
@@ -211,7 +212,7 @@ async function fetchCardTransfers(client: DbClient, userId: string, limit: numbe
       cardName: row.card_inventory?.cards?.card_name ?? null,
       cardRarity: row.card_inventory?.cards?.rarity ?? null,
       serialNumber: row.card_inventory?.serial_number ?? null,
-      counterpartId: counterpart?.id ?? (direction === 'sent' ? row.to_user_id : row.from_user_id),
+      counterpartId,
       counterpartLabel,
       note: row.note ?? null,
     };
