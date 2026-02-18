@@ -1,3 +1,4 @@
+import type { PostgrestError } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import { fetchAuthedContext } from "@/lib/app/session";
@@ -97,7 +98,11 @@ export async function POST(req: Request) {
     });
 
     if (transferError) {
-      throw new Error(transferError.message);
+      if (isMissingCardTransfersTableError(transferError)) {
+        console.warn("[card-send] card_transfers table unavailable, skipping transfer log", transferError);
+      } else {
+        throw new Error(transferError.message);
+      }
     }
 
     // 送信者のキャッシュからカードを削除
@@ -176,4 +181,16 @@ async function findInventoryRow({ supabase, cardInventoryId, cardId, serialNumbe
 
   const { data } = await query.maybeSingle();
   return data ?? null;
+}
+
+function isMissingCardTransfersTableError(error: PostgrestError | null | undefined) {
+  if (!error) {
+    return false;
+  }
+  const missingCodes = new Set(["PGRST301", "42P01"]);
+  if (error.code && missingCodes.has(error.code)) {
+    return true;
+  }
+  const message = error.message?.toLowerCase() ?? "";
+  return message.includes("card_transfers") && (message.includes("does not exist") || message.includes("not found"));
 }
