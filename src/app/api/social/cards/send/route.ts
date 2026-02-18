@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       .select("id", { count: "exact", head: true })
       .eq("app_user_id", fromUserId)
       .eq("card_id", inventoryRow.card_id)
-      .neq("id", cardInventoryId);
+      .neq("id", inventoryRow.id);
 
     // 受信者が既にこのカードを持っているかチェック
     const { count: receiverExistingCopies } = await supabase
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     const { error: updateError } = await supabase
       .from("card_inventory")
       .update({ app_user_id: toUserId, obtained_at: new Date().toISOString() })
-      .eq("id", cardInventoryId)
+      .eq("id", inventoryRow.id)
       .eq("app_user_id", fromUserId);
 
     if (updateError) {
@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     const senderDistinctDelta = (senderOtherCopies ?? 0) > 0 ? 0 : -1;
     void emitCollectionEventToEdge(fromUserId, {
       type: 'remove',
-      inventoryId: cardInventoryId,
+      inventoryId: inventoryRow.id,
       totalOwnedDelta: -1,
       distinctOwnedDelta: senderDistinctDelta,
     });
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
     const { data: updatedInventory } = await supabase
       .from("card_inventory")
       .select("*")
-      .eq("id", cardInventoryId)
+      .eq("id", inventoryRow.id)
       .single();
 
     if (updatedInventory) {
