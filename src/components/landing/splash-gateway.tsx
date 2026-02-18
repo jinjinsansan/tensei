@@ -19,6 +19,7 @@ const SHUFFLE_CARDS = [
   "/kenta_cards/card10_rockstar.png",
   "/kenta_cards/card11_demon_king.png",
 ];
+const SHUFFLE_SPEED_MS = 70;
 
 export function SplashGateway() {
   const router = useRouter();
@@ -37,10 +38,11 @@ export function SplashGateway() {
 
   useEffect(() => {
     if (phase !== "shuffle") return;
+    let index = 0;
     const interval = setInterval(() => {
-      const randomIndex = Math.floor(Math.random() * SHUFFLE_CARDS.length);
-      setCurrentShuffleCard(SHUFFLE_CARDS[randomIndex]);
-    }, 50);
+      index = (index + 1) % SHUFFLE_CARDS.length;
+      setCurrentShuffleCard(SHUFFLE_CARDS[index]);
+    }, SHUFFLE_SPEED_MS);
     return () => clearInterval(interval);
   }, [phase]);
 
