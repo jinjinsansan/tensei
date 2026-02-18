@@ -53,6 +53,125 @@ const RARITY_BADGES: Record<string, string> = {
   LR: "text-cyan-200 border-cyan-300/40 bg-cyan-600/10",
 };
 
+type CardTheme = {
+  frameOuter: [string, string];
+  frameInner: [string, string];
+  headerBg: string;
+  headerText: string;
+  panelBg: string;
+  panelBorder: string;
+  starColor: string;
+  starGlow: string;
+  serialColor: string;
+  tagBg: string;
+  tagText: string;
+  accent: string;
+};
+
+const DEFAULT_CARD_THEME: CardTheme = {
+  frameOuter: ["#fefefe", "#d1d5db"],
+  frameInner: ["#cbd5f5", "#f5f3ff"],
+  headerBg: "rgba(8,8,15,0.94)",
+  headerText: "#f9fafb",
+  panelBg: "rgba(6,6,10,0.92)",
+  panelBorder: "rgba(255,255,255,0.15)",
+  starColor: "#fde047",
+  starGlow: "rgba(250,204,21,0.4)",
+  serialColor: "#c4b5fd",
+  tagBg: "rgba(255,255,255,0.08)",
+  tagText: "#e2e8f0",
+  accent: "#93c5fd",
+};
+
+const CARD_THEMES: Record<string, CardTheme> = {
+  N: {
+    frameOuter: ["#9ca3af", "#6b7280"],
+    frameInner: ["#d1d5db", "#f3f4f6"],
+    headerBg: "rgba(15,15,18,0.95)",
+    headerText: "#f5f5f5",
+    panelBg: "rgba(9,9,12,0.94)",
+    panelBorder: "rgba(255,255,255,0.12)",
+    starColor: "#fbbf24",
+    starGlow: "rgba(251,191,36,0.35)",
+    serialColor: "#d1d5db",
+    tagBg: "rgba(255,255,255,0.08)",
+    tagText: "#f3f4f6",
+    accent: "#a5b4fc",
+  },
+  R: {
+    frameOuter: ["#fcd34d", "#fb923c"],
+    frameInner: ["#fff7d6", "#fde68a"],
+    headerBg: "rgba(28,14,6,0.95)",
+    headerText: "#fff7d4",
+    panelBg: "rgba(20,10,6,0.94)",
+    panelBorder: "rgba(250,204,21,0.35)",
+    starColor: "#fde68a",
+    starGlow: "rgba(253,230,138,0.45)",
+    serialColor: "#fb923c",
+    tagBg: "rgba(250,204,21,0.15)",
+    tagText: "#fff7d4",
+    accent: "#f97316",
+  },
+  SR: {
+    frameOuter: ["#f9a8d4", "#fef08a"],
+    frameInner: ["#fff1e1", "#ffd5f0"],
+    headerBg: "rgba(32,13,24,0.95)",
+    headerText: "#fff5f7",
+    panelBg: "rgba(21,6,14,0.94)",
+    panelBorder: "rgba(249,168,212,0.4)",
+    starColor: "#fef9c3",
+    starGlow: "rgba(252,211,77,0.45)",
+    serialColor: "#f472b6",
+    tagBg: "rgba(249,168,212,0.18)",
+    tagText: "#ffe4f1",
+    accent: "#fb7185",
+  },
+  SSR: {
+    frameOuter: ["#c084fc", "#f472b6"],
+    frameInner: ["#fdf4ff", "#e9d5ff"],
+    headerBg: "rgba(32,12,39,0.95)",
+    headerText: "#fdf2ff",
+    panelBg: "rgba(18,6,24,0.93)",
+    panelBorder: "rgba(192,132,252,0.5)",
+    starColor: "#fef3c7",
+    starGlow: "rgba(254,215,170,0.45)",
+    serialColor: "#c084fc",
+    tagBg: "rgba(192,132,252,0.2)",
+    tagText: "#f5e9ff",
+    accent: "#f472b6",
+  },
+  UR: {
+    frameOuter: ["#34d399", "#60a5fa"],
+    frameInner: ["#d1fae5", "#e0f2fe"],
+    headerBg: "rgba(6,24,28,0.95)",
+    headerText: "#e0f2fe",
+    panelBg: "rgba(3,12,17,0.93)",
+    panelBorder: "rgba(103,232,249,0.45)",
+    starColor: "#a7f3d0",
+    starGlow: "rgba(5,150,105,0.4)",
+    serialColor: "#67e8f9",
+    tagBg: "rgba(45,212,191,0.16)",
+    tagText: "#ccfbf1",
+    accent: "#5eead4",
+  },
+  LR: {
+    frameOuter: ["#fde047", "#f97316"],
+    frameInner: ["#fff8dc", "#fff1a6"],
+    headerBg: "rgba(36,24,5,0.96)",
+    headerText: "#fff7d6",
+    panelBg: "rgba(25,15,4,0.94)",
+    panelBorder: "rgba(253,224,71,0.55)",
+    starColor: "#ffe08a",
+    starGlow: "rgba(253,186,116,0.45)",
+    serialColor: "#fb923c",
+    tagBg: "rgba(253,224,71,0.2)",
+    tagText: "#fff8dc",
+    accent: "#fbbf24",
+  },
+};
+
+const CARD_LOGO_SRC = "/raise-gacha-logo.png";
+
 export function CollectionDetailClient({ entry, shareUrl, referralShareActive = false }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState("");
@@ -203,126 +322,165 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
       }
 
       // Canvas で画像合成（publicフォルダ内の画像のみ）
+      const loadImageElement = (src: string) =>
+        new Promise<HTMLImageElement>((resolve, reject) => {
+          const image = new window.Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error("Image load failed"));
+          image.src = src;
+        });
+
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         throw new Error("Canvas not supported");
       }
 
-      // 画像を読み込み
-      const img = new window.Image();
-      
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error("Image load failed"));
-        img.src = resolvedImage;
-      });
+      const img = await loadImageElement(resolvedImage);
+      const logoImage = await loadImageElement(CARD_LOGO_SRC).catch(() => null);
+      const theme = CARD_THEMES[entry.rarity] ?? DEFAULT_CARD_THEME;
 
-      // Canvas サイズを設定（画像サイズに合わせる）
+      const drawRoundedRect = (
+        context: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        width: number,
+        height: number,
+        radius: number,
+      ) => {
+        const r = Math.min(radius, width / 2, height / 2);
+        context.beginPath();
+        context.moveTo(x + r, y);
+        context.lineTo(x + width - r, y);
+        context.quadraticCurveTo(x + width, y, x + width, y + r);
+        context.lineTo(x + width, y + height - r);
+        context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+        context.lineTo(x + r, y + height);
+        context.quadraticCurveTo(x, y + height, x, y + height - r);
+        context.lineTo(x, y + r);
+        context.quadraticCurveTo(x, y, x + r, y);
+        context.closePath();
+      };
+
       canvas.width = img.width;
       canvas.height = img.height;
-
-      // 背景画像を描画
       ctx.drawImage(img, 0, 0);
 
-      const borderWidth = Math.max(4, Math.floor(img.width * 0.012));
-      const padding = Math.max(12, Math.floor(img.width / 28));
+      const borderWidth = Math.max(6, Math.floor(img.width * 0.018));
       const innerWidth = img.width - borderWidth * 2;
+      const padding = Math.max(14, Math.floor(img.width / 26));
 
-      // 外枠
-      ctx.lineWidth = borderWidth;
-      const frameGradient = ctx.createLinearGradient(0, 0, img.width, img.height);
-      frameGradient.addColorStop(0, "rgba(255,215,128,0.9)");
-      frameGradient.addColorStop(0.5, "rgba(168,134,255,0.8)");
-      frameGradient.addColorStop(1, "rgba(255,249,198,0.9)");
-      ctx.strokeStyle = frameGradient;
-      ctx.strokeRect(borderWidth / 2, borderWidth / 2, img.width - borderWidth, img.height - borderWidth);
+      const outerBorder = Math.max(borderWidth, Math.floor(img.width * 0.02));
+      ctx.lineWidth = outerBorder;
+      const outerGradient = ctx.createLinearGradient(0, 0, img.width, img.height);
+      outerGradient.addColorStop(0, theme.frameOuter[0]);
+      outerGradient.addColorStop(1, theme.frameOuter[1]);
+      ctx.strokeStyle = outerGradient;
+      ctx.strokeRect(outerBorder / 2, outerBorder / 2, img.width - outerBorder, img.height - outerBorder);
 
-      // 上部ヘッダー
-      const headerHeight = Math.floor(img.height * 0.15);
-      const headerGradient = ctx.createLinearGradient(borderWidth, borderWidth, borderWidth, borderWidth + headerHeight);
-      headerGradient.addColorStop(0, "rgba(20,20,25,0.95)");
-      headerGradient.addColorStop(1, "rgba(10,10,15,0.8)");
-      ctx.fillStyle = headerGradient;
+      const innerBorder = Math.max(2, Math.floor(outerBorder * 0.45));
+      ctx.lineWidth = innerBorder;
+      const innerGradient = ctx.createLinearGradient(0, img.height, img.width, 0);
+      innerGradient.addColorStop(0, theme.frameInner[0]);
+      innerGradient.addColorStop(1, theme.frameInner[1]);
+      ctx.strokeStyle = innerGradient;
+      ctx.strokeRect(borderWidth, borderWidth, innerWidth, img.height - borderWidth * 2);
+
+      const headerHeight = Math.floor(img.height * 0.16);
+      const footerHeight = Math.floor(img.height * 0.34);
+      const headerPadding = Math.max(padding, Math.floor(headerHeight * 0.25));
+      const infoPaddingX = Math.max(padding * 1.3, 32);
+      const infoPaddingY = Math.max(Math.floor(footerHeight * 0.12), 28);
+
+      ctx.save();
+      ctx.fillStyle = theme.headerBg;
       ctx.fillRect(borderWidth, borderWidth, innerWidth, headerHeight);
-
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
-      ctx.fillRect(borderWidth, borderWidth + headerHeight - 2, innerWidth, 2);
+      ctx.restore();
+      ctx.fillStyle = theme.accent;
+      ctx.fillRect(borderWidth, borderWidth + headerHeight - 3, innerWidth, 3);
 
       const headerFont = Math.floor(headerHeight * 0.45);
-      const headerBaseline = borderWidth + headerHeight - Math.floor(headerHeight * 0.3);
-      ctx.font = `600 ${headerFont}px 'Inter', 'Noto Sans JP', sans-serif`;
-      ctx.fillStyle = "#fcd34d";
-      ctx.fillText(entry.rarity, borderWidth + padding, headerBaseline);
-      const rarityWidth = ctx.measureText(entry.rarity).width;
+      const headerCenterY = borderWidth + headerHeight / 2;
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.font = `700 ${headerFont}px 'Inter', 'Noto Sans JP', sans-serif`;
+      ctx.fillStyle = theme.headerText;
+      ctx.fillText(entry.rarity, borderWidth + headerPadding, headerCenterY);
 
-      if (stars) {
-        const baseStarFont = Math.floor(headerFont * 0.85);
-        const maxStarWidth = Math.max(0, innerWidth - padding * 2 - rarityWidth - Math.floor(padding * 1.5));
-        if (maxStarWidth > 0) {
-          let starFont = baseStarFont;
-          ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
-          let starWidth = ctx.measureText(stars).width;
-          if (starWidth > maxStarWidth && starWidth > 0) {
-            const scaledFont = Math.max(
-              Math.floor(headerFont * 0.5),
-              Math.floor(starFont * (maxStarWidth / starWidth) * 0.95),
-            );
-            starFont = scaledFont;
-            ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
-            starWidth = ctx.measureText(stars).width;
-          }
-          const starX = Math.max(borderWidth + padding + rarityWidth + Math.floor(padding * 0.75), img.width - padding - starWidth);
-          ctx.fillStyle = "#fde68a";
-          ctx.fillText(stars, starX, headerBaseline);
-        }
+      if (logoImage) {
+        const logoMaxHeight = headerHeight * 0.6;
+        const ratio = logoImage.width / logoImage.height;
+        const logoWidth = logoMaxHeight * ratio;
+        const logoX = img.width - borderWidth - headerPadding - logoWidth;
+        const logoY = headerCenterY - logoMaxHeight / 2;
+        ctx.globalAlpha = 0.9;
+        ctx.drawImage(logoImage, logoX, logoY, logoWidth, logoMaxHeight);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.textAlign = "right";
+        ctx.font = `700 ${Math.floor(headerFont * 0.55)}px 'Inter', sans-serif`;
+        ctx.fillText("RAISE GACHA", img.width - borderWidth - headerPadding, headerCenterY);
+        ctx.textAlign = "left";
       }
 
-      // 下部フッター
-      const footerHeight = Math.floor(img.height * 0.34);
-      const footerY = img.height - footerHeight - borderWidth;
-      const footerGradient = ctx.createLinearGradient(0, footerY, 0, footerY + footerHeight);
-      footerGradient.addColorStop(0, "rgba(0,0,0,0.05)");
-      footerGradient.addColorStop(0.25, "rgba(0,0,0,0.35)");
-      footerGradient.addColorStop(0.6, "rgba(0,0,0,0.75)");
-      footerGradient.addColorStop(1, "rgba(0,0,0,0.96)");
-      ctx.fillStyle = footerGradient;
-      ctx.fillRect(borderWidth, footerY, innerWidth, footerHeight);
+      const panelY = img.height - borderWidth - footerHeight;
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = Math.max(20, Math.floor(img.width * 0.02));
+      ctx.fillStyle = theme.panelBg;
+      ctx.fillRect(borderWidth, panelY, innerWidth, footerHeight);
+      ctx.restore();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = theme.panelBorder;
+      ctx.strokeRect(borderWidth, panelY, innerWidth, footerHeight);
 
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
-      ctx.fillRect(borderWidth, footerY, innerWidth, 2);
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillRect(borderWidth, panelY + infoPaddingY * 0.35, innerWidth, 1);
 
-      const footerPaddingTop = Math.max(padding, Math.floor(footerHeight * 0.12));
-      const footerPaddingBottom = Math.max(padding, Math.floor(footerHeight * 0.18));
+      const starLabelFont = Math.max(12, Math.floor(img.width / 90));
+      const starFont = Math.max(18, Math.floor(img.width / 20));
+      let cursorY = panelY + infoPaddingY + starLabelFont;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.font = `600 ${starLabelFont}px 'Inter', sans-serif`;
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.fillText("STAR RATING", img.width / 2, cursorY);
+      cursorY += starLabelFont + Math.floor(starLabelFont * 0.5);
+      ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
+      ctx.fillStyle = theme.starColor;
+      ctx.shadowColor = theme.starGlow;
+      ctx.shadowBlur = Math.max(8, Math.floor(starFont * 0.35));
+      ctx.fillText(stars ?? "—", img.width / 2, cursorY);
+      ctx.shadowColor = "transparent";
+      ctx.textAlign = "left";
+      cursorY += Math.floor(starFont * 0.7);
 
-      // タイトル
-      const titleFont = Math.floor(img.width / 18);
+      const titleFont = Math.floor(img.width / 16);
       ctx.font = `700 ${titleFont}px 'Noto Sans JP', 'Inter', sans-serif`;
       ctx.fillStyle = "#ffffff";
-      const titleY = footerY + footerPaddingTop + titleFont;
-      ctx.fillText(entry.cardName, borderWidth + padding, titleY);
+      ctx.fillText(entry.cardName, borderWidth + infoPaddingX, cursorY);
+      cursorY += Math.floor(titleFont * 0.6);
 
-      // 説明テキスト折り返し
-      const bodyFont = Math.floor(titleFont * 0.55);
+      const bodyFont = Math.floor(titleFont * 0.52);
       const lineHeight = bodyFont * 1.5;
-      const maxWidth = innerWidth - padding * 2;
+      const maxWidth = innerWidth - infoPaddingX * 2;
       const maxLines = 3;
       const drawWrappedText = (text: string, startY: number) => {
         ctx.font = `${bodyFont}px 'Noto Sans JP', 'Inter', sans-serif`;
-        ctx.fillStyle = "#e5e5e5";
+        ctx.fillStyle = "#f5f5f5";
         const chars = text.split("");
         let line = "";
         let y = startY;
         let lineCount = 0;
-        for (let i = 0; i < chars.length; i++) {
+        for (let i = 0; i < chars.length; i += 1) {
           const testLine = line + chars[i];
           if (ctx.measureText(testLine).width > maxWidth && line !== "") {
-            ctx.fillText(line, borderWidth + padding, y);
+            ctx.fillText(line, borderWidth + infoPaddingX, y);
             line = chars[i];
             y += lineHeight;
-            lineCount++;
+            lineCount += 1;
             if (lineCount >= maxLines - 1) {
-              ctx.fillText(`${line}${i < chars.length - 1 ? "..." : ""}`, borderWidth + padding, y);
+              ctx.fillText(`${line}${i < chars.length - 1 ? "..." : ""}`, borderWidth + infoPaddingX, y);
               return y + lineHeight;
             }
           } else {
@@ -330,39 +488,46 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
           }
         }
         if (line) {
-          ctx.fillText(line, borderWidth + padding, y);
+          ctx.fillText(line, borderWidth + infoPaddingX, y);
           y += lineHeight;
         }
         return y;
       };
 
       if (displayDescription) {
-        drawWrappedText(displayDescription, titleY + Math.floor(titleFont * 0.7));
+        cursorY = drawWrappedText(displayDescription, cursorY);
+      } else {
+        cursorY += bodyFont;
       }
 
-      // シリアル番号（カード番号風）
-      const serialFont = Math.floor(titleFont * 0.6);
+      const detailTags = [entry.personName, entry.cardStyle].filter(Boolean) as string[];
+      if (detailTags.length) {
+        const tagFont = Math.max(14, Math.floor(bodyFont * 0.75));
+        const tagHeight = Math.floor(tagFont * 1.9);
+        let tagX = borderWidth + infoPaddingX;
+        const tagY = cursorY + Math.floor(tagFont * 0.2);
+        ctx.font = `600 ${tagFont}px 'Inter', 'Noto Sans JP', sans-serif`;
+        detailTags.forEach((text) => {
+          const pillWidth = ctx.measureText(text).width + tagFont * 1.6;
+          ctx.fillStyle = theme.tagBg;
+          drawRoundedRect(ctx, tagX, tagY, pillWidth, tagHeight, tagHeight / 2);
+          ctx.fill();
+          ctx.fillStyle = theme.tagText;
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, tagX + tagFont * 0.8, tagY + tagHeight / 2 + 1);
+          ctx.textBaseline = "alphabetic";
+          tagX += pillWidth + tagFont * 0.8;
+        });
+        cursorY = tagY + tagHeight + Math.floor(tagFont * 0.6);
+      }
+
+      const serialFont = Math.floor(titleFont * 0.55);
+      const serialBaseline = panelY + footerHeight - infoPaddingY;
+      ctx.textAlign = "right";
       ctx.font = `700 ${serialFont}px 'Inter', sans-serif`;
-      ctx.fillStyle = "#c4b5fd";
-      const serialWidth = ctx.measureText(formattedSerial).width;
-      const serialBaseline = footerY + footerHeight - footerPaddingBottom;
-      ctx.fillText(formattedSerial, img.width - padding - serialWidth, serialBaseline);
-
-      // 人名・スタイルなどラベル
-      const metaFont = Math.floor(bodyFont * 0.75);
-      ctx.font = `600 ${metaFont}px 'Inter', sans-serif`;
-      ctx.fillStyle = "rgba(255,255,255,0.65)";
-      const metaTexts = [entry.personName, entry.cardStyle].filter(Boolean) as string[];
-      if (metaTexts.length > 0) {
-        let metaX = borderWidth + padding;
-        const metaY = serialBaseline - serialFont - Math.floor(metaFont * 1.2);
-        for (const text of metaTexts) {
-          const label = `● ${text}`;
-          const width = ctx.measureText(label).width + padding;
-          ctx.fillText(label, metaX, metaY);
-          metaX += width;
-        }
-      }
+      ctx.fillStyle = theme.serialColor;
+      ctx.fillText(formattedSerial, img.width - infoPaddingX, serialBaseline);
+      ctx.textAlign = "left";
 
       // Canvas を Blob に変換
       const blob = await new Promise<Blob>((resolve, reject) => {
