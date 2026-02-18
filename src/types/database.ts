@@ -812,6 +812,160 @@ export type Database = {
           }
         ];
       };
+      mail_broadcasts: {
+        Row: {
+          id: string;
+          subject: string;
+          body_html: string;
+          body_text: string;
+          audience: string;
+          target_user_id: string | null;
+          sent_by: string | null;
+          total_recipients: number;
+          status: string;
+          error_message: string | null;
+          sent_at: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          subject: string;
+          body_html: string;
+          body_text: string;
+          audience: string;
+          target_user_id?: string | null;
+          sent_by?: string | null;
+          total_recipients?: number;
+          status?: string;
+          error_message?: string | null;
+          sent_at?: string | null;
+          created_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['mail_broadcasts']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'mail_broadcasts_sent_by_fkey';
+            columns: ['sent_by'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_broadcasts_target_user_id_fkey';
+            columns: ['target_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      mail_broadcast_logs: {
+        Row: {
+          id: string;
+          broadcast_id: string;
+          user_id: string | null;
+          email: string;
+          status: string;
+          sent_at: string | null;
+          error_message: string | null;
+          metadata: Json;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          broadcast_id: string;
+          user_id?: string | null;
+          email: string;
+          status?: string;
+          sent_at?: string | null;
+          error_message?: string | null;
+          metadata?: Json;
+          created_at?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['mail_broadcast_logs']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'mail_broadcast_logs_broadcast_id_fkey';
+            columns: ['broadcast_id'];
+            referencedRelation: 'mail_broadcasts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_broadcast_logs_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      user_notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          category: string;
+          title: string;
+          message: string;
+          link_url: string | null;
+          metadata: Json;
+          broadcast_id: string | null;
+          read_at: string | null;
+          emailed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category?: string;
+          title: string;
+          message: string;
+          link_url?: string | null;
+          metadata?: Json;
+          broadcast_id?: string | null;
+          read_at?: string | null;
+          emailed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['user_notifications']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'user_notifications_broadcast_id_fkey';
+            columns: ['broadcast_id'];
+            referencedRelation: 'mail_broadcasts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_notifications_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      password_reset_tokens: {
+        Row: {
+          id: string;
+          user_id: string;
+          token: string;
+          expires_at: string;
+          used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          token: string;
+          expires_at: string;
+          used_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['password_reset_tokens']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'password_reset_tokens_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       referral_codes: {
         Row: {
           id: string;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { loginLibraryMember, resendVerificationEmail } from "../actions";
 
-type LoginPageParams = { error?: string; resend?: string };
+type LoginPageParams = { error?: string; resend?: string; reset?: string };
 
 type LoginPageProps = {
   searchParams?: Promise<LoginPageParams>;
@@ -18,10 +18,15 @@ const resendMessages: Record<string, { text: string; variant: "error" | "success
   sent: { text: "認証メールを送信しました。", variant: "success" },
 };
 
+const resetMessages: Record<string, { text: string; variant: "error" | "success" }> = {
+  done: { text: "パスワードを更新しました。新しい情報でサインインしてください。", variant: "success" },
+};
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = (await searchParams) ?? {};
   const error = params.error;
   const resend = params.resend ? resendMessages[params.resend] : null;
+  const reset = params.reset ? resetMessages[params.reset] : null;
 
   return (
     <div className="space-y-6">
@@ -57,6 +62,17 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         {error && (
           <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
             {error}
+          </p>
+        )}
+        {reset && (
+          <p
+            className={`rounded-xl border px-4 py-2 text-sm ${
+              reset.variant === "success"
+                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-100"
+                : "border-red-500/30 bg-red-500/10 text-red-200"
+            }`}
+          >
+            {reset.text}
           </p>
         )}
 

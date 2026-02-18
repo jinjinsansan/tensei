@@ -1,6 +1,9 @@
 type ServerEnv = {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
+  RESEND_API_KEY: string;
+  RESEND_FROM_EMAIL: string;
+  RESEND_FROM_NAME: string;
 };
 
 type PublicEnv = {
@@ -26,6 +29,9 @@ export function getServerEnv(): ServerEnv {
       'SUPABASE_SERVICE_ROLE_KEY',
       process.env.SUPABASE_SERVICE_ROLE_KEY,
     ),
+    RESEND_API_KEY: ensureEnv('RESEND_API_KEY', process.env.RESEND_API_KEY),
+    RESEND_FROM_EMAIL: ensureEnv('RESEND_FROM_EMAIL', process.env.RESEND_FROM_EMAIL),
+    RESEND_FROM_NAME: process.env.RESEND_FROM_NAME ?? 'Raise Gacha',
   };
 }
 

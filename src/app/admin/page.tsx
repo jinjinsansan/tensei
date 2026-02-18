@@ -34,6 +34,11 @@ const cards = [
     href: "/admin/users",
   },
   {
+    title: "メルマガ配信",
+    description: "Resendで全体・個別メールとアプリ内通知を送信します。",
+    href: "/admin/newsletters",
+  },
+  {
     title: "統計ダッシュボード",
     description: "星ごとの出現率や人気カードを確認します。",
     href: "/admin/stats",

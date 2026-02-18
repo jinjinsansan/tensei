@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { fetchAuthedContext } from "@/lib/app/session";
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { getPublicEnv } from "@/lib/env";
+import { deliverNotifications } from "@/lib/notifications/delivery";
+import type { Tables } from "@/types/database";
 
 export async function POST(req: Request) {
   try {
@@ -34,6 +37,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true, status: "already_accepted" });
     }
 
+    const { data: fromUserRow, error: fromUserError } = await supabase
+      .from("app_users")
+      .select("*")
+      .eq("id", requestRow.from_user_id)
+      .maybeSingle();
+    if (fromUserError || !fromUserRow) {
+      return NextResponse.json({ error: "申請ユーザー情報が見つかりません" }, { status: 404 });
+    }
+
     const now = new Date().toISOString();
     await supabase
       .from("friend_requests")
@@ -48,6 +60,35 @@ export async function POST(req: Request) {
         .from("friends")
         .upsert({ user_id: requestRow.to_user_id, friend_user_id: requestRow.from_user_id }, { onConflict: "user_id,friend_user_id" }),
     ]);
+
+    const siteUrl = getPublicEnv().NEXT_PUBLIC_SITE_URL ?? "https://raisegacha.com";
+    const socialUrl = `${siteUrl}/social`;
+    const requester = fromUserRow as Tables<'app_users'>;
+    const cache = new Map<string, Tables<'app_users'>>([
+      [requester.id, requester],
+      [context.user.id, context.user],
+    ]);
+    await deliverNotifications(
+      [
+        {
+          userId: requester.id,
+          title: "フレンド申請が承認されました",
+          message: `${context.user.display_name ?? context.user.email ?? 'プレイヤー'} とフレンドになりました。`,
+          linkUrl: socialUrl,
+          category: 'friend',
+          emailSubject: 'フレンド承認が完了しました',
+        },
+        {
+          userId,
+          title: "フレンド申請に応えました",
+          message: `${requester.display_name ?? requester.email ?? requester.id} とフレンドになりました。`,
+          linkUrl: socialUrl,
+          category: 'friend',
+          emailSubject: 'フレンド承認が完了しました',
+        },
+      ],
+      { userCache: cache },
+    );
 
     return NextResponse.json({ ok: true, status: "accepted" });
   } catch (error) {

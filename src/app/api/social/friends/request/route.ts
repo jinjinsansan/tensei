@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { fetchAuthedContext } from "@/lib/app/session";
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { getPublicEnv } from "@/lib/env";
+import { deliverNotifications } from "@/lib/notifications/delivery";
+import type { Tables } from "@/types/database";
 
 export async function POST(req: Request) {
   try {
@@ -23,12 +26,21 @@ export async function POST(req: Request) {
 
     const { data: targetUser, error: targetError } = await supabase
       .from("app_users")
-      .select("id")
+      .select("*")
       .eq("id", targetUserId)
       .single();
     if (targetError || !targetUser) {
       return NextResponse.json({ error: "ユーザーが見つかりません" }, { status: 404 });
     }
+    const targetAppUser = targetUser as Tables<'app_users'>;
+    const senderName = context.user.display_name ?? context.user.email ?? "プレイヤー";
+    const targetName = targetAppUser.display_name ?? targetAppUser.email ?? targetAppUser.id;
+    const siteUrl = getPublicEnv().NEXT_PUBLIC_SITE_URL ?? "https://raisegacha.com";
+    const socialUrl = `${siteUrl}/social`;
+    const notificationUsers = new Map<string, Tables<'app_users'>>([
+      [targetAppUser.id, targetAppUser],
+      [context.user.id, context.user],
+    ]);
 
     // 既にフレンドかチェック
     const { data: existingFriend } = await supabase
@@ -64,6 +76,28 @@ export async function POST(req: Request) {
           .upsert({ user_id: targetUserId, friend_user_id: userId }, { onConflict: "user_id,friend_user_id" }),
       ]);
 
+      await deliverNotifications(
+        [
+          {
+            userId: targetUserId,
+            title: "フレンド申請が承認されました",
+            message: `${context.user.display_name ?? context.user.email ?? "フレンド"} とフレンドになりました。SOCIALホールで確認できます。`,
+            linkUrl: socialUrl,
+            category: 'friend',
+            emailSubject: 'フレンド承認が完了しました',
+          },
+          {
+            userId,
+            title: "フレンド申請が承認されました",
+            message: `${targetName} とフレンドになりました。`,
+            linkUrl: socialUrl,
+            category: 'friend',
+            emailSubject: 'フレンド承認が完了しました',
+          },
+        ],
+        { userCache: notificationUsers },
+      );
+
       return NextResponse.json({ ok: true, status: "accepted" });
     }
 
@@ -84,6 +118,20 @@ export async function POST(req: Request) {
       to_user_id: targetUserId,
       status: "pending",
     });
+
+    await deliverNotifications(
+      [
+        {
+          userId: targetUserId,
+          title: "新しいフレンド申請",
+          message: `${senderName} からフレンド申請が届きました。SOCIALホールで承認できます。`,
+          linkUrl: socialUrl,
+          category: 'friend',
+          emailSubject: 'フレンド申請が届きました',
+        },
+      ],
+      { userCache: notificationUsers },
+    );
 
     return NextResponse.json({ ok: true, status: "requested" });
   } catch (error) {

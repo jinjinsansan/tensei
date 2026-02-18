@@ -25,6 +25,7 @@ const sections = [
   {
     title: "サポート / 設定",
     links: [
+      { title: "お知らせ受信箱", description: "管理者からのメルマガと通知", href: "/notifications", badge: "NEW" },
       { title: "使い方ガイド", description: "遊び方を確認", href: "/how-to-play", badge: "NEW" },
       { title: "ヘルプセンター", description: "よくある質問 (準備中)", href: "mailto:support@raisegacha.com", badge: "EMAIL" },
       { title: "パスワード変更", description: "メール経由で更新", href: "/reset" },

@@ -15,6 +15,7 @@ const links = [
   { href: '/admin/settings', label: 'RTP設定' },
   { href: '/admin/presentation', label: '演出確率設定' },
   { href: '/admin/countdown-patterns', label: 'カウントダウンパターン' },
+  { href: '/admin/newsletters', label: 'メルマガ配信' },
   { href: '/admin/stats', label: '統計' },
 ];
 
