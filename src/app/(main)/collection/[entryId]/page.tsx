@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
 import { CollectionDetailClient } from "@/components/collection/collection-detail-client";
-import { getSessionWithSnapshot } from "@/lib/app/session";
+import { fetchAuthedContext } from "@/lib/app/session";
 import { fetchCollectionEntryById } from "@/lib/collection/supabase";
 import { getPublicEnv } from "@/lib/env";
 import { getServiceSupabase } from "@/lib/supabase/service";
@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CollectionEntryPage({ params }: PageProps) {
   const { entryId } = await params;
   const supabase = getServiceSupabase();
-  const context = await getSessionWithSnapshot(supabase).catch(() => null);
+  const context = await fetchAuthedContext(supabase).catch(() => null);
   if (!context) {
     notFound();
   }
@@ -97,7 +97,7 @@ export default async function CollectionEntryPage({ params }: PageProps) {
     ? null
     : await fetchReferralCode(supabase, context.user.id);
   const referralShareUrl = referralCodeRow?.code
-    ? await buildReferralShareUrl(referralCodeRow.code, entry.card_id)
+    ? await buildReferralShareUrl(referralCodeRow.code)
     : null;
   const shareUrl = referralShareUrl ?? (await buildShareUrl(entry.id));
 
@@ -154,14 +154,11 @@ async function buildShareUrl(entryId: string) {
   return `/collection/${entryId}`;
 }
 
-async function buildReferralShareUrl(code: string, cardId: string) {
+async function buildReferralShareUrl(code: string) {
   const env = getPublicEnv();
   const explicitBase = env.NEXT_PUBLIC_SITE_URL ?? env.NEXT_PUBLIC_APP_URL ?? "";
   const normalized = explicitBase ? explicitBase.replace(/\/$/, "") : "";
   const params = new URLSearchParams({ ref: code });
-  if (cardId) {
-    params.set("card", cardId);
-  }
   const suffix = `/register?${params.toString()}`;
   if (normalized) {
     return `${normalized}${suffix}`;
