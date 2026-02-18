@@ -7,12 +7,15 @@ import { buildCollectionEntryFromInventory } from "@/lib/collection/supabase";
 import { fetchCardById } from "@/lib/data/gacha";
 
 export async function POST(req: Request) {
+  console.log("[card-send] route invoked at", new Date().toISOString());
   try {
     const supabase = getServiceSupabase();
     const context = await fetchAuthedContext(supabase);
     if (!context) {
+      console.log("[card-send] unauthorized");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    console.log("[card-send] user authenticated:", context.user.id);
 
     const { cardInventoryId, cardId, serialNumber, toUserId } = (await req.json()) as {
       cardInventoryId?: string;
@@ -49,8 +52,10 @@ export async function POST(req: Request) {
     });
 
     if (!inventoryRow) {
+      console.log("[card-send] inventory not found", { cardInventoryId, cardId, serialNumber, fromUserId });
       return NextResponse.json({ error: "カードが見つからないか、あなたの所有ではありません" }, { status: 404 });
     }
+    console.log("[card-send] inventory found:", inventoryRow.id);
 
     // カード情報を取得
     let card: Awaited<ReturnType<typeof fetchCardById>> | null = null;
@@ -125,9 +130,10 @@ export async function POST(req: Request) {
       });
     }
 
+    console.log("[card-send] transfer successful");
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("card send error", error);
+    console.error("[card-send] error:", error);
     return NextResponse.json({ error: "カード送付に失敗しました" }, { status: 500 });
   }
 }
