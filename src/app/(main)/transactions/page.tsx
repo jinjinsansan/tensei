@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { GachaHistoryList } from "@/components/transactions/gacha-history-list";
 import { fetchAuthedContext } from "@/lib/app/session";
-import { getServiceSupabase } from "@/lib/supabase/service";
 import { fetchTransactionHistory } from "@/lib/data/transactions";
+import { getServiceSupabase } from "@/lib/supabase/service";
 
 const yenFormatter = new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" });
 
@@ -20,38 +22,62 @@ export default async function TransactionsPage() {
     .filter((purchase) => purchase.currency === "JPY")
     .reduce((sum, purchase) => sum + purchase.amountCents, 0);
 
+  const gachaEntries = history.gachaPlays.map((play) => ({
+    ...play,
+    formattedTimestamp: formatDateTime(play.createdAt),
+  }));
+
+  const summaryCards = [
+    {
+      label: "購入件数",
+      value: `${history.ticketPurchases.length}件`,
+      helper: yenFormatter.format(totalPurchasesYen / 100),
+      icon: "🎫",
+      accent: "from-yellow-500/15 via-yellow-500/5 to-black/40 border-yellow-400/30",
+    },
+    {
+      label: "ガチャ履歴",
+      value: `${history.gachaPlays.length}件`,
+      helper: "最新50件",
+      icon: "🎰",
+      accent: "from-blue-500/20 via-blue-500/5 to-black/40 border-blue-400/30",
+    },
+    {
+      label: "カード送受信",
+      value: `${history.cardTransfers.length}件`,
+      helper: "フレンド配送",
+      icon: "🔁",
+      accent: "from-pink-500/20 via-pink-500/5 to-black/40 border-pink-400/30",
+    },
+  ];
+
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-8 pb-12">
-      <header className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-6 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
+    <section className="relative mx-auto w-full max-w-5xl space-y-8 pb-14">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-neon-purple/20 blur-3xl" />
+        <div className="absolute right-0 top-20 h-56 w-56 rounded-full bg-neon-blue/10 blur-[100px]" />
+        <div className="absolute bottom-0 left-8 h-56 w-56 rounded-full bg-neon-pink/10 blur-[100px]" />
+      </div>
+
+      <header className="space-y-4 rounded-3xl border border-white/10 bg-black/30 px-6 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
         <p className="text-xs uppercase tracking-[0.5em] text-neon-yellow">Transaction History</p>
         <h1 className="font-display text-4xl text-white">取引履歴</h1>
         <p className="text-sm text-zinc-300">
-          チケット購入・ガチャ結果・カード送受信の履歴をまとめて確認できます。
+          チケット購入・ガチャ結果・カード送受信の履歴をまとめて確認できます。安心して遊べるよう、必要な情報をいつでも参照できます。
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <SummaryCard
-          label="購入件数"
-          value={`${history.ticketPurchases.length}件`}
-          helper={yenFormatter.format(totalPurchasesYen / 100)}
-          accent="text-neon-yellow"
-        />
-        <SummaryCard
-          label="ガチャ履歴"
-          value={`${history.gachaPlays.length}件`}
-          helper="最新50件"
-          accent="text-neon-blue"
-        />
-        <SummaryCard
-          label="カード送受信"
-          value={`${history.cardTransfers.length}件`}
-          helper="フレンド配送"
-          accent="text-neon-pink"
-        />
+      <div className="grid gap-4 md:grid-cols-3">
+        {summaryCards.map((card) => (
+          <SummaryCard key={card.label} {...card} />
+        ))}
       </div>
 
-      <HistorySection title="チケット購入履歴" description="決済ステータスや受付番号を確認できます。">
+      <HistorySection
+        title="チケット購入履歴"
+        description="決済ステータスや受付番号を確認できます。"
+        tone="gold"
+      >
         {history.ticketPurchases.length === 0 ? (
           <EmptyState message="購入履歴がまだありません。" />
         ) : (
@@ -100,80 +126,66 @@ export default async function TransactionsPage() {
         )}
       </HistorySection>
 
-      <HistorySection title="ガチャプレイ履歴" description="獲得カードと反転発生の有無を確認できます。">
+      <HistorySection
+        title="ガチャプレイ履歴"
+        description="獲得カードと反転発生の有無を確認できます。"
+        tone="blue"
+      >
         {history.gachaPlays.length === 0 ? (
           <EmptyState message="ガチャ履歴がまだありません。" />
         ) : (
-          <div className="space-y-3">
-            {history.gachaPlays.map((play) => (
-              <div
-                key={play.id}
-                className="rounded-3xl border border-white/10 bg-black/25 p-4 shadow-panel-inset"
+          <GachaHistoryList entries={gachaEntries} />
+        )}
+      </HistorySection>
+
+      <HistorySection
+        title="カード送付/受取履歴"
+        description="フレンド間のカード移動を記録します。"
+        tone="pink"
+      >
+        {history.cardTransfers.length === 0 ? (
+          <EmptyState message="カード送受信履歴がまだありません。" />
+        ) : (
+          <div className="space-y-4">
+            {history.cardTransfers.map((transfer) => (
+              <article
+                key={transfer.id}
+                className="rounded-3xl border border-white/10 bg-gradient-to-br from-pink-500/5 via-black/30 to-black/40 p-5 shadow-panel-inset"
               >
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">{formatDateTime(play.createdAt)}</p>
-                    <p className="font-display text-xl text-white">
-                      {play.cardName ?? "???"}
-                      <span className="ml-2 text-sm text-white/70">★{play.starLevel}</span>
-                    </p>
-                    <p className="text-xs text-white/60">
-                      {play.characterName ?? "キャラクター不明"} / {play.cardRarity ?? "N"}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs uppercase tracking-[0.35em] text-white/60">Result ID</p>
-                    <p className="font-mono text-sm text-white/80">{play.historyId ?? "-"}</p>
-                    <p className="text-xs text-white/70">
-                      {play.hadReversal ? "逆転演出あり" : "通常演出"} ・ {play.obtainedVia}
-                    </p>
-                  </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <DirectionBadge direction={transfer.direction} />
+                  <p className="text-xs uppercase tracking-[0.35em] text-white/60">{formatDateTime(transfer.createdAt)}</p>
                 </div>
-              </div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <TransferField
+                    label="カード"
+                    value={<span className="font-display text-lg text-white">{transfer.cardName ?? "???"}</span>}
+                    sub={transfer.cardRarity ?? "N"}
+                  />
+                  <TransferField
+                    label="シリアル"
+                    value={transfer.serialNumber ? `No.${String(transfer.serialNumber).padStart(3, "0")}` : "-"}
+                  />
+                  <TransferField
+                    label={transfer.direction === "sent" ? "送り先" : "受取元"}
+                    value={<span className="font-mono text-sm text-white/80 break-all">{transfer.counterpartLabel}</span>}
+                  />
+                  <TransferField label="メモ" value={transfer.note ?? "-"} />
+                </div>
+              </article>
             ))}
           </div>
         )}
       </HistorySection>
 
-      <HistorySection title="カード送付/受取履歴" description="フレンド間のカード移動を記録します。">
-        {history.cardTransfers.length === 0 ? (
-          <EmptyState message="カード送受信履歴がまだありません。" />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-white/80">
-              <thead>
-                <tr className="text-xs uppercase tracking-[0.3em] text-white/60">
-                  <th className="px-3 py-2">日時</th>
-                  <th className="px-3 py-2">方向</th>
-                  <th className="px-3 py-2">カード</th>
-                  <th className="px-3 py-2">シリアル</th>
-                  <th className="px-3 py-2">相手</th>
-                  <th className="px-3 py-2">メモ</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.cardTransfers.map((transfer) => (
-                  <tr key={transfer.id} className="border-t border-white/5">
-                    <td className="px-3 py-3 align-top text-white/70">{formatDateTime(transfer.createdAt)}</td>
-                    <td className="px-3 py-3 align-top">
-                      <DirectionBadge direction={transfer.direction} />
-                    </td>
-                    <td className="px-3 py-3 align-top">
-                      <p className="font-semibold text-white">{transfer.cardName ?? "???"}</p>
-                      <p className="text-xs text-white/60">{transfer.cardRarity ?? "N"}</p>
-                    </td>
-                    <td className="px-3 py-3 align-top">{transfer.serialNumber ? `No.${String(transfer.serialNumber).padStart(3, "0")}` : "-"}</td>
-                    <td className="px-3 py-3 align-top">
-                      <p className="font-mono text-xs text-white/70 break-all">{transfer.counterpartLabel}</p>
-                    </td>
-                    <td className="px-3 py-3 align-top text-white/60">{transfer.note ?? "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </HistorySection>
+      <div className="text-center">
+        <Link
+          href="/mypage"
+          className="inline-flex items-center justify-center rounded-full border border-white/20 bg-black/30 px-6 py-3 text-sm font-semibold text-white transition hover:border-neon-pink/60 hover:text-neon-pink"
+        >
+          ← メニューに戻る
+        </Link>
+      </div>
     </section>
   );
 }
@@ -182,18 +194,27 @@ function SummaryCard({
   label,
   value,
   helper,
+  icon,
   accent,
 }: {
   label: string;
   value: string;
   helper: string;
+  icon: string;
   accent: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/15 bg-black/30 px-4 py-4 text-white shadow-panel-inset">
-      <p className={`text-[0.6rem] uppercase tracking-[0.4em] ${accent}`}>{label}</p>
-      <p className="font-display text-3xl">{value}</p>
-      <p className="text-xs text-white/70">{helper}</p>
+    <div className={`rounded-3xl border bg-gradient-to-br px-5 py-5 text-white shadow-panel-inset ${accent}`}>
+      <div className="flex items-center gap-3">
+        <span className="text-2xl" aria-hidden>
+          {icon}
+        </span>
+        <div>
+          <p className="text-[0.65rem] uppercase tracking-[0.45em] text-white/70">{label}</p>
+          <p className="font-display text-3xl">{value}</p>
+        </div>
+      </div>
+      <p className="mt-2 text-xs text-white/70">{helper}</p>
     </div>
   );
 }
@@ -202,25 +223,47 @@ function HistorySection({
   title,
   description,
   children,
+  tone = "gold",
 }: {
   title: string;
   description: string;
   children: ReactNode;
+  tone?: HistorySectionTone;
 }) {
+  const toneStyles: Record<HistorySectionTone, { container: string; glow: string }> = {
+    gold: {
+      container: "border-yellow-500/20 bg-gradient-to-br from-yellow-500/10 via-black/40 to-black/70",
+      glow: "bg-yellow-500/30",
+    },
+    blue: {
+      container: "border-blue-500/20 bg-gradient-to-br from-blue-500/10 via-black/40 to-black/70",
+      glow: "bg-blue-500/30",
+    },
+    pink: {
+      container: "border-pink-500/20 bg-gradient-to-br from-pink-500/10 via-black/40 to-black/70",
+      glow: "bg-pink-500/30",
+    },
+  };
+
+  const toneClass = toneStyles[tone] ?? toneStyles.gold;
+
   return (
-    <section className="space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset">
-      <div>
-        <p className="text-xs uppercase tracking-[0.35em] text-neon-purple">{title}</p>
-        <p className="text-sm text-white/70">{description}</p>
+    <section className={`relative overflow-hidden rounded-3xl border p-6 shadow-panel-inset ${toneClass.container}`}>
+      <div className={`pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full blur-[120px] ${toneClass.glow}`} aria-hidden />
+      <div className="relative space-y-2">
+        <p className="text-xs uppercase tracking-[0.4em] text-white/70">{title}</p>
+        <p className="text-sm text-white/80">{description}</p>
       </div>
-      {children}
+      <div className="relative mt-4">{children}</div>
     </section>
   );
 }
 
+type HistorySectionTone = "gold" | "blue" | "pink";
+
 function EmptyState({ message }: { message: string }) {
   return (
-    <p className="rounded-3xl border border-dashed border-white/15 bg-white/5 px-4 py-6 text-center text-sm text-white/60">
+    <p className="rounded-3xl border border-dashed border-white/20 bg-white/5 px-4 py-6 text-center text-sm text-white/70">
       {message}
     </p>
   );
@@ -255,6 +298,16 @@ function DirectionBadge({ direction }: { direction: "sent" | "received" }) {
     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] ${className}`}>
       {label}
     </span>
+  );
+}
+
+function TransferField({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+  return (
+    <div>
+      <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/50">{label}</p>
+      <div className="mt-1 text-sm text-white">{value}</div>
+      {sub ? <p className="text-xs text-white/60">{sub}</p> : null}
+    </div>
   );
 }
 
