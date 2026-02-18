@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { fetchAuthedContext } from "@/lib/app/session";
-import { fetchCollectionSnapshot, sliceSnapshot } from "@/lib/collection/supabase";
-import { fetchCollectionFromEdge, writeCollectionSnapshotToEdge } from "@/lib/cloudflare/collection-cache";
+import { fetchCollectionPageData } from "@/lib/collection/page-data";
 import { getServiceSupabase } from "@/lib/supabase/service";
 
 const DEFAULT_LIMIT = 50;
@@ -24,17 +23,9 @@ export async function GET(request: Request) {
     const limit = Math.min(Math.max(rawLimit || DEFAULT_LIMIT, 1), MAX_LIMIT);
     const offset = Math.max(rawOffset || 0, 0);
 
-    const cached = await fetchCollectionFromEdge({ userId: context.user.id, limit, offset });
-    if (cached) {
-      return NextResponse.json(cached);
-    }
+    const payload = await fetchCollectionPageData(supabase, context.user.id, { limit, offset });
 
-    const snapshot = await fetchCollectionSnapshot(supabase, context.user.id);
-    const responsePayload = sliceSnapshot(snapshot, limit, offset);
-
-    await writeCollectionSnapshotToEdge(context.user.id, snapshot);
-
-    return NextResponse.json(responsePayload);
+    return NextResponse.json(payload);
   } catch (error) {
     console.error("collection error", error);
     return NextResponse.json(

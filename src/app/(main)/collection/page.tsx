@@ -1,8 +1,20 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { CollectionList } from "@/components/collection/collection-list";
+import { fetchCollectionPageData } from "@/lib/collection/page-data";
+import { fetchAuthedContext } from "@/lib/app/session";
+import { getServiceSupabase } from "@/lib/supabase/service";
 
-export default function CollectionPage() {
+export default async function CollectionPage() {
+  const supabase = getServiceSupabase();
+  const context = await fetchAuthedContext(supabase);
+  if (!context) {
+    notFound();
+  }
+
+  const initialData = await fetchCollectionPageData(supabase, context.user.id, { limit: 50, offset: 0 });
+
   return (
     <section className="mx-auto w-full max-w-4xl space-y-8 pb-10">
       <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 px-6 py-7 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
@@ -22,7 +34,7 @@ export default function CollectionPage() {
         </Link>
       </div>
 
-      <CollectionList />
+      <CollectionList initialData={initialData} />
     </section>
   );
 }
