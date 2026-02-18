@@ -204,7 +204,7 @@ export async function requestPasswordReset(formData: FormData) {
   const user = await findUserByEmail(supabase, parsed.data.email);
   if (user) {
     const tokenRow = await createPasswordResetToken(supabase, user.id);
-    const resetLink = `${SITE_URL}/reset?token=${tokenRow.token}`;
+    const resetLink = `${SITE_URL}/reset/complete?token=${tokenRow.token}`;
     await deliverNotifications(
       [
         {
@@ -230,17 +230,17 @@ export async function completePasswordReset(formData: FormData) {
     confirmPassword: String(formData.get('confirmPassword') ?? ''),
   });
   if (!parsed.success) {
-    buildStatusRedirect('/reset', { status: 'token-error' });
+    buildStatusRedirect('/reset/complete', { status: 'token-error' });
     return;
   }
   const tokenRow = await verifyPasswordResetToken(supabase, parsed.data.token);
   if (!tokenRow) {
-    buildStatusRedirect('/reset', { status: 'token-expired' });
+    buildStatusRedirect('/reset/complete', { status: 'token-expired' });
     return;
   }
   const user = await findUserById(supabase, tokenRow.user_id);
   if (!user) {
-    buildStatusRedirect('/reset', { status: 'token-error' });
+    buildStatusRedirect('/reset/complete', { status: 'token-error' });
     return;
   }
   const newHash = await hashPassword(parsed.data.password);
