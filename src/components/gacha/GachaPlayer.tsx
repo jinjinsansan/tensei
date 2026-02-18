@@ -15,7 +15,7 @@ import {
   type CountdownSelection,
 } from '@/lib/gacha/common/countdown-selector';
 import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
-import { chooseTitleVideo } from '@/lib/gacha/common/title-video-selector';
+import { chooseTitleVideo, selectTitleStars } from '@/lib/gacha/common/title-video-selector';
 import type {
   CdColor,
   CharacterModule,
@@ -111,6 +111,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
   const [countdownIndex, setCountdownIndex] = useState(0);
   const [preSceneIndex, setPreSceneIndex] = useState(0);
   const [mainSceneIndex, setMainSceneIndex] = useState(0);
+  const [mainSceneMode, setMainSceneMode] = useState<'primary' | 'reveal'>('primary');
   const [dondenIndex, setDondenIndex] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [serialNumber, setSerialNumber] = useState<number | null>(null);
@@ -159,11 +160,15 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     if (gachaResult.isLoss || !character) return null;
     const availableCardIds = character.cards.map((card) => card.cardId);
     if (!availableCardIds.length) return null;
-    const realCardId =
-      gachaResult.isDonden && gachaResult.dondenFromCardId
-        ? gachaResult.dondenFromCardId
-        : gachaResult.cardId;
-    return chooseTitleVideo(realCardId, availableCardIds, presentation.titleHintRate);
+    if (gachaResult.isDonden) {
+      const fakeCardId = gachaResult.dondenFromCardId ?? gachaResult.cardId;
+      return {
+        videoCardId: fakeCardId,
+        starDisplay: selectTitleStars(false),
+        isRealCard: false,
+      } as TitleVideoSelection;
+    }
+    return chooseTitleVideo(gachaResult.cardId, availableCardIds, presentation.titleHintRate);
   });
 
   const titleVideoSrc = useMemo(() => {
@@ -195,18 +200,38 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     return chance ? character.getChanceSceneVideoPath(chance.patternId) : null;
   }, [character, preScenePatternId]);
 
-  const cardDefinition = useMemo(
-    () => character?.cards.find((card) => card.cardId === gachaResult.cardId) ?? null,
-    [character, gachaResult.cardId],
+  const primaryMainSceneCardId = gachaResult.isDonden && gachaResult.dondenFromCardId
+    ? gachaResult.dondenFromCardId
+    : gachaResult.cardId;
+  const revealMainSceneCardId = gachaResult.isDonden ? gachaResult.cardId : null;
+
+  const getMainSceneVideosForCard = useCallback(
+    (cardId: string | null) => {
+      if (!character || !cardId) return [];
+      const card = character.cards.find((entry) => entry.cardId === cardId);
+      if (!card) return [];
+      const steps = card.mainSceneSteps ?? 0;
+      return Array.from({ length: steps }).map((_, idx) =>
+        character.getMainSceneVideoPath(cardId, idx + 1),
+      );
+    },
+    [character],
   );
 
-  const mainSceneVideos = useMemo(() => {
-    if (!character || !cardDefinition) return [];
-    const steps = cardDefinition.mainSceneSteps ?? 0;
-    return Array.from({ length: steps }).map((_, idx) =>
-      character.getMainSceneVideoPath(gachaResult.cardId, idx + 1),
-    );
-  }, [character, cardDefinition, gachaResult.cardId]);
+  const primaryMainSceneVideos = useMemo(
+    () => getMainSceneVideosForCard(primaryMainSceneCardId),
+    [getMainSceneVideosForCard, primaryMainSceneCardId],
+  );
+
+  const revealMainSceneVideos = useMemo(
+    () => (gachaResult.isDonden ? getMainSceneVideosForCard(revealMainSceneCardId) : []),
+    [gachaResult.isDonden, getMainSceneVideosForCard, revealMainSceneCardId],
+  );
+
+  const activeMainSceneVideos =
+    gachaResult.isDonden && mainSceneMode === 'reveal' ? revealMainSceneVideos : primaryMainSceneVideos;
+  const activeMainSceneCardId =
+    gachaResult.isDonden && mainSceneMode === 'reveal' ? revealMainSceneCardId : primaryMainSceneCardId;
 
   const dondenRoute = useMemo(() => {
     if (!character || !gachaResult.isDonden) return null;
@@ -237,7 +262,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     add(titleVideoSrc);
     preSceneMeta?.videos.forEach((src) => add(src));
     add(chanceSceneVideo);
-    mainSceneVideos.forEach((src) => add(src));
+    primaryMainSceneVideos.forEach((src) => add(src));
+    revealMainSceneVideos.forEach((src) => add(src));
     dondenVideos.forEach((src) => add(src));
     add(lossCardImage);
     return Array.from(set);
@@ -248,7 +274,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     titleVideoSrc,
     preSceneMeta,
     chanceSceneVideo,
-    mainSceneVideos,
+    primaryMainSceneVideos,
+    revealMainSceneVideos,
     dondenVideos,
     lossCardImage,
   ]);
@@ -352,7 +379,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const countdownTotal = countdownVideos.length;
   const preSceneTotal = preSceneMeta?.videos.length ?? 0;
-  const mainSceneTotal = mainSceneVideos.length;
+  const mainSceneTotal = activeMainSceneVideos.length;
   const dondenTotal = dondenVideos.length;
 
   const progressPhase = useCallback(() => {
@@ -377,6 +404,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
           } else if (chanceSceneVideo) {
             startPhase('CHANCE_SCENE');
           } else {
+            setMainSceneMode('primary');
             startPhase('MAIN_SCENE');
           }
           return;
@@ -386,9 +414,15 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
             setPreSceneIndex((idx) => Math.min(idx + 1, preSceneTotal - 1));
             return;
           }
-          startPhase(chanceSceneVideo ? 'CHANCE_SCENE' : 'MAIN_SCENE');
+          if (chanceSceneVideo) {
+            startPhase('CHANCE_SCENE');
+          } else {
+            setMainSceneMode('primary');
+            startPhase('MAIN_SCENE');
+          }
           return;
         case 'CHANCE_SCENE':
+          setMainSceneMode('primary');
           startPhase('MAIN_SCENE');
           return;
         case 'MAIN_SCENE':
@@ -396,8 +430,15 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
             setMainSceneIndex((idx) => Math.min(idx + 1, mainSceneTotal - 1));
             return;
           }
-          if (gachaResult.isDonden && dondenTotal > 0) {
-            startPhase('DONDEN_SCENE');
+          if (gachaResult.isDonden && mainSceneMode === 'primary') {
+            if (dondenTotal > 0) {
+              startPhase('DONDEN_SCENE');
+            } else if (revealMainSceneVideos.length > 0) {
+              setMainSceneMode('reveal');
+              startPhase('MAIN_SCENE');
+            } else {
+              startPhase('CARD_REVEAL');
+            }
           } else {
             startPhase('CARD_REVEAL');
           }
@@ -407,7 +448,12 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
             setDondenIndex((idx) => Math.min(idx + 1, dondenTotal - 1));
             return;
           }
-          startPhase('CARD_REVEAL');
+          if (gachaResult.isDonden && revealMainSceneVideos.length > 0) {
+            setMainSceneMode('reveal');
+            startPhase('MAIN_SCENE');
+          } else {
+            startPhase('CARD_REVEAL');
+          }
           return;
         case 'LOSS_REVEAL':
           // 現状このフェーズには遷移しない（互換用）
@@ -432,6 +478,8 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
       mainSceneIndex,
       dondenTotal,
       dondenIndex,
+      mainSceneMode,
+      revealMainSceneVideos.length,
       exitPlayer,
       startPhase,
     ],
@@ -457,6 +505,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     titleSelection,
     preScenePattern: preSceneMeta?.patternId ?? null,
     character,
+    mainSceneCardId: activeMainSceneCardId,
   });
 
   const phaseVideo = resolvePhaseVideo({
@@ -470,7 +519,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
     preSceneMeta,
     preSceneIndex,
     chanceSceneVideo,
-    mainSceneVideos,
+    mainSceneVideos: activeMainSceneVideos,
     mainSceneIndex,
     dondenVideos,
     dondenIndex,
@@ -478,7 +527,10 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const signedPhaseVideoSrc = resolveAssetSrc(phaseVideo?.src ?? null);
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
-  const phaseVideoKey = phaseVideo ? `${phase}-${phaseVideo.key}` : `${phase}-video`;
+  const mainSceneKeySuffix = phase === 'MAIN_SCENE' ? `-${mainSceneMode}` : '';
+  const phaseVideoKey = phaseVideo
+    ? `${phase}-${phaseVideo.key}${mainSceneKeySuffix}`
+    : `${phase}-video${mainSceneKeySuffix}`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
   const hasPhaseVideo = Boolean(signedPhaseVideoSrc);
   const controlsLocked = hasPhaseVideo && isControlsLocked(phase, videoReady);
@@ -680,6 +732,7 @@ function buildPhaseDetails(args: {
   titleSelection: TitleVideoSelection | null;
   preScenePattern: string | null;
   character: CharacterModule | null;
+  mainSceneCardId: string | null;
 }): string | undefined {
   const {
     phase,
@@ -689,6 +742,7 @@ function buildPhaseDetails(args: {
     titleSelection,
     preScenePattern,
     character,
+    mainSceneCardId,
   } = args;
   switch (phase) {
     case 'STANDBY':
@@ -712,7 +766,8 @@ function buildPhaseDetails(args: {
     case 'CHANCE_SCENE':
       return preScenePattern ? `チャンスシーン (${preScenePattern}) に突入` : 'チャンスシーンを準備中';
     case 'MAIN_SCENE': {
-      const info = character?.getCardDisplayInfo(gachaResult.cardId);
+      const targetCardId = mainSceneCardId ?? gachaResult.cardId;
+      const info = character?.getCardDisplayInfo(targetCardId);
       return info
         ? `転生先メイン演出: ${info.name} ★${info.starRating} / ${info.title}`
         : `転生先メイン演出: ${gachaResult.cardName}`;
