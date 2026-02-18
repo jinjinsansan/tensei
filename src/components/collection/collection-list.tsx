@@ -195,6 +195,12 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
   }, [filtered, todayKey]);
 
   const visibleCount = showHistorical ? filtered.length : todayEntries.length;
+  const uniqueCompletionPercent = safeData && safeData.totalAvailable > 0
+    ? Math.round((safeData.distinctOwned / safeData.totalAvailable) * 100)
+    : 0;
+  const duplicateCount = safeData ? Math.max(safeData.totalOwned - safeData.distinctOwned, 0) : 0;
+  const todayCount = todayEntries.length;
+  const historicalVisibleCount = Math.max(filtered.length - todayCount, 0);
 
   const renderCollectionCard = (item: CollectionEntry) => {
     const card = item.cards;
@@ -298,30 +304,44 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
   return (
     <div className="space-y-6">
       <section className="space-y-6 rounded-3xl border border-white/10 bg-black/30 p-6 shadow-panel-inset">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">COLLECTION PROGRESS</p>
-            <p className="text-sm text-zinc-400">獲得済みカードのステータス</p>
-          </div>
-          <span className="rounded-full border border-white/20 px-4 py-1 text-[0.65rem] uppercase tracking-[0.4em] text-white/60">
-            SERIAL SAFE
-          </span>
+        <div className="space-y-2">
+          <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">COLLECTION SUMMARY</p>
+          <h2 className="font-display text-3xl text-white">コレクションの進捗</h2>
+          <p className="text-sm text-white/70">ユニーク達成率や今日獲得したカードがひと目で分かります。</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
-            <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">Unique</p>
-            <p className="font-display text-3xl">{safeData.distinctOwned}</p>
-            <p className="text-xs text-white/70">/ {safeData.totalAvailable}</p>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-white">
+            <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">コンプリート率</p>
+            <p className="font-display text-4xl">{uniqueCompletionPercent}%</p>
+            <p className="text-xs text-white/70">ユニーク {safeData.distinctOwned} / {safeData.totalAvailable}</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
-            <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">Total</p>
-            <p className="font-display text-3xl">{safeData.totalOwned}</p>
-            <p className="text-xs text-white/70">累計入手枚数</p>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-white">
+            <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">所持カード</p>
+            <p className="font-display text-4xl">{safeData.totalOwned}</p>
+            <p className="text-xs text-white/70">重複 {duplicateCount} 枚を含む総数</p>
           </div>
-          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
-            <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">Visible</p>
-            <p className="font-display text-3xl">{filtered.length}</p>
-            <p className="text-xs text-white/70">条件一致</p>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-white">
+            <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">今日の入手</p>
+            <p className="font-display text-4xl">{todayCount}枚</p>
+            <p className="text-xs text-white/70">履歴 {historicalVisibleCount} 枚（折りたたみ）</p>
+          </div>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-white">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">シリアル保護</p>
+            <p className="font-semibold text-white">SERIAL SAFE</p>
+            <p className="text-sm text-white/75">ダウンロード時も実際のシリアル番号は自動でマスクされます。</p>
+          </div>
+          <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-white">
+            <p className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">表示モード</p>
+            <p className="text-lg font-semibold text-white">
+              {showHistorical ? "本日 + 履歴を表示中" : "本日のカードのみ表示中"}
+            </p>
+            <p className="text-sm text-white/75">
+              {showHistorical
+                ? `現在 ${filtered.length} 枚のカードをリストに表示しています。`
+                : `履歴を展開すると過去 ${historicalCount} 枚もすぐに確認できます。`}
+            </p>
           </div>
         </div>
       </section>
