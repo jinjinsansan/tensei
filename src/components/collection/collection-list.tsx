@@ -55,7 +55,7 @@ function isLossCardData(card: { is_loss_card?: boolean | null; name?: string | n
 }
 
 type CollectionListProps = {
-  initialData: CollectionResponse | null;
+  initialData?: CollectionResponse | null;
 };
 
 type DateGroup = {
