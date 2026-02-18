@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+
+import { Check, ChevronDown } from "lucide-react";
 
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
@@ -714,21 +716,12 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
               </p>
             ) : (
               <form onSubmit={handleSendToFriend} className="mt-4 space-y-3">
-                <label className="space-y-2 text-sm text-white">
-                  <span className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">Friend</span>
-                  <select
-                    value={selectedFriend}
-                    onChange={(event) => setSelectedFriend(event.target.value)}
-                    className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
-                  >
-                    <option value="">選択してください</option>
-                    {friends.map((friend) => (
-                      <option key={friend.id} value={friend.id}>
-                        {friend.display_name ?? friend.email ?? friend.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <FriendSelect
+                  label="Friend"
+                  friends={friends}
+                  value={selectedFriend}
+                  onChange={setSelectedFriend}
+                />
                 <button
                   type="submit"
                   disabled={!selectedFriend || sendState === "loading"}
@@ -747,6 +740,106 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+type FriendSelectProps = {
+  label: string;
+  friends: Friend[];
+  value: string;
+  onChange: (id: string) => void;
+};
+
+function FriendSelect({ label, friends, value, onChange }: FriendSelectProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const labelId = useId();
+
+  useEffect(() => {
+    function handlePointer(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handlePointer);
+    return () => document.removeEventListener("mousedown", handlePointer);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open]);
+
+  const selectedFriend = friends.find((friend) => friend.id === value);
+  const displayLabel = selectedFriend
+    ? selectedFriend.display_name ?? selectedFriend.email ?? selectedFriend.id
+    : "選択してください";
+
+  const friendOptions = [
+    { id: "", label: "選択してください" },
+    ...friends.map((friend) => ({
+      id: friend.id,
+      label: friend.display_name ?? friend.email ?? friend.id,
+    })),
+  ];
+
+  return (
+    <div className="space-y-2 text-sm" ref={containerRef}>
+      <span id={labelId} className="text-[0.6rem] uppercase tracking-[0.35em] text-white/60">
+        {label}
+      </span>
+      <div className="relative">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-left text-sm text-white transition hover:border-white/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-blue/60"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={labelId}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <span className="truncate text-white/90">{displayLabel}</span>
+          <ChevronDown className={`ml-3 h-4 w-4 shrink-0 text-white/60 transition ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <div
+            role="listbox"
+            aria-labelledby={labelId}
+            className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-white/15 bg-black/90 shadow-[0_20px_45px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+          >
+            <ul className="max-h-56 overflow-y-auto py-2 text-sm">
+              {friendOptions.map((option) => {
+                const selected = option.id === value || (option.id === "" && !value);
+                return (
+                  <li key={option.id || "placeholder"}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      className={`flex w-full items-center justify-between px-4 py-2 text-left text-white/85 transition hover:bg-white/10 ${
+                        selected ? "bg-white/10 text-neon-green" : ""
+                      }`}
+                      onClick={() => {
+                        onChange(option.id);
+                        setOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {selected && <Check className="h-4 w-4 text-neon-green" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

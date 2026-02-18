@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+
+import { Check, ChevronDown } from "lucide-react";
 
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
@@ -253,77 +255,58 @@ export function CollectionList() {
               onChange={(e) => setKeyword(e.target.value)}
             />
           </label>
-          <label className="space-y-1">
-            <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Sort</span>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as "recent" | "rarity" | "name")}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
-            >
-              <option value="recent">最近取得順</option>
-              <option value="rarity">レア度順</option>
-              <option value="name">名前順</option>
-            </select>
-          </label>
+          <FilterSelect
+            label="Sort"
+            value={sort}
+            onChange={setSort}
+            options={[
+              { value: "recent", label: "最近取得順" },
+              { value: "rarity", label: "レア度順" },
+              { value: "name", label: "名前順" },
+            ]}
+          />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <label className="space-y-1">
-            <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Rarity</span>
-            <select
-              value={rarityFilter}
-              onChange={(e) => setRarityFilter(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
-            >
-              <option value="all">すべて</option>
-              {filterOptions.rarities.map((rarity) => (
-                <option key={rarity} value={rarity}>
-                  {RARITY_LABELS[rarity] ?? rarity}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1">
-            <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Character</span>
-            <select
-              value={personFilter}
-              onChange={(e) => setPersonFilter(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
-            >
-              <option value="all">すべて</option>
-              {filterOptions.persons.map((person) => (
-                <option key={person} value={person}>
-                  {person}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1">
-            <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Style</span>
-            <select
-              value={styleFilter}
-              onChange={(e) => setStyleFilter(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
-            >
-              <option value="all">すべて</option>
-              {filterOptions.styles.map((style) => (
-                <option key={style} value={style}>
-                  {style}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1">
-            <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Outcome</span>
-            <select
-              value={outcomeFilter}
-              onChange={(e) => setOutcomeFilter(e.target.value as typeof outcomeFilter)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
-            >
-              <option value="all">すべて</option>
-              <option value="hit">当たりのみ</option>
-              <option value="loss">転生失敗のみ</option>
-            </select>
-          </label>
+          <FilterSelect
+            label="Rarity"
+            value={rarityFilter}
+            onChange={setRarityFilter}
+            options={[
+              { value: "all", label: "すべて" },
+              ...filterOptions.rarities.map((rarity) => ({
+                value: rarity,
+                label: RARITY_LABELS[rarity] ?? rarity,
+              })),
+            ]}
+          />
+          <FilterSelect
+            label="Character"
+            value={personFilter}
+            onChange={setPersonFilter}
+            options={[
+              { value: "all", label: "すべて" },
+              ...filterOptions.persons.map((person) => ({ value: person, label: person })),
+            ]}
+          />
+          <FilterSelect
+            label="Style"
+            value={styleFilter}
+            onChange={setStyleFilter}
+            options={[
+              { value: "all", label: "すべて" },
+              ...filterOptions.styles.map((style) => ({ value: style, label: style })),
+            ]}
+          />
+          <FilterSelect
+            label="Outcome"
+            value={outcomeFilter}
+            onChange={setOutcomeFilter}
+            options={[
+              { value: "all", label: "すべて" },
+              { value: "hit", label: "当たりのみ" },
+              { value: "loss", label: "転生失敗のみ" },
+            ]}
+          />
           <div className="flex items-end">
             <button
               type="button"
@@ -494,4 +477,98 @@ function isSignableAsset(path?: string | null): path is string {
 
   normalized = normalized.replace(/^\/+/g, '');
   return normalized.startsWith('common/') || normalized.startsWith('characters/');
+}
+
+type FilterSelectOption<T extends string> = {
+  value: T;
+  label: string;
+};
+
+type FilterSelectProps<T extends string> = {
+  label: string;
+  value: T;
+  onChange: (value: T) => void;
+  options: FilterSelectOption<T>[];
+};
+
+function FilterSelect<T extends string>({ label, value, onChange, options }: FilterSelectProps<T>) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const labelId = useId();
+
+  useEffect(() => {
+    function handlePointer(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handlePointer);
+    return () => document.removeEventListener("mousedown", handlePointer);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open]);
+
+  const activeLabel = options.find((option) => option.value === value)?.label ?? options[0]?.label ?? "";
+
+  return (
+    <div className="space-y-1" ref={containerRef}>
+      <span id={labelId} className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">
+        {label}
+      </span>
+      <div className="relative">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-left text-sm text-white transition hover:border-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-blue/60"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={labelId}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <span className="truncate text-white/90">{activeLabel}</span>
+          <ChevronDown className={`ml-3 h-4 w-4 shrink-0 text-white/60 transition ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <div
+            role="listbox"
+            aria-labelledby={labelId}
+            className="absolute left-0 right-0 z-30 mt-2 rounded-2xl border border-white/15 bg-black/90 shadow-[0_20px_45px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+          >
+            <ul className="max-h-60 overflow-y-auto py-2 text-sm text-white/90">
+              {options.map((option) => {
+                const selected = option.value === value;
+                return (
+                  <li key={option.value}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      className={`flex w-full items-center justify-between px-4 py-2 text-left transition hover:bg-white/10 ${
+                        selected ? "bg-white/10 text-neon-yellow" : "text-white/80"
+                      }`}
+                      onClick={() => {
+                        onChange(option.value);
+                        setOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {selected && <Check className="h-4 w-4 text-neon-yellow" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

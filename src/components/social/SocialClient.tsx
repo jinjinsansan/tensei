@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+
+import { Check, ChevronDown } from "lucide-react";
 
 type Friend = {
   id: string;
@@ -68,6 +70,28 @@ export function SocialClient({ userId, displayName, email }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const cardOptions = useMemo(() => {
+    const base = [{ value: "", label: "選択してください" }];
+    const options = collection.map((item) => {
+      const stars = item.star_level ? "★".repeat(Math.max(1, Math.min(item.star_level, 12))) + " " : "";
+      const serialLabel = `#${String(item.serial_number).padStart(3, "0")}`;
+      return {
+        value: item.inventory_id,
+        label: `${stars}${item.card_name} / ${serialLabel}`,
+      };
+    });
+    return base.concat(options);
+  }, [collection]);
+
+  const friendOptions = useMemo(() => {
+    const base = [{ value: "", label: "選択してください" }];
+    const options = friends.map((friend) => ({
+      value: friend.id,
+      label: friend.display_name ?? friend.email ?? friend.id,
+    }));
+    return base.concat(options);
+  }, [friends]);
 
   useEffect(() => {
     void refreshAll();
@@ -391,40 +415,8 @@ export function SocialClient({ userId, displayName, email }: Props) {
             <p className="text-sm text-zinc-300">シリアル付きカードをプレゼント</p>
           </div>
           <form onSubmit={handleSendCard} className="space-y-4 text-sm">
-            <label className="space-y-2">
-              <span className={FIELD_LABEL}>Card</span>
-              <select
-                value={selectedInventoryId}
-                onChange={(e) => setSelectedInventoryId(e.target.value)}
-                className={INPUT_CLASS}
-              >
-                <option value="">選択してください</option>
-                {collection.map((item) => {
-                  const stars = item.star_level ? "★".repeat(Math.max(1, Math.min(item.star_level, 12))) + " " : "";
-                  return (
-                    <option key={item.inventory_id} value={item.inventory_id}>
-                      {stars}
-                      {item.card_name} / #{item.serial_number}
-                    </option>
-                  );
-                })}
-              </select>
-            </label>
-            <label className="space-y-2">
-              <span className={FIELD_LABEL}>Friend</span>
-              <select
-                value={selectedFriendId}
-                onChange={(e) => setSelectedFriendId(e.target.value)}
-                className={INPUT_CLASS}
-              >
-                <option value="">選択してください</option>
-                {friends.map((friend) => (
-                  <option key={friend.id} value={friend.id}>
-                    {friend.display_name ?? friend.email ?? friend.id}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectField label="Card" value={selectedInventoryId} onChange={setSelectedInventoryId} options={cardOptions} />
+            <SelectField label="Friend" value={selectedFriendId} onChange={setSelectedFriendId} options={friendOptions} />
             <button
               type="submit"
               disabled={loading || !selectedInventoryId || !selectedFriendId}
@@ -441,6 +433,100 @@ export function SocialClient({ userId, displayName, email }: Props) {
           {message}
         </div>
       )}
+    </div>
+  );
+}
+
+type SelectOption = {
+  value: string;
+  label: string;
+};
+
+type SelectFieldProps = {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: SelectOption[];
+};
+
+function SelectField({ label, value, onChange, options }: SelectFieldProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const labelId = useId();
+
+  useEffect(() => {
+    function handlePointer(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handlePointer);
+    return () => document.removeEventListener("mousedown", handlePointer);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [open]);
+
+  const activeLabel = options.find((option) => option.value === value)?.label ?? options[0]?.label ?? "";
+
+  return (
+    <div className="space-y-2" ref={containerRef}>
+      <span id={labelId} className={FIELD_LABEL}>
+        {label}
+      </span>
+      <div className="relative">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-left text-sm text-white transition hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neon-blue/60"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={labelId}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <span className="truncate text-white/90">{activeLabel}</span>
+          <ChevronDown className={`ml-3 h-4 w-4 shrink-0 text-white/60 transition ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <div
+            role="listbox"
+            aria-labelledby={labelId}
+            className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-white/15 bg-black/90 shadow-[0_20px_45px_rgba(0,0,0,0.55)] backdrop-blur-xl"
+          >
+            <ul className="max-h-56 overflow-y-auto py-2 text-sm">
+              {options.map((option) => {
+                const selected = option.value === value;
+                return (
+                  <li key={option.value || "placeholder"}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      className={`flex w-full items-center justify-between px-4 py-2 text-left transition hover:bg-white/10 ${
+                        selected ? "bg-white/10 text-neon-yellow" : "text-white/85"
+                      }`}
+                      onClick={() => {
+                        onChange(option.value);
+                        setOpen(false);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {selected && <Check className="h-4 w-4 text-neon-yellow" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
