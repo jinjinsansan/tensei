@@ -436,6 +436,7 @@ export type Database = {
           rarity_ssr: number;
           rarity_ur: number;
           rarity_lr: number;
+          star_distribution: Json;
           donden_rate: number;
           updated_at: string | null;
         };
@@ -449,6 +450,7 @@ export type Database = {
           rarity_ssr?: number;
           rarity_ur?: number;
           rarity_lr?: number;
+          star_distribution?: Json;
           donden_rate?: number;
           updated_at?: string | null;
         };

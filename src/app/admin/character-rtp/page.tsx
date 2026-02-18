@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { AdminCard, AdminPageHero } from '@/components/admin/admin-ui';
+import { getStarDistributionFromRow } from '@/lib/data/gacha';
 import { getServiceSupabase } from '@/lib/supabase/service';
 import type { Tables } from '@/types/database';
 import { CharacterForm } from './character-form';
@@ -31,13 +32,6 @@ async function updateCharacterConfig(formData: FormData) {
   const weightRaw = Number(formData.get('weight') ?? 0);
   const weight = Number.isFinite(weightRaw) ? Math.max(0, weightRaw) : 0;
 
-  const n = Number(formData.get('rarity_N') ?? 0);
-  const r = Number(formData.get('rarity_R') ?? 0);
-  const sr = Number(formData.get('rarity_SR') ?? 0);
-  const ssr = Number(formData.get('rarity_SSR') ?? 0);
-  const ur = Number(formData.get('rarity_UR') ?? 0);
-  const lr = Number(formData.get('rarity_LR') ?? 0);
-
   // 最低1つのキャラクターを有効にする必要があるかチェック
   if (!isActive) {
     const { data: otherCharacters } = await supabase
@@ -52,19 +46,35 @@ async function updateCharacterConfig(formData: FormData) {
     }
   }
   
-  console.log('[updateCharacterConfig] Validation passed:', {
+  console.log('[updateCharacterConfig] Validation passed (pre-star parsing):', {
     isActive,
     weight,
-    totalRtp: n + r + sr + ssr + ur + lr
   });
   const dondenRaw = Number(formData.get('dondenRate') ?? 0);
   const dondenRate = Number.isFinite(dondenRaw) ? Math.min(Math.max(dondenRaw, 0), 100) : 0;
 
-   const totalRtp = n + r + sr + ssr + ur + lr;
-   if (Number.isFinite(totalRtp) && Math.abs(totalRtp - 100) > 0.1) {
-     console.error('[updateCharacterConfig] RTP validation failed:', { totalRtp });
-     return redirect(`/admin/character-rtp?error=rtp_total&total=${totalRtp.toFixed(1)}`);
-   }
+  const starValues = Array.from({ length: 12 }, (_, index) => {
+    const fieldName = `star_${index + 1}`;
+    const raw = Number(formData.get(fieldName) ?? 0);
+    return Number.isFinite(raw) ? raw : 0;
+  });
+
+  const totalStar = starValues.reduce((sum, value) => sum + value, 0);
+  if (Number.isFinite(totalStar) && Math.abs(totalStar - 100) > 0.1) {
+    console.error('[updateCharacterConfig] Star distribution validation failed:', { totalStar });
+    return redirect(`/admin/character-rtp?error=star_total&total=${totalStar.toFixed(1)}`);
+  }
+
+  console.log('[updateCharacterConfig] Star distribution totals:', { totalStar });
+
+  const [rarity_n, rarity_r, rarity_sr, rarity_ssr, rarity_ur, rarity_lr] = [
+    starValues[0] + starValues[1],
+    starValues[2] + starValues[3],
+    starValues[4] + starValues[5],
+    starValues[6] + starValues[7],
+    starValues[8] + starValues[9],
+    starValues[10] + starValues[11],
+  ];
 
   const { error: characterError } = await supabase
     .from('gacha_characters')
@@ -88,12 +98,13 @@ async function updateCharacterConfig(formData: FormData) {
     .upsert(
       {
         character_id: characterId,
-        rarity_n: n,
-        rarity_r: r,
-        rarity_sr: sr,
-        rarity_ssr: ssr,
-        rarity_ur: ur,
-        rarity_lr: lr,
+        rarity_n,
+        rarity_r,
+        rarity_sr,
+        rarity_ssr,
+        rarity_ur,
+        rarity_lr,
+        star_distribution: starValues,
         donden_rate: dondenRate,
         updated_at: new Date().toISOString(),
       },
@@ -190,7 +201,7 @@ export default async function CharacterRtpPage({
           <p className="mt-1 text-xs text-red-200">
             {errorType === 'missing_character_id' && 'キャラクターIDが指定されていません。'}
             {errorType === 'last_character' && '最低1つのキャラクターを有効にする必要があります。'}
-            {errorType === 'rtp_total' && `★別RTPの合計が100%になるように設定してください。（現在: ${totalRtp}%）`}
+            {errorType === 'star_total' && `★分布の合計が100%になるように設定してください。（現在: ${totalRtp}%）`}
             {errorType === 'db_character' && `データベースエラー（gacha_characters）: ${errorMsg}`}
             {errorType === 'db_rtp' && `データベースエラー（gacha_rtp_config）: ${errorMsg}`}
           </p>
@@ -205,12 +216,7 @@ export default async function CharacterRtpPage({
             characterName={character.character_name}
             isActive={character.is_active}
             weight={Number(character.weight ?? 0)}
-            rtpN={Number(rtp?.rarity_n ?? 35)}
-            rtpR={Number(rtp?.rarity_r ?? 25)}
-            rtpSR={Number(rtp?.rarity_sr ?? 20)}
-            rtpSSR={Number(rtp?.rarity_ssr ?? 12)}
-            rtpUR={Number(rtp?.rarity_ur ?? 6)}
-            rtpLR={Number(rtp?.rarity_lr ?? 2)}
+            starDistribution={getStarDistributionFromRow(rtp ?? undefined)}
             dondenRate={Number(rtp?.donden_rate ?? 15)}
             action={updateCharacterConfig}
           />

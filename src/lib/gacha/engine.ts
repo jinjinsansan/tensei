@@ -1,6 +1,7 @@
 import { randomFloat, pickRandom, pickByWeight } from '@/lib/utils/random';
 import { getServiceSupabase } from '@/lib/supabase/service';
 import {
+  DEFAULT_STAR_DISTRIBUTION,
   fetchCardsByCharacter,
   fetchChanceScenes,
   fetchCharacterRtpConfig,
@@ -353,7 +354,7 @@ async function resolveScenario(
 
   // 4. キャラ別RTP取得 & レア度抽選
   const rtp = await fetchCharacterRtpConfig(supabase, moduleCharacterId);
-  const rarity = drawRarity(rtp.rarityDistribution);
+  const desiredStarLevel = drawStarLevel(rtp.starDistribution);
 
   // 5. カードプール取得（max_supply / current_supply を考慮）
   const cards = await fetchCardsByCharacter(supabase, characterDbId);
@@ -377,11 +378,11 @@ async function resolveScenario(
     throw new Error(`Character ${supabaseCharacter.name} has no playable cards.`);
   }
 
-  const rarityMatched = playableCards.filter((card) => coerceRarity(card.rarity) === rarity);
-  const selectableCards = rarityMatched.length ? rarityMatched : playableCards;
+  const starMatched = playableCards.filter((card) => Number(card.star_level ?? 0) === desiredStarLevel);
+  const selectableCards = starMatched.length ? starMatched : playableCards;
   const selectedCard = pickRandom(selectableCards);
 
-  const star = selectedCard.star_level;
+  const star = selectedCard.star_level ?? desiredStarLevel;
 
   // 6. どんでん返し判定（キャラ別 dondenRate）
   const characterModule = getCharacter(moduleCharacterId);
@@ -425,26 +426,20 @@ async function resolveScenario(
   };
 }
 
-function drawRarity(distribution: Record<Rarity, number>): Rarity {
-  const entries: [Rarity, number][] = [
-    ['N', distribution.N ?? 0],
-    ['R', distribution.R ?? 0],
-    ['SR', distribution.SR ?? 0],
-    ['SSR', distribution.SSR ?? 0],
-    ['UR', distribution.UR ?? 0],
-    ['LR', distribution.LR ?? 0],
-  ];
-
-  const total = entries.reduce((sum, [, value]) => sum + value, 0);
+function drawStarLevel(distribution: number[]): number {
+  const source = distribution.length === 12 ? distribution : DEFAULT_STAR_DISTRIBUTION;
+  const total = source.reduce((sum, value) => sum + (Number.isFinite(value) ? value : 0), 0);
   if (total <= 0) {
-    return 'N';
+    return 1;
   }
-
   const roll = randomFloat() * total;
   let cumulative = 0;
-  for (const [rarity, value] of entries) {
+  for (let index = 0; index < source.length; index += 1) {
+    const value = Number.isFinite(source[index]) ? source[index] : 0;
     cumulative += value;
-    if (roll <= cumulative) return rarity;
+    if (roll <= cumulative) {
+      return index + 1;
+    }
   }
-  return entries[entries.length - 1][0];
+  return source.length;
 }

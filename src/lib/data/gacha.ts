@@ -2,7 +2,7 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { parseGachaConfig, type ParsedGachaConfig } from '@/lib/gacha/config';
-import type { CharacterId, Rarity } from '@/lib/gacha/common/types';
+import type { CharacterId } from '@/lib/gacha/common/types';
 
 type DbClient = SupabaseClient<Database>;
 type HistoryStatus = 'pending' | 'success' | 'error';
@@ -69,9 +69,61 @@ export async function fetchGachaCharactersConfig(client: DbClient): Promise<Gach
 export type CharacterRtpConfig = {
   characterId: string;
   lossRate: number; // 0-100
-  rarityDistribution: Record<Rarity, number>;
+  starDistribution: number[]; // length 12, sum ~100
   dondenRate: number; // 0-100
 };
+
+export const DEFAULT_STAR_DISTRIBUTION = [15, 13, 12, 11, 10, 9, 8, 7, 5, 4, 4, 2];
+
+function cloneDefaultStarDistribution(): number[] {
+  return [...DEFAULT_STAR_DISTRIBUTION];
+}
+
+function normalizeStarDistribution(value: unknown): number[] | null {
+  if (!Array.isArray(value)) return null;
+  if (value.length !== 12) return null;
+  const numbers = value.map((entry) => {
+    if (typeof entry === 'number' && Number.isFinite(entry)) {
+      return entry;
+    }
+    const parsed = Number(entry);
+    return Number.isFinite(parsed) ? parsed : 0;
+  });
+  return numbers;
+}
+
+function convertRarityToStarDistribution(row?: Tables<'gacha_rtp_config'> | null): number[] {
+  if (!row) {
+    return cloneDefaultStarDistribution();
+  }
+  const rarityBuckets = [
+    Number(row.rarity_n ?? 0),
+    Number(row.rarity_r ?? 0),
+    Number(row.rarity_sr ?? 0),
+    Number(row.rarity_ssr ?? 0),
+    Number(row.rarity_ur ?? 0),
+    Number(row.rarity_lr ?? 0),
+  ];
+  const distribution: number[] = [];
+  for (const bucket of rarityBuckets) {
+    distribution.push(bucket / 2, bucket / 2);
+  }
+  if (distribution.length === 12) {
+    return distribution;
+  }
+  return cloneDefaultStarDistribution();
+}
+
+export function getStarDistributionFromRow(row?: Tables<'gacha_rtp_config'> | null): number[] {
+  if (!row) {
+    return cloneDefaultStarDistribution();
+  }
+  const normalized = normalizeStarDistribution(row.star_distribution);
+  if (normalized) {
+    return normalized;
+  }
+  return convertRarityToStarDistribution(row);
+}
 
 // v2: キャラ別RTP設定（gacha_rtp_config）
 export async function fetchCharacterRtpConfig(
@@ -91,32 +143,18 @@ export async function fetchCharacterRtpConfig(
     return {
       characterId,
       lossRate: 60,
-      rarityDistribution: {
-        N: 35,
-        R: 25,
-        SR: 20,
-        SSR: 12,
-        UR: 6,
-        LR: 2,
-      },
+      starDistribution: cloneDefaultStarDistribution(),
       dondenRate: 15,
     };
   }
 
   const row = data as Tables<'gacha_rtp_config'>;
-  const rarityDistribution: Record<Rarity, number> = {
-    N: Number(row.rarity_n ?? 0),
-    R: Number(row.rarity_r ?? 0),
-    SR: Number(row.rarity_sr ?? 0),
-    SSR: Number(row.rarity_ssr ?? 0),
-    UR: Number(row.rarity_ur ?? 0),
-    LR: Number(row.rarity_lr ?? 0),
-  };
+  const starDistribution = getStarDistributionFromRow(row);
 
   return {
     characterId: row.character_id,
     lossRate: Number(row.loss_rate ?? 60),
-    rarityDistribution,
+    starDistribution,
     dondenRate: Number(row.donden_rate ?? 15),
   };
 }

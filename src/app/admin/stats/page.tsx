@@ -1,6 +1,14 @@
 import { AdminCard, AdminPageHero, AdminSectionTitle, AdminSubCard } from '@/components/admin/admin-ui';
-import { fetchGachaCardLeaderboard, fetchGachaConfig, fetchGachaStarCounts, fetchGachaSummaryStats } from '@/lib/data/gacha';
+import {
+  DEFAULT_STAR_DISTRIBUTION,
+  fetchGachaCardLeaderboard,
+  fetchGachaCharactersConfig,
+  fetchGachaStarCounts,
+  fetchGachaSummaryStats,
+  getStarDistributionFromRow,
+} from '@/lib/data/gacha';
 import { getServiceSupabase } from '@/lib/supabase/service';
+import type { Tables } from '@/types/database';
 
 function formatPercent(value: number) {
   if (!Number.isFinite(value)) return '0%';
@@ -9,19 +17,44 @@ function formatPercent(value: number) {
 
 export default async function AdminStatsPage() {
   const supabase = getServiceSupabase();
-  const [summary, starCounts, leaderboard, config] = await Promise.all([
+  const [summary, starCounts, leaderboard, characters, rtpResponse] = await Promise.all([
     fetchGachaSummaryStats(supabase),
     fetchGachaStarCounts(supabase),
     fetchGachaCardLeaderboard(supabase, 8),
-    fetchGachaConfig(supabase),
+    fetchGachaCharactersConfig(supabase),
+    supabase.from('gacha_rtp_config').select('*'),
   ]);
 
+  if (rtpResponse.error) {
+    throw new Error(rtpResponse.error.message);
+  }
+
+  const rtpRows = (rtpResponse.data ?? []) as Tables<'gacha_rtp_config'>[];
+  const starPlan = Array.from({ length: 12 }, () => 0);
+  const activeCharacters = characters.filter((character) => character.isActive && character.weight > 0);
+  const totalCharacterWeight = activeCharacters.reduce((sum, character) => sum + character.weight, 0);
+  const weightDenominator = totalCharacterWeight > 0 ? totalCharacterWeight : 1;
+
+  const starDistributionByCharacter = new Map<string, number[]>();
+  for (const row of rtpRows) {
+    starDistributionByCharacter.set(row.character_id, getStarDistributionFromRow(row));
+  }
+
+  activeCharacters.forEach((character) => {
+    const weightShare = character.weight / weightDenominator;
+    const starDistribution = starDistributionByCharacter.get(character.characterId) ?? DEFAULT_STAR_DISTRIBUTION;
+    starDistribution.forEach((rate, index) => {
+      const normalized = Number(rate) / 100;
+      starPlan[index] += weightShare * normalized;
+    });
+  });
+
   const totalPlays = summary.totalPlays || 0;
-  const expectedRtp = config.rtp.reduce((acc, slot) => acc + slot.probability, 0);
+  const expectedRtp = starPlan.reduce((acc, value) => acc + value, 0);
   const distribution = Array.from({ length: 12 }, (_, index) => {
     const starLevel = index + 1;
     const actualTotal = starCounts.find((entry) => entry.starLevel === starLevel)?.total ?? 0;
-    const plan = config.rtp.find((slot) => slot.star === starLevel)?.probability ?? 0;
+    const plan = starPlan[index] ?? 0;
     const actualRatio = totalPlays > 0 ? actualTotal / totalPlays : 0;
     return { starLevel, actualTotal, actualRatio, plan };
   });

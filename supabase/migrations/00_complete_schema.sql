@@ -497,6 +497,7 @@ create table if not exists public.gacha_rtp_config (
   rarity_ssr numeric not null default 12,
   rarity_ur numeric not null default 6,
   rarity_lr numeric not null default 2,
+  star_distribution jsonb not null default '[]'::jsonb,
   donden_rate numeric not null default 15,
   updated_at timestamptz default now(),
   unique (character_id)
@@ -518,10 +519,43 @@ set character_name = excluded.character_name,
     weight = excluded.weight,
     updated_at = now();
 
-insert into public.gacha_rtp_config (character_id, loss_rate, rarity_n, rarity_r, rarity_sr, rarity_ssr, rarity_ur, rarity_lr, donden_rate)
+insert into public.gacha_rtp_config (
+  character_id,
+  loss_rate,
+  rarity_n,
+  rarity_r,
+  rarity_sr,
+  rarity_ssr,
+  rarity_ur,
+  rarity_lr,
+  star_distribution,
+  donden_rate
+)
 values
-  ('kenta', 60, 35, 25, 20, 12, 6, 2, 15),
-  ('shoichi', 60, 35, 25, 20, 12, 6, 2, 15)
+  (
+    'kenta',
+    60,
+    35,
+    25,
+    20,
+    12,
+    6,
+    2,
+    jsonb_build_array(17.5,17.5,12.5,12.5,10,10,6,6,3,3,1,1),
+    15
+  ),
+  (
+    'shoichi',
+    60,
+    35,
+    25,
+    20,
+    12,
+    6,
+    2,
+    jsonb_build_array(17.5,17.5,12.5,12.5,10,10,6,6,3,3,1,1),
+    15
+  )
 on conflict (character_id) do update
 set loss_rate = excluded.loss_rate,
     rarity_n = excluded.rarity_n,
@@ -530,6 +564,7 @@ set loss_rate = excluded.loss_rate,
     rarity_ssr = excluded.rarity_ssr,
     rarity_ur = excluded.rarity_ur,
     rarity_lr = excluded.rarity_lr,
+    star_distribution = excluded.star_distribution,
     donden_rate = excluded.donden_rate,
     updated_at = now();
 

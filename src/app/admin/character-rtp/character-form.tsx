@@ -8,45 +8,39 @@ type Props = {
   characterName: string;
   isActive: boolean;
   weight: number;
-  rtpN: number;
-  rtpR: number;
-  rtpSR: number;
-  rtpSSR: number;
-  rtpUR: number;
-  rtpLR: number;
+  starDistribution: number[];
   dondenRate: number;
   action: (formData: FormData) => void;
 };
+
+const STAR_LEVELS = Array.from({ length: 12 }, (_, index) => index + 1);
 
 export function CharacterForm({
   characterId,
   characterName,
   isActive,
   weight,
-  rtpN,
-  rtpR,
-  rtpSR,
-  rtpSSR,
-  rtpUR,
-  rtpLR,
+  starDistribution,
   dondenRate,
   action,
 }: Props) {
-  const [rarityValues, setRarityValues] = useState({
-    N: rtpN,
-    R: rtpR,
-    SR: rtpSR,
-    SSR: rtpSSR,
-    UR: rtpUR,
-    LR: rtpLR,
+  const [starValues, setStarValues] = useState(() => {
+    if (starDistribution.length === 12) {
+      return [...starDistribution];
+    }
+    return STAR_LEVELS.map(() => 0);
   });
 
-  const totalRtp = Object.values(rarityValues).reduce((sum, val) => sum + val, 0);
-  const isValidTotal = Math.abs(totalRtp - 100) < 0.1;
+  const totalStar = starValues.reduce((sum, val) => sum + (Number.isFinite(val) ? val : 0), 0);
+  const isValidTotal = Math.abs(totalStar - 100) < 0.1;
 
-  const handleRarityChange = (rarity: keyof typeof rarityValues, value: string) => {
-    const numValue = Number(value) || 0;
-    setRarityValues((prev) => ({ ...prev, [rarity]: numValue }));
+  const handleStarChange = (index: number, value: string) => {
+    const parsed = Number(value);
+    setStarValues((prev) => {
+      const next = [...prev];
+      next[index] = Number.isFinite(parsed) ? parsed : 0;
+      return next;
+    });
   };
 
   return (
@@ -90,20 +84,23 @@ export function CharacterForm({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">Rarity Distribution</p>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            {(['N', 'R', 'SR', 'SSR', 'UR', 'LR'] as const).map((label) => (
-              <label key={label} className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2">
-                <span className="font-medium text-white">{label}</span>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">STAR DISTRIBUTION</p>
+          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+            {STAR_LEVELS.map((star, index) => (
+              <label
+                key={star}
+                className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2"
+              >
+                <span className="font-medium text-white">★{star}</span>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
-                    name={`rarity_${label}`}
+                    name={`star_${star}`}
                     min={0}
                     max={100}
-                    step={1}
-                    value={rarityValues[label]}
-                    onChange={(e) => handleRarityChange(label, e.target.value)}
+                    step={0.1}
+                    value={Number.isFinite(starValues[index]) ? starValues[index] : 0}
+                    onChange={(e) => handleStarChange(index, e.target.value)}
                     className="w-20 rounded-lg border border-white/20 bg-transparent px-2 py-1 text-right text-xs text-white"
                   />
                   <span className="text-[11px] text-white/60">%</span>
@@ -112,7 +109,7 @@ export function CharacterForm({
             ))}
           </div>
           <p className={`text-xs ${isValidTotal ? 'text-white/60' : 'text-red-400 font-semibold'}`}>
-            合計: {totalRtp.toFixed(1)}% {!isValidTotal && '⚠️ 100%にしてください'}
+            合計: {totalStar.toFixed(1)}% {!isValidTotal && '⚠️ 100%にしてください'}
           </p>
         </div>
 
@@ -144,7 +141,7 @@ export function CharacterForm({
       {!isValidTotal && (
         <div className="rounded-2xl border border-yellow-400/40 bg-yellow-400/10 p-3">
           <p className="text-xs font-semibold text-yellow-300">
-            ⚠️ レアリティ分布の合計を100%にしてください（現在: {totalRtp.toFixed(1)}%）
+            ⚠️ ★分布の合計を100%にしてください（現在: {totalStar.toFixed(1)}%）
           </p>
         </div>
       )}
