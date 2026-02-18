@@ -240,9 +240,7 @@ export async function fetchReferralStats(client: DbClient, userId: string): Prom
 
   const { data, error } = await client
     .from('referral_claims')
-    .select(
-      'invited_user_id, created_at, referrer_reward_tickets, invited_user:invited_user_id ( display_name, email )',
-    )
+    .select('invited_user_id, created_at, referrer_reward_tickets')
     .eq('referral_code_id', codeRow.id)
     .eq('status', 'granted')
     .order('created_at', { ascending: false })
@@ -250,23 +248,37 @@ export async function fetchReferralStats(client: DbClient, userId: string): Prom
   if (error) {
     throw error;
   }
-  const rows = (data ?? []) as (
-    Tables<'referral_claims'> & {
-      invited_user: Pick<Tables<'app_users'>, 'display_name' | 'email'> | null;
+
+  const invitedUserIds = (data ?? []).map((row) => row.invited_user_id);
+  const invitedUsersMap = new Map<string, { display_name: string; email: string | null }>();
+  if (invitedUserIds.length > 0) {
+    const { data: invitedUsers, error: invitedUsersError } = await client
+      .from('app_users')
+      .select('id, display_name, email')
+      .in('id', invitedUserIds);
+    if (invitedUsersError) {
+      throw invitedUsersError;
     }
-  )[];
-  const totalTickets = rows.reduce((sum, row) => sum + (row.referrer_reward_tickets ?? 0), 0);
+    for (const u of invitedUsers ?? []) {
+      invitedUsersMap.set(u.id, { display_name: u.display_name ?? '名無しさん', email: u.email });
+    }
+  }
+
+  const totalTickets = (data ?? []).reduce((sum, row) => sum + (row.referrer_reward_tickets ?? 0), 0);
   const stats: ReferralStats = {
     code: codeRow.code,
-    totalInvites: rows.length,
+    totalInvites: data?.length ?? 0,
     totalTicketsEarned: totalTickets,
-    recentInvites: rows.map((row) => ({
-      userId: row.invited_user_id,
-      name: row.invited_user?.display_name ?? '名無しさん',
-      email: row.invited_user?.email ?? null,
-      createdAt: row.created_at,
-      tickets: row.referrer_reward_tickets ?? 0,
-    })),
+    recentInvites: (data ?? []).map((row) => {
+      const user = invitedUsersMap.get(row.invited_user_id);
+      return {
+        userId: row.invited_user_id,
+        name: user?.display_name ?? '名無しさん',
+        email: user?.email ?? null,
+        createdAt: row.created_at,
+        tickets: row.referrer_reward_tickets ?? 0,
+      };
+    }),
   };
   return stats;
 }
