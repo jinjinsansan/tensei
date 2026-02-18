@@ -14,13 +14,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { cardInventoryId, toUserId } = (await req.json()) as {
+    const { cardInventoryId, cardId, serialNumber, toUserId } = (await req.json()) as {
       cardInventoryId?: string;
+      cardId?: string;
+      serialNumber?: number | null;
       toUserId?: string;
     };
 
-    if (!cardInventoryId || !toUserId) {
-      return NextResponse.json({ error: "cardInventoryId と toUserId は必須です" }, { status: 400 });
+    if ((!cardInventoryId && !cardId) || !toUserId) {
+      return NextResponse.json({ error: "送付するカード情報が不足しています" }, { status: 400 });
     }
 
     const fromUserId = context.user.id;
@@ -38,14 +40,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "フレンドのみカード送付が可能です" }, { status: 403 });
     }
 
-    const { data: inventoryRow, error: invError } = await supabase
-      .from("card_inventory")
-      .select("id, app_user_id, card_id, serial_number")
-      .eq("id", cardInventoryId)
-      .eq("app_user_id", fromUserId)
-      .single();
+    const inventoryRow = await findInventoryRow({
+      supabase,
+      cardInventoryId,
+      cardId,
+      serialNumber,
+      userId: fromUserId,
+    });
 
-    if (invError || !inventoryRow) {
+    if (!inventoryRow) {
       return NextResponse.json({ error: "カードが見つからないか、あなたの所有ではありません" }, { status: 404 });
     }
 
@@ -122,4 +125,44 @@ export async function POST(req: Request) {
     console.error("card send error", error);
     return NextResponse.json({ error: "カード送付に失敗しました" }, { status: 500 });
   }
+}
+
+type FindInventoryArgs = {
+  supabase: ReturnType<typeof getServiceSupabase>;
+  cardInventoryId?: string;
+  cardId?: string;
+  serialNumber?: number | null;
+  userId: string;
+};
+
+async function findInventoryRow({ supabase, cardInventoryId, cardId, serialNumber, userId }: FindInventoryArgs) {
+  if (cardInventoryId) {
+    const { data } = await supabase
+      .from("card_inventory")
+      .select("id, app_user_id, card_id, serial_number")
+      .eq("id", cardInventoryId)
+      .maybeSingle();
+    if (data && data.app_user_id === userId) {
+      return data;
+    }
+  }
+
+  if (!cardId) {
+    return null;
+  }
+
+  let query = supabase
+    .from("card_inventory")
+    .select("id, app_user_id, card_id, serial_number")
+    .eq("app_user_id", userId)
+    .eq("card_id", cardId)
+    .order("obtained_at", { ascending: false })
+    .limit(1);
+
+  if (typeof serialNumber === "number") {
+    query = query.eq("serial_number", serialNumber);
+  }
+
+  const { data } = await query.maybeSingle();
+  return data ?? null;
 }

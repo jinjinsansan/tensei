@@ -254,7 +254,12 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         const res = await fetch("/api/social/cards/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cardInventoryId: entry.id, toUserId: selectedFriend }),
+          body: JSON.stringify({
+            cardInventoryId: entry.id,
+            cardId: entry.cardId,
+            serialNumber: entry.serialNumber,
+            toUserId: selectedFriend,
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -270,7 +275,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         setSendMessage("カード送付に失敗しました");
       }
     },
-    [entry.id, selectedFriend],
+    [entry.cardId, entry.id, entry.serialNumber, selectedFriend],
   );
 
   const handleDownload = useCallback(async () => {
