@@ -272,7 +272,8 @@ async function resolveScenario(
       throw new Error('LOSS処理用のカードが見つかりません。');
     }
 
-    const lossCard = cards.find((card) => card.card_name === '転生失敗') ?? cards[0];
+    const lossCard =
+      cards.find((card) => card.is_loss_card) ?? cards.find((card) => card.card_name === '転生失敗') ?? cards[0];
 
     const story: StoryPayload = {
       starLevel: lossCard.star_level ?? 0,
@@ -360,9 +361,10 @@ async function resolveScenario(
     throw new Error(`Character ${supabaseCharacter.name} has no active cards.`);
   }
 
-  const lossCard = cards.find((card) => card.card_name === '転生失敗');
+  const lossCard = cards.find((card) => card.is_loss_card || card.card_name === '転生失敗');
   const basePlayableCards = lossCard ? cards.filter((card) => card.id !== lossCard.id) : cards;
   const supplyFiltered = basePlayableCards.filter((card) => {
+    if (card.is_loss_card) return true;
     const max = card.max_supply;
     const current = card.current_supply;
     if (max == null) return true;

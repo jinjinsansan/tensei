@@ -17,6 +17,7 @@ type InventoryRow = Tables<'card_inventory'> & {
     current_supply: number | null;
     person_name: string | null;
     card_style: string | null;
+    is_loss_card: boolean | null;
   } | null;
 };
 
@@ -61,7 +62,8 @@ export async function fetchCollectionEntryById(
          max_supply,
          current_supply,
          person_name,
-         card_style
+         card_style,
+         is_loss_card
        )`,
     )
     .eq('id', entryId)
@@ -145,6 +147,7 @@ export function buildCollectionEntryFromInventory(
       current_supply: card.current_supply,
       person_name: card.person_name,
       card_style: card.card_style,
+      is_loss_card: card.is_loss_card,
     },
   };
 }
@@ -170,7 +173,8 @@ async function fetchAllInventory(client: DbClient, userId: string) {
            max_supply,
            current_supply,
            person_name,
-           card_style
+         card_style,
+         is_loss_card
          )`,
         shouldCount ? { count: 'exact' } : undefined,
       )
@@ -252,6 +256,7 @@ function mapInventoryRowToEntry(row: InventoryRow): CollectionEntry {
           current_supply: row.cards.current_supply,
           person_name: row.cards.person_name,
           card_style: row.cards.card_style,
+          is_loss_card: row.cards.is_loss_card,
         }
       : null,
   };

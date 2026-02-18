@@ -1,10 +1,11 @@
 import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 
-import type { Database, Tables, TablesInsert } from '@/types/database';
+import type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { parseGachaConfig, type ParsedGachaConfig } from '@/lib/gacha/config';
 import type { CharacterId, Rarity } from '@/lib/gacha/common/types';
 
 type DbClient = SupabaseClient<Database>;
+type HistoryStatus = 'pending' | 'success' | 'error';
 
 function handleError(error: PostgrestError | null) {
   if (error) {
@@ -317,6 +318,23 @@ export async function insertGachaHistory(
   handleError(error);
   if (!data) throw new Error('Failed to record gacha history');
   return data as Tables<'gacha_history'>;
+}
+
+export async function setGachaHistoryStatus(
+  client: DbClient,
+  historyId: string | null | undefined,
+  status: HistoryStatus,
+  detail?: string | null,
+): Promise<void> {
+  if (!historyId) {
+    return;
+  }
+  const updatePayload: TablesUpdate<'gacha_history'> = {
+    result: status,
+    result_detail: detail ?? null,
+  };
+  const { error } = await client.from('gacha_history').update(updatePayload).eq('id', historyId);
+  handleError(error);
 }
 
 export async function insertGachaResult(

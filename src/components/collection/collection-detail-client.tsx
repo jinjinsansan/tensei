@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
+import { buildCommonAssetPath } from "@/lib/gacha/assets";
 
 type Friend = {
   id: string;
@@ -24,6 +25,7 @@ type DetailEntry = {
   imageUrl: string | null;
   personName: string | null;
   cardStyle: string | null;
+  isLossCard: boolean;
 };
 
 type Props = {
@@ -32,6 +34,14 @@ type Props = {
 };
 
 const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
+const LOSS_CARD_IMAGE = buildCommonAssetPath("loss_card.png");
+
+function pickDisplayImage(entry: DetailEntry, resolvedAsset?: string | null) {
+  if (resolvedAsset) return resolvedAsset;
+  if (entry.imageUrl) return entry.imageUrl;
+  if (entry.isLossCard) return LOSS_CARD_IMAGE;
+  return FALLBACK_CARD_IMAGE;
+}
 
 const RARITY_BADGES: Record<string, string> = {
   N: "text-white/80 border-white/30 bg-white/5",
@@ -51,7 +61,8 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
 
   const sources = useMemo(() => (entry.imageUrl ? [entry.imageUrl] : []), [entry.imageUrl]);
   const { resolveAssetSrc, isSigning } = useSignedAssetResolver(sources);
-  const resolvedImage = resolveAssetSrc(entry.imageUrl) ?? entry.imageUrl ?? FALLBACK_CARD_IMAGE;
+  const resolvedAsset = resolveAssetSrc(entry.imageUrl);
+  const resolvedImage = pickDisplayImage(entry, resolvedAsset);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,19 +99,28 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
     }
   }, [entry.obtainedAt]);
 
+  const displayDescription = useMemo(
+    () => entry.description ?? (entry.isLossCard ? "この来世は見つかりませんでした..." : null),
+    [entry.description, entry.isLossCard],
+  );
+
   const stars = useMemo(() => {
+    if (entry.isLossCard) return null;
     if (!entry.starLevel || entry.starLevel <= 0) return null;
     const count = Math.min(12, Math.max(1, entry.starLevel));
     return "★".repeat(count);
-  }, [entry.starLevel]);
+  }, [entry.isLossCard, entry.starLevel]);
 
   const rarityBadge = RARITY_BADGES[entry.rarity] ?? RARITY_BADGES.N;
 
   const shareIntentUrl = useMemo(() => {
-    const text = encodeURIComponent(`「${entry.cardName}」を獲得しました！`);
+    const headline = entry.isLossCard
+      ? "転生失敗...魂はまだ準備中。"
+      : `「${entry.cardName}」を獲得しました！`;
+    const text = encodeURIComponent(headline);
     const url = encodeURIComponent(shareUrl);
     return `https://twitter.com/intent/tweet?text=${text}&url=${url}&hashtags=%E6%9D%A5%E4%B8%96%E3%82%AC%E3%83%81%E3%83%A3`;
-  }, [entry.cardName, shareUrl]);
+  }, [entry.cardName, entry.isLossCard, shareUrl]);
 
   const handleSendToFriend = useCallback(
     async (event: React.FormEvent) => {
@@ -134,6 +154,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
   const handleDownload = useCallback(async () => {
     if (!resolvedImage) return;
     setDownloadState("pending");
+    const shareMessage = entry.isLossCard ? "転生失敗...魂はまだ準備中。" : `${entry.cardName}を獲得しました！`;
     
     try {
       // 署名付きURL（R2）の場合は画像合成をスキップして元画像をダウンロード
@@ -157,7 +178,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
             try {
               await navigator.share({
                 title: entry.cardName,
-                text: `${entry.cardName}を獲得しました！`,
+                text: shareMessage,
                 files: [file],
               });
               setDownloadState("idle");
@@ -294,8 +315,8 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
         return y;
       };
 
-      if (entry.description) {
-        drawWrappedText(entry.description, titleY + padding);
+      if (displayDescription) {
+        drawWrappedText(displayDescription, titleY + padding);
       }
 
       // シリアル番号（カード番号風）
@@ -340,7 +361,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
           try {
             await navigator.share({
               title: entry.cardName,
-              text: `${entry.cardName}を獲得しました！`,
+              text: shareMessage,
               files: [file],
             });
             setDownloadState("idle");
@@ -372,9 +393,10 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
   }, [
     entry.cardName,
     entry.rarity,
-    entry.description,
+    displayDescription,
     entry.personName,
     entry.cardStyle,
+    entry.isLossCard,
     resolvedImage,
     stars,
     formattedSerial,
@@ -387,7 +409,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
           <div className="space-y-2">
             <p className="text-xs uppercase tracking-[0.45em] text-neon-purple">CARD SHOWCASE</p>
             <h1 className="font-display text-3xl text-white">{entry.cardName}</h1>
-            {entry.description && <p className="text-sm text-white/80">{entry.description}</p>}
+            {displayDescription && <p className="text-sm text-white/80">{displayDescription}</p>}
           </div>
           <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-white/0 to-white/0 p-4 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_60%)]" />
@@ -399,6 +421,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
                 sizes="(max-width: 768px) 100vw, 60vw"
                 className="rounded-[26px] object-cover"
                 priority
+                unoptimized
                 onError={(event) => {
                   if (event.currentTarget.src !== FALLBACK_CARD_IMAGE) {
                     event.currentTarget.src = FALLBACK_CARD_IMAGE;
@@ -414,7 +437,14 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
           </div>
           <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.35em] text-white/70">
             <span className={`rounded-full border px-4 py-1 ${rarityBadge}`}>{entry.rarity}</span>
-            {stars && <span className="rounded-full border border-white/15 px-4 py-1 text-amber-200">{stars}</span>}
+        {stars ? (
+          <span className="rounded-full border border-white/15 px-4 py-1 text-amber-200">{stars}</span>
+        ) : entry.isLossCard ? (
+          <span className="rounded-full border border-red-300/60 px-4 py-1 text-red-200">LOSS ROUTE</span>
+        ) : null}
+        {entry.isLossCard && (
+          <span className="rounded-full border border-red-400/40 px-4 py-1 text-red-200">NO PUCHUN</span>
+        )}
             <span className="rounded-full border border-white/15 px-4 py-1">{formattedSerial}</span>
           </div>
         </div>

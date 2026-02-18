@@ -5,12 +5,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
+import { buildCommonAssetPath } from "@/lib/gacha/assets";
 
 
 type CollectionItem = {
   id: string;
   card_id: string;
-  serial_number: number;
+  serial_number: number | null;
   obtained_at: string | null;
   cards: {
     id: string;
@@ -23,6 +24,7 @@ type CollectionItem = {
     current_supply: number | null;
     person_name: string | null;
     card_style: string | null;
+    is_loss_card: boolean | null;
   } | null;
 };
 
@@ -72,6 +74,16 @@ const RARITY_GRADIENTS: Record<string, string> = {
 };
 
 const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
+const LOSS_CARD_NAME = "転生失敗";
+const LOSS_CARD_IMAGE = buildCommonAssetPath("loss_card.png");
+
+type LossAwareCard = { is_loss_card?: boolean | null; name?: string | null } | null;
+
+function isLossCardData(card: LossAwareCard): boolean {
+  if (!card) return false;
+  if (card.is_loss_card) return true;
+  return card.name === LOSS_CARD_NAME;
+}
 
 
 export function CollectionList() {
@@ -83,6 +95,7 @@ export function CollectionList() {
   const [rarityFilter, setRarityFilter] = useState("all");
   const [personFilter, setPersonFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
+  const [outcomeFilter, setOutcomeFilter] = useState<"all" | "hit" | "loss">("all");
 
   const mountedRef = useRef(false);
 
@@ -165,11 +178,14 @@ export function CollectionList() {
       const rarity = item.cards?.rarity ?? "";
       const person = item.cards?.person_name ?? "";
       const style = item.cards?.card_style ?? "";
+      const loss = isLossCardData(item.cards);
       const matchesKeyword = name.includes(lower);
       const matchesRarity = rarityFilter === "all" || rarity === rarityFilter;
       const matchesPerson = personFilter === "all" || person === personFilter;
       const matchesStyle = styleFilter === "all" || style === styleFilter;
-      return matchesKeyword && matchesRarity && matchesPerson && matchesStyle;
+      const matchesOutcome =
+        outcomeFilter === "all" || (outcomeFilter === "loss" ? loss : !loss);
+      return matchesKeyword && matchesRarity && matchesPerson && matchesStyle && matchesOutcome;
     });
 
     if (sort === "rarity") {
@@ -181,7 +197,7 @@ export function CollectionList() {
       return list.sort((a, b) => (a.cards?.name ?? "").localeCompare(b.cards?.name ?? ""));
     }
     return list.sort((a, b) => (b.obtained_at ?? "").localeCompare(a.obtained_at ?? ""));
-  }, [data, keyword, sort, rarityFilter, personFilter, styleFilter]);
+  }, [data, keyword, sort, rarityFilter, personFilter, styleFilter, outcomeFilter]);
 
   if (error) {
     return <p className="text-sm text-red-400">{error}</p>;
@@ -250,7 +266,7 @@ export function CollectionList() {
             </select>
           </label>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <label className="space-y-1">
             <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Rarity</span>
             <select
@@ -296,6 +312,18 @@ export function CollectionList() {
               ))}
             </select>
           </label>
+          <label className="space-y-1">
+            <span className="text-[0.6rem] uppercase tracking-[0.35em] text-zinc-400">Outcome</span>
+            <select
+              value={outcomeFilter}
+              onChange={(e) => setOutcomeFilter(e.target.value as typeof outcomeFilter)}
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white focus:border-neon-blue focus:outline-none"
+            >
+              <option value="all">すべて</option>
+              <option value="hit">当たりのみ</option>
+              <option value="loss">転生失敗のみ</option>
+            </select>
+          </label>
           <div className="flex items-end">
             <button
               type="button"
@@ -305,6 +333,7 @@ export function CollectionList() {
                 setRarityFilter("all");
                 setPersonFilter("all");
                 setStyleFilter("all");
+                setOutcomeFilter("all");
               }}
               className="w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.4em] text-white/80 transition hover:border-white/40 hover:text-white"
             >
@@ -329,8 +358,10 @@ export function CollectionList() {
               const card = item.cards;
               if (!card) return null;
               const starLevel = card.star_level ?? null;
-              const starIcons = starLevel ? "★".repeat(Math.max(1, Math.min(starLevel, 12))) : "";
-              const serialLabel = `#${String(item.serial_number).padStart(3, "0")}`;
+              const isLossCard = isLossCardData(card);
+              const starIcons = !isLossCard && starLevel ? "★".repeat(Math.max(1, Math.min(starLevel, 12))) : "";
+              const serialLabel =
+                item.serial_number != null ? `#${String(item.serial_number).padStart(3, "0")}` : "---";
               const rarityBadge = RARITY_BADGES[card.rarity] ?? RARITY_BADGES.N;
               const rarityGradient = RARITY_GRADIENTS[card.rarity] ?? RARITY_GRADIENTS.N;
               const obtainedAtLabel = item.obtained_at
@@ -342,9 +373,10 @@ export function CollectionList() {
                   })
                 : null;
 
-              const shouldSign = isSignableAsset(card.image_url);
-              const resolvedImage = shouldSign ? resolveAssetSrc(card.image_url) : card.image_url;
-              const isAwaitingImage = shouldSign && Boolean(card.image_url) && !resolvedImage && isSigning;
+              const rawImage = card.image_url ?? (isLossCard ? LOSS_CARD_IMAGE : null);
+              const shouldSign = isSignableAsset(rawImage);
+              const resolvedImage = shouldSign ? resolveAssetSrc(rawImage) : rawImage;
+              const isAwaitingImage = shouldSign && Boolean(rawImage) && !resolvedImage && isSigning;
 
               return (
                 <Link
@@ -369,7 +401,7 @@ export function CollectionList() {
                           }}
                           className="rounded-2xl object-cover shadow-[0_15px_25px_rgba(0,0,0,0.45)]"
                         />
-                      ) : card.image_url ? (
+                      ) : rawImage ? (
                         <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
                           {isAwaitingImage ? "LOADING" : "NO IMAGE"}
                         </div>
@@ -387,8 +419,17 @@ export function CollectionList() {
                         >
                           {RARITY_LABELS[card.rarity] ?? card.rarity}
                         </span>
+                        {isLossCard && (
+                          <span className="rounded-full border border-red-300/40 bg-red-500/10 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-red-200">
+                            LOSS
+                          </span>
+                        )}
                       </div>
-                      {starIcons && <p className="text-xs text-amber-200">{starIcons}</p>}
+                      {starIcons ? (
+                        <p className="text-xs text-amber-200">{starIcons}</p>
+                      ) : isLossCard ? (
+                        <p className="text-xs uppercase tracking-[0.35em] text-white/70">LOSS ROUTE</p>
+                      ) : null}
                       {card.description && (
                         <p className="text-sm text-white/80 line-clamp-2">{card.description}</p>
                       )}

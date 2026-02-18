@@ -7,6 +7,7 @@ import {
   fetchGachaResultById,
   upsertCardCollection,
   insertCardInventoryEntry,
+  setGachaHistoryStatus,
 } from '@/lib/data/gacha';
 import { fetchAuthedContext } from '@/lib/app/session';
 import { buildCollectionEntryFromInventory, hasUserCollectedCard } from '@/lib/collection/supabase';
@@ -22,11 +23,12 @@ type ResultRequest = {
 };
 
 export async function POST(request: Request) {
+  const supabase = getServiceSupabase();
+  let historyId: string | null = null;
   try {
     const body = await request.json();
     validateBody(body);
 
-    const supabase = getServiceSupabase();
     const context = await fetchAuthedContext(supabase);
     if (!context) {
       return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
@@ -49,6 +51,8 @@ export async function POST(request: Request) {
     const card = await fetchCardById(supabase, cardId);
 
     let alreadyOwnedBeforeAward = true;
+
+    historyId = resultRow.history_id ?? null;
 
     if (!resultRow.card_awarded) {
       alreadyOwnedBeforeAward = await hasUserCollectedCard(supabase, user.id, cardId);
@@ -81,6 +85,7 @@ export async function POST(request: Request) {
         totalOwnedDelta: 1,
         distinctOwnedDelta: alreadyOwnedBeforeAward ? 0 : 1,
       });
+      await setGachaHistoryStatus(supabase, historyId, 'success');
     } else {
       const { data: inventoryRow } = await supabase
         .from('card_inventory')
@@ -92,6 +97,7 @@ export async function POST(request: Request) {
         serialNumber = typeof inventoryRow.serial_number === 'number' ? inventoryRow.serial_number : null;
         inventoryId = inventoryRow.id as string;
       }
+      await setGachaHistoryStatus(supabase, historyId, 'success');
     }
 
     const story = resultRow.scenario_snapshot as StoryPayload;
@@ -120,6 +126,13 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('gacha/result error', error);
     const message = error instanceof Error ? error.message : '結果の確定に失敗しました。';
+    if (historyId) {
+      try {
+        await setGachaHistoryStatus(supabase, historyId, 'error', message.slice(0, 500));
+      } catch (statusError) {
+        console.error('Failed to update gacha history status', statusError);
+      }
+    }
     const status = error instanceof Error && error.message.includes('ログイン') ? 401 : 500;
     return NextResponse.json({ success: false, error: message }, { status });
   }

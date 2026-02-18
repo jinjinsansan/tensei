@@ -9,6 +9,7 @@ export type CollectionCardSummary = {
   current_supply?: number | null;
   person_name?: string | null;
   card_style?: string | null;
+  is_loss_card?: boolean | null;
 };
 
 export type CollectionEntry = {

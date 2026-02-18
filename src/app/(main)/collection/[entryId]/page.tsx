@@ -107,6 +107,7 @@ export default async function CollectionEntryPage({ params }: PageProps) {
     imageUrl: entry.cards.image_url ?? null,
     personName: entry.cards.person_name ?? null,
     cardStyle: entry.cards.card_style ?? null,
+    isLossCard: Boolean(entry.cards.is_loss_card),
   };
 
   return (

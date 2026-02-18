@@ -49,6 +49,10 @@ export type Database = {
           avatar_url: string | null;
           metadata: Json;
           is_admin: boolean;
+          is_blocked: boolean;
+          deleted_at: string | null;
+          login_bonus_last_claim_at: string | null;
+          login_bonus_streak: number;
           created_at: string;
           updated_at: string;
           last_login_at: string | null;
@@ -61,6 +65,10 @@ export type Database = {
           avatar_url?: string | null;
           metadata?: Json;
           is_admin?: boolean;
+          is_blocked?: boolean;
+          deleted_at?: string | null;
+          login_bonus_last_claim_at?: string | null;
+          login_bonus_streak?: number;
           created_at?: string;
           updated_at?: string;
           last_login_at?: string | null;
@@ -167,6 +175,7 @@ export type Database = {
           current_supply: number;
           person_name: string | null;
           card_style: string | null;
+          is_loss_card: boolean;
         };
         Insert: {
           id?: string;
@@ -185,6 +194,7 @@ export type Database = {
           current_supply?: number;
           person_name?: string | null;
           card_style?: string | null;
+          is_loss_card?: boolean;
         };
         Update: Partial<Database['public']['Tables']['cards']['Row']>;
         Relationships: [
@@ -475,6 +485,7 @@ export type Database = {
           star_level: number;
           scenario: Json;
           result: string | null;
+          result_detail: string | null;
           had_reversal: boolean;
           gacha_type: string;
           created_at: string;
@@ -487,6 +498,7 @@ export type Database = {
           star_level: number;
           scenario: Json;
           result?: string | null;
+          result_detail?: string | null;
           had_reversal?: boolean;
           gacha_type?: string;
           created_at?: string;
@@ -974,6 +986,23 @@ export type Database = {
           rarity: string | null;
           star_level: number | null;
           total: number | null;
+        }[];
+      };
+      get_admin_user_metrics: {
+        Args: {
+          target_user_ids?: string[] | null;
+        };
+        Returns: {
+          user_id: string | null;
+          total_pulls: number | null;
+          last_gacha_at: string | null;
+          last_card_name: string | null;
+          last_card_rarity: string | null;
+          pending_results: number | null;
+          error_results: number | null;
+          last_error_at: string | null;
+          last_error_detail: string | null;
+          last_result_status: string | null;
         }[];
       };
       next_card_serial: {

@@ -29,6 +29,11 @@ const cards = [
     href: "/admin/inventory",
   },
   {
+    title: "ユーザー管理",
+    description: "チケット残高やブロック状態、ログインボーナスを確認・制御します。",
+    href: "/admin/users",
+  },
+  {
     title: "統計ダッシュボード",
     description: "星ごとの出現率や人気カードを確認します。",
     href: "/admin/stats",

@@ -25,6 +25,9 @@ export async function fetchAuthedContext(client?: SupabaseClient<Database>): Pro
   if (!user) {
     return null;
   }
+  if (user.is_blocked || user.deleted_at) {
+    return null;
+  }
   return { session, user };
 }
 
