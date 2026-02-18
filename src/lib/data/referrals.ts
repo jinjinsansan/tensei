@@ -233,52 +233,62 @@ export type ReferralStats = {
 };
 
 export async function fetchReferralStats(client: DbClient, userId: string): Promise<ReferralStats> {
-  const codeRow = await fetchReferralCode(client, userId);
-  if (!codeRow) {
-    return { code: null, totalInvites: 0, totalTicketsEarned: 0, recentInvites: [] };
-  }
-
-  const { data, error } = await client
-    .from('referral_claims')
-    .select('invited_user_id, created_at, referrer_reward_tickets')
-    .eq('referral_code_id', codeRow.id)
-    .eq('status', 'granted')
-    .order('created_at', { ascending: false })
-    .limit(20);
-  if (error) {
-    throw error;
-  }
-
-  const invitedUserIds = (data ?? []).map((row) => row.invited_user_id);
-  const invitedUsersMap = new Map<string, { display_name: string; email: string | null }>();
-  if (invitedUserIds.length > 0) {
-    const { data: invitedUsers, error: invitedUsersError } = await client
-      .from('app_users')
-      .select('id, display_name, email')
-      .in('id', invitedUserIds);
-    if (invitedUsersError) {
-      throw invitedUsersError;
+  try {
+    const codeRow = await fetchReferralCode(client, userId);
+    if (!codeRow) {
+      return { code: null, totalInvites: 0, totalTicketsEarned: 0, recentInvites: [] };
     }
-    for (const u of invitedUsers ?? []) {
-      invitedUsersMap.set(u.id, { display_name: u.display_name ?? '名無しさん', email: u.email });
-    }
-  }
 
-  const totalTickets = (data ?? []).reduce((sum, row) => sum + (row.referrer_reward_tickets ?? 0), 0);
-  const stats: ReferralStats = {
-    code: codeRow.code,
-    totalInvites: data?.length ?? 0,
-    totalTicketsEarned: totalTickets,
-    recentInvites: (data ?? []).map((row) => {
-      const user = invitedUsersMap.get(row.invited_user_id);
-      return {
-        userId: row.invited_user_id,
-        name: user?.display_name ?? '名無しさん',
-        email: user?.email ?? null,
-        createdAt: row.created_at,
-        tickets: row.referrer_reward_tickets ?? 0,
-      };
-    }),
-  };
-  return stats;
+    const { data, error } = await client
+      .from('referral_claims')
+      .select('invited_user_id, created_at, referrer_reward_tickets')
+      .eq('referral_code_id', codeRow.id)
+      .eq('status', 'granted')
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (error) {
+      console.error('Error fetching referral claims:', error);
+      throw new Error(`紹介履歴の取得に失敗しました: ${error.message}`);
+    }
+
+    const invitedUserIds = (data ?? []).map((row) => row.invited_user_id);
+    const invitedUsersMap = new Map<string, { display_name: string; email: string | null }>();
+    if (invitedUserIds.length > 0) {
+      const { data: invitedUsers, error: invitedUsersError } = await client
+        .from('app_users')
+        .select('id, display_name, email')
+        .in('id', invitedUserIds);
+      if (invitedUsersError) {
+        console.error('Error fetching invited users:', invitedUsersError);
+        throw new Error(`招待ユーザー情報の取得に失敗しました: ${invitedUsersError.message}`);
+      }
+      for (const u of invitedUsers ?? []) {
+        invitedUsersMap.set(u.id, { display_name: u.display_name ?? '名無しさん', email: u.email });
+      }
+    }
+
+    const totalTickets = (data ?? []).reduce((sum, row) => sum + (row.referrer_reward_tickets ?? 0), 0);
+    const stats: ReferralStats = {
+      code: codeRow.code,
+      totalInvites: data?.length ?? 0,
+      totalTicketsEarned: totalTickets,
+      recentInvites: (data ?? []).map((row) => {
+        const user = invitedUsersMap.get(row.invited_user_id);
+        return {
+          userId: row.invited_user_id,
+          name: user?.display_name ?? '名無しさん',
+          email: user?.email ?? null,
+          createdAt: row.created_at,
+          tickets: row.referrer_reward_tickets ?? 0,
+        };
+      }),
+    };
+    return stats;
+  } catch (error) {
+    console.error('fetchReferralStats error:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('紹介統計の取得中に予期しないエラーが発生しました');
+  }
 }

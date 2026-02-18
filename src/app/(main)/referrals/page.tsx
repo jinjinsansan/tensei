@@ -29,50 +29,55 @@ export default async function ReferralPage() {
   if (!context) {
     redirect('/login');
   }
-  const [settings, stats, friendRows] = await Promise.all([
-    getReferralSettings(supabase),
-    fetchReferralStats(supabase, context.user.id),
-    supabase
-      .from('friends')
-      .select('id, user_id, friend_user_id, created_at')
-      .eq('user_id', context.user.id)
-      .order('created_at', { ascending: false })
-      .limit(12),
-  ]);
-  if (friendRows.error) {
-    throw new Error(friendRows.error.message);
-  }
 
-  const friendUserIds = (friendRows.data ?? []).map((f) => f.friend_user_id);
-  const friendUsersMap = new Map<string, { display_name: string; email: string | null }>();
-  if (friendUserIds.length > 0) {
-    const { data: friendUsers, error: friendUsersError } = await supabase
-      .from('app_users')
-      .select('id, display_name, email')
-      .in('id', friendUserIds);
-    if (friendUsersError) {
-      throw new Error(friendUsersError.message);
+  try {
+    const [settings, stats, friendRows] = await Promise.all([
+      getReferralSettings(supabase),
+      fetchReferralStats(supabase, context.user.id),
+      supabase
+        .from('friends')
+        .select('id, user_id, friend_user_id, created_at')
+        .eq('user_id', context.user.id)
+        .order('created_at', { ascending: false })
+        .limit(12),
+    ]);
+    
+    if (friendRows.error) {
+      console.error('Friends query error:', friendRows.error);
+      throw new Error(`フレンド情報の取得に失敗しました: ${friendRows.error.message}`);
     }
-    for (const u of friendUsers ?? []) {
-      friendUsersMap.set(u.id, { display_name: u.display_name ?? '名無しさん', email: u.email });
+
+    const friendUserIds = (friendRows.data ?? []).map((f) => f.friend_user_id);
+    const friendUsersMap = new Map<string, { display_name: string; email: string | null }>();
+    if (friendUserIds.length > 0) {
+      const { data: friendUsers, error: friendUsersError } = await supabase
+        .from('app_users')
+        .select('id, display_name, email')
+        .in('id', friendUserIds);
+      if (friendUsersError) {
+        console.error('Friend users query error:', friendUsersError);
+        throw new Error(`ユーザー情報の取得に失敗しました: ${friendUsersError.message}`);
+      }
+      for (const u of friendUsers ?? []) {
+        friendUsersMap.set(u.id, { display_name: u.display_name ?? '名無しさん', email: u.email });
+      }
     }
-  }
 
-  const friendList = (friendRows.data ?? []).map((row) => {
-    const user = friendUsersMap.get(row.friend_user_id);
-    return {
-      id: row.friend_user_id,
-      name: user?.display_name ?? '名無しさん',
-      email: user?.email ?? null,
-      createdAt: row.created_at,
-    };
-  });
-  const siteUrl = getPublicEnv().NEXT_PUBLIC_SITE_URL ?? 'https://raisegacha.com';
-  const referralUrl = stats.code ? `${siteUrl}/register?ref=${stats.code}` : null;
-  const referralDisabled = context.user.referral_blocked;
+    const friendList = (friendRows.data ?? []).map((row) => {
+      const user = friendUsersMap.get(row.friend_user_id);
+      return {
+        id: row.friend_user_id,
+        name: user?.display_name ?? '名無しさん',
+        email: user?.email ?? null,
+        createdAt: row.created_at,
+      };
+    });
+    const siteUrl = getPublicEnv().NEXT_PUBLIC_SITE_URL ?? 'https://raisegacha.com';
+    const referralUrl = stats.code ? `${siteUrl}/register?ref=${stats.code}` : null;
+    const referralDisabled = context.user.referral_blocked;
 
-  return (
-    <section className="space-y-8 pb-10">
+    return (
+      <section className="space-y-8 pb-10">
       <div className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-6 py-7 shadow-[0_20px_45px_rgba(0,0,0,0.35)]">
         <p className="text-xs uppercase tracking-[0.5em] text-neon-yellow">REFERRAL</p>
         <h1 className="font-display text-3xl text-white">友だち紹介プログラム</h1>
@@ -214,12 +219,51 @@ export default async function ReferralPage() {
         )}
       </div>
 
-      <Link
-        href="/mypage"
-        className="block rounded-full border border-white/20 bg-black/30 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-neon-yellow"
-      >
-        ← メニューに戻る
-      </Link>
-    </section>
-  );
+        <Link
+          href="/mypage"
+          className="block rounded-full border border-white/20 bg-black/30 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-neon-yellow"
+        >
+          ← メニューに戻る
+        </Link>
+      </section>
+    );
+  } catch (error) {
+    console.error('Referral page error:', error);
+    return (
+      <section className="space-y-8 pb-10">
+        <div className="space-y-3 rounded-3xl border border-white/10 bg-black/30 px-6 py-7 shadow-[0_20px_45px_rgba(0,0,0,0.35)]">
+          <p className="text-xs uppercase tracking-[0.5em] text-red-400">ERROR</p>
+          <h1 className="font-display text-3xl text-white">エラーが発生しました</h1>
+          <p className="text-sm text-zinc-300">
+            紹介プログラムの読み込み中にエラーが発生しました。
+          </p>
+          <p className="rounded-2xl border border-red-400/30 bg-red-400/10 px-4 py-3 text-sm text-red-200">
+            {error instanceof Error ? error.message : '不明なエラーが発生しました'}
+          </p>
+        </div>
+        <div className="space-y-4 rounded-3xl border border-white/10 bg-black/25 p-6 shadow-panel-inset">
+          <p className="text-sm text-white/80">
+            この問題が解決しない場合は、以下をお試しください：
+          </p>
+          <ul className="space-y-2 text-sm text-white/70">
+            <li className="rounded-2xl border border-white/10 bg-black/40 p-4">
+              1. ページを再読み込みしてください
+            </li>
+            <li className="rounded-2xl border border-white/10 bg-black/40 p-4">
+              2. ログアウトして再度ログインしてください
+            </li>
+            <li className="rounded-2xl border border-white/10 bg-black/40 p-4">
+              3. 問題が続く場合は、サポートにお問い合わせください
+            </li>
+          </ul>
+        </div>
+        <Link
+          href="/mypage"
+          className="block rounded-full border border-white/20 bg-black/30 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-neon-yellow"
+        >
+          ← メニューに戻る
+        </Link>
+      </section>
+    );
+  }
 }
