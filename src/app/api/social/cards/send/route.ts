@@ -53,7 +53,12 @@ export async function POST(req: Request) {
     }
 
     // カード情報を取得
-    const card = await fetchCardById(supabase, inventoryRow.card_id);
+    let card: Awaited<ReturnType<typeof fetchCardById>> | null = null;
+    try {
+      card = await fetchCardById(supabase, inventoryRow.card_id);
+    } catch (cardError) {
+      console.warn("card send warning: failed to load card", cardError);
+    }
 
     // 送信者がこのカードの他のコピーを持っているかチェック
     const { count: senderOtherCopies } = await supabase
@@ -106,7 +111,7 @@ export async function POST(req: Request) {
       .eq("id", inventoryRow.id)
       .single();
 
-    if (updatedInventory) {
+    if (updatedInventory && card) {
       const entry = buildCollectionEntryFromInventory(updatedInventory, card);
       // distinctOwnedDelta: 既に持っていれば 0、新規なら +1
       const receiverDistinctDelta = (receiverExistingCopies ?? 0) > 0 ? 0 : 1;
