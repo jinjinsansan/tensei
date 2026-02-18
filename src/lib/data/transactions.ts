@@ -186,8 +186,8 @@ async function fetchCardTransfers(client: DbClient, userId: string, limit: numbe
          serial_number,
          cards:card_id (id, card_name, rarity)
        ),
-       from_user:from_user_id (id, display_name, email),
-       to_user:to_user_id (id, display_name, email)`,
+       from_user:from_user_id!card_transfers_from_user_id_fkey (id, display_name, email),
+       to_user:to_user_id!card_transfers_to_user_id_fkey (id, display_name, email)`,
     )
     .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
     .order('created_at', { ascending: false })
