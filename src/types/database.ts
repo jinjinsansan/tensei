@@ -168,6 +168,51 @@ export type Database = {
           }
         ];
       };
+      ticket_purchase_history: {
+        Row: {
+          id: string;
+          app_user_id: string;
+          ticket_type_id: string;
+          quantity: number;
+          amount_cents: number;
+          currency: string;
+          payment_method: string;
+          external_reference: string | null;
+          status: string;
+          note: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          app_user_id: string;
+          ticket_type_id: string;
+          quantity: number;
+          amount_cents: number;
+          currency?: string;
+          payment_method?: string;
+          external_reference?: string | null;
+          status?: string;
+          note?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['ticket_purchase_history']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'ticket_purchase_history_app_user_id_fkey';
+            columns: ['app_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'ticket_purchase_history_ticket_type_id_fkey';
+            columns: ['ticket_type_id'];
+            referencedRelation: 'ticket_types';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       cards: {
         Row: {
           id: string;
