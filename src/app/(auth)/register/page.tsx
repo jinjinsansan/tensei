@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { registerLibraryMember } from '@/app/(auth)/actions';
 
 type RegisterPageProps = {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; ref?: string }>;
 };
 
 const inputClassName =
@@ -12,6 +12,7 @@ const inputClassName =
 export default async function RegisterPage({ searchParams }: RegisterPageProps) {
   const params = (await searchParams) ?? {};
   const error = params.error;
+  const referralCode = params.ref ?? '';
 
   return (
     <section className="space-y-8">
@@ -54,6 +55,20 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
               className={inputClassName}
               placeholder="••••••••"
             />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-[0.35em] text-zinc-400">Referral Code (optional)</label>
+            <input
+              type="text"
+              name="referralCode"
+              defaultValue={referralCode}
+              className={inputClassName}
+              placeholder="例: AB12CD34"
+              pattern="[A-Za-z0-9]+"
+            />
+            {referralCode && (
+              <p className="mt-1 text-xs text-neon-yellow">紹介コードが適用されます。</p>
+            )}
           </div>
           <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-xs text-zinc-300">
             <input type="checkbox" name="acceptTerms" value="true" required className="h-4 w-4 accent-neon-yellow" />

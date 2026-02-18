@@ -12,6 +12,7 @@ import { clearSessionToken, getOrCreateSessionToken, getSessionToken } from '@/l
 import { deliverNotifications } from '@/lib/notifications/delivery';
 import { getPublicEnv } from '@/lib/env';
 import { createPasswordResetToken, verifyPasswordResetToken, markResetTokenUsed } from '@/lib/auth/reset';
+import { validateReferralCode, applyReferralCode } from '@/lib/data/referrals';
 
 const registerSchema = z
   .object({
@@ -20,6 +21,7 @@ const registerSchema = z
     confirmPassword: z.string().min(8),
     displayName: z.string().min(1).optional(),
     acceptTerms: z.literal('true'),
+    referralCode: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'パスワードが一致しません。',
@@ -66,16 +68,26 @@ export async function registerLibraryMember(formData: FormData) {
     confirmPassword: String(formData.get('confirmPassword') ?? ''),
     displayName: formData.get('displayName') ? String(formData.get('displayName')) : undefined,
     acceptTerms: String(formData.get('acceptTerms') ?? ''),
+    referralCode: formData.get('referralCode') ? String(formData.get('referralCode')) : undefined,
   });
   if (!parsed.success) {
     buildErrorRedirect('/register', '入力内容をご確認ください。');
     return;
   }
   const { email, password } = parsed.data;
+  const referralCode = parsed.data.referralCode?.trim();
   const existing = await findUserByEmail(supabase, email);
   if (existing) {
     buildErrorRedirect('/register', '既に登録済みのメールアドレスです。');
     return;
+  }
+  if (referralCode) {
+    try {
+      await validateReferralCode(supabase, referralCode);
+    } catch (error) {
+      buildErrorRedirect('/register', error instanceof Error ? error.message : '紹介コードが無効です。');
+      return;
+    }
   }
   const hashed = await hashPassword(password);
   const derivedDisplayName = parsed.data.displayName?.trim() || email.split('@')[0] || 'Player';
@@ -87,6 +99,14 @@ export async function registerLibraryMember(formData: FormData) {
   await ensureInitialTickets(supabase, user.id);
   const token = await getOrCreateSessionToken();
   await attachSessionToUser(supabase, token, user.id);
+
+  if (referralCode) {
+    try {
+      await applyReferralCode(supabase, user.id, referralCode);
+    } catch (error) {
+      console.error('apply referral failed', error);
+    }
+  }
 
   const cache = new Map([[user.id, user]]);
   await deliverNotifications(

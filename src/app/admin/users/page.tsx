@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { AdminCard, AdminPageHero, AdminSectionTitle } from "@/components/admin/admin-ui";
 import { UserGachaLogPanel } from "@/components/admin/user-gacha-log-panel";
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { getReferralSettings, updateReferralSettings } from "@/lib/data/referrals";
+import { getUserFromSession } from "@/lib/data/session";
 import type { Tables, TablesUpdate } from "@/types/database";
 
 const USERS_LIMIT = 40;
@@ -67,6 +69,12 @@ async function manageUserAction(formData: FormData) {
       updates.is_blocked = false;
       updates.deleted_at = null;
       break;
+    case "referral_block":
+      updates.referral_blocked = true;
+      break;
+    case "referral_unblock":
+      updates.referral_blocked = false;
+      break;
     default:
       throw new Error("サポートされていない操作です");
   }
@@ -75,6 +83,28 @@ async function manageUserAction(formData: FormData) {
   if (error) {
     throw new Error(error.message);
   }
+  revalidatePath("/admin/users");
+}
+
+async function updateReferralSettingsAction(formData: FormData) {
+  "use server";
+  const supabase = getServiceSupabase();
+  const admin = await getUserFromSession(supabase);
+  if (!admin || !admin.is_admin) {
+    throw new Error("管理者のみが設定を更新できます");
+  }
+  const referrerTickets = Number(formData.get("referrerTickets") ?? 0);
+  const refereeTickets = Number(formData.get("refereeTickets") ?? 0);
+  const ticketCode = String(formData.get("ticketCode") ?? "basic");
+  await updateReferralSettings(
+    supabase,
+    {
+      referrer_ticket_amount: Math.max(0, Math.trunc(referrerTickets)),
+      referee_ticket_amount: Math.max(0, Math.trunc(refereeTickets)),
+      ticket_code: ticketCode || "basic",
+    },
+    admin.id,
+  );
   revalidatePath("/admin/users");
 }
 
@@ -114,6 +144,7 @@ function buildTicketMap(rows: TicketRow[] = []): Map<string, TicketSummary[]> {
 
 export default async function AdminUsersPage() {
   const supabase = getServiceSupabase();
+  const referralSettings = await getReferralSettings(supabase);
   const { data: users, error } = await supabase
     .from("app_users")
     .select("*")
@@ -150,6 +181,99 @@ export default async function AdminUsersPage() {
   }
   const ticketMap = buildTicketMap(ticketRows);
 
+  const referralCodeMap = new Map<string, Tables<"referral_codes">>();
+  const codeOwnerMap = new Map<string, string>();
+  if (userIds.length) {
+    const { data: referralCodes, error: referralCodesError } = await supabase
+      .from("referral_codes")
+      .select("id, app_user_id, code, uses, usage_limit")
+      .in("app_user_id", userIds);
+    if (referralCodesError) {
+      throw new Error(referralCodesError.message);
+    }
+    for (const row of referralCodes ?? []) {
+      const typed = row as Tables<"referral_codes">;
+      referralCodeMap.set(typed.app_user_id, typed);
+      codeOwnerMap.set(typed.id, typed.app_user_id);
+    }
+  }
+
+  const referralStatsMap = new Map<string, { count: number; tickets: number }>();
+  const codeIds = Array.from(codeOwnerMap.keys());
+  if (codeIds.length) {
+    const { data: referralClaimRows, error: referralClaimsError } = await supabase
+      .from("referral_claims")
+      .select("referral_code_id, referrer_reward_tickets")
+      .in("referral_code_id", codeIds)
+      .eq("status", "granted");
+    if (referralClaimsError) {
+      throw new Error(referralClaimsError.message);
+    }
+    for (const row of referralClaimRows ?? []) {
+      const ownerId = codeOwnerMap.get(row.referral_code_id);
+      if (!ownerId) continue;
+      const stats = referralStatsMap.get(ownerId) ?? { count: 0, tickets: 0 };
+      stats.count += 1;
+      stats.tickets += row.referrer_reward_tickets ?? 0;
+      referralStatsMap.set(ownerId, stats);
+    }
+  }
+
+  let referralOriginsData: {
+    invited_user_id: string;
+    referral_codes: { app_user_id: string; code: string } | null;
+  }[] = [];
+  if (userIds.length) {
+    const { data: originRows, error: originError } = await supabase
+      .from("referral_claims")
+      .select("invited_user_id, referral_codes:referral_code_id ( app_user_id, code )")
+      .in("invited_user_id", userIds)
+      .eq("status", "granted");
+    if (originError) {
+      throw new Error(originError.message);
+    }
+    referralOriginsData = originRows ?? [];
+  }
+
+  const referrerInfoMap = new Map<string, Pick<Tables<"app_users">, "id" | "display_name" | "email">>();
+  for (const user of userList) {
+    referrerInfoMap.set(user.id, { id: user.id, display_name: user.display_name, email: user.email });
+  }
+  const missingReferrerIds = Array.from(
+    new Set(
+      referralOriginsData
+        .map((row) => row.referral_codes?.app_user_id)
+        .filter((id): id is string => {
+          if (!id) return false;
+          return !referrerInfoMap.has(id);
+        }),
+    ),
+  );
+  if (missingReferrerIds.length) {
+    const { data: extraReferrers, error: extraReferrerError } = await supabase
+      .from("app_users")
+      .select("id, display_name, email")
+      .in("id", missingReferrerIds);
+    if (extraReferrerError) {
+      throw new Error(extraReferrerError.message);
+    }
+    for (const ref of extraReferrers ?? []) {
+      referrerInfoMap.set(ref.id, ref);
+    }
+  }
+
+  const referralOriginMap = new Map<string, { referrerId: string; referrerName: string; code: string }>();
+  for (const row of referralOriginsData) {
+    const info = row.referral_codes;
+    if (!info?.app_user_id) continue;
+    const refInfo = referrerInfoMap.get(info.app_user_id);
+    referralOriginMap.set(row.invited_user_id, {
+      referrerId: info.app_user_id,
+      referrerName: refInfo?.display_name ?? refInfo?.email ?? "不明",
+      code: info.code ?? "",
+    });
+  }
+
   return (
     <div className="space-y-6">
       <AdminPageHero
@@ -157,6 +281,44 @@ export default async function AdminUsersPage() {
         title="ユーザー管理"
         description="チケット残高、ガチャ履歴、ブロック / 削除状態を確認しながら制御します。"
       />
+
+      <AdminCard>
+        <AdminSectionTitle
+          title="紹介プログラム設定"
+          description="紹介者 / 被紹介者へ付与するベーシックチケット数を調整します"
+        />
+        <form action={updateReferralSettingsAction} className="mt-6 grid gap-4 md:grid-cols-2">
+          <input type="hidden" name="ticketCode" value={referralSettings.ticket_code} />
+          <label className="flex flex-col rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
+            <span className="text-xs uppercase tracking-[0.35em] text-white/60">紹介者チケット</span>
+            <input
+              type="number"
+              name="referrerTickets"
+              min={0}
+              defaultValue={referralSettings.referrer_ticket_amount}
+              className="mt-2 rounded-xl bg-black/60 px-3 py-2 text-base text-white focus:outline-none"
+            />
+            <span className="mt-1 text-xs text-white/50">付与する {referralSettings.ticket_code} チケット枚数</span>
+          </label>
+          <label className="flex flex-col rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
+            <span className="text-xs uppercase tracking-[0.35em] text-white/60">被紹介者チケット</span>
+            <input
+              type="number"
+              name="refereeTickets"
+              min={0}
+              defaultValue={referralSettings.referee_ticket_amount}
+              className="mt-2 rounded-xl bg-black/60 px-3 py-2 text-base text-white focus:outline-none"
+            />
+            <span className="mt-1 text-xs text-white/50">登録直後に付与される枚数</span>
+          </label>
+          <button
+            type="submit"
+            className="md:col-span-2 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white hover:bg-white/20"
+          >
+            設定を更新
+          </button>
+        </form>
+      </AdminCard>
 
       <AdminCard>
         <AdminSectionTitle
@@ -172,6 +334,9 @@ export default async function AdminUsersPage() {
           {userList.map((user) => {
             const metrics = metricsMap.get(user.id);
             const tickets = ticketMap.get(user.id) ?? [];
+            const referralCode = referralCodeMap.get(user.id);
+            const referralStats = referralStatsMap.get(user.id) ?? { count: 0, tickets: 0 };
+            const referralOrigin = referralOriginMap.get(user.id);
             const loginBonusText = user.login_bonus_last_claim_at
               ? `${formatDate(user.login_bonus_last_claim_at)} / 連続 ${user.login_bonus_streak ?? 0} 日`
               : "未取得";
@@ -202,6 +367,11 @@ export default async function AdminUsersPage() {
                     )}
                     {user.deleted_at && (
                       <span className="rounded-full border border-white/20 px-3 py-1 text-white/70">DELETED</span>
+                    )}
+                    {user.referral_blocked && (
+                      <span className="rounded-full border border-fuchsia-400/40 bg-fuchsia-400/10 px-3 py-1 text-fuchsia-200">
+                        REFERRAL OFF
+                      </span>
                     )}
                   </div>
                 </div>
@@ -287,8 +457,45 @@ export default async function AdminUsersPage() {
                           {user.deleted_at ? "復元" : "利用停止"}
                         </button>
                       </form>
+                      <form action={manageUserAction} className="flex-1 min-w-[140px]">
+                        <input type="hidden" name="userId" value={user.id} />
+                        <button
+                          type="submit"
+                          name="intent"
+                          value={user.referral_blocked ? "referral_unblock" : "referral_block"}
+                          className="w-full rounded-2xl border border-white/25 px-4 py-2 text-sm font-semibold text-white"
+                        >
+                          {user.referral_blocked ? "紹介再開" : "紹介停止"}
+                        </button>
+                      </form>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/35 p-4">
+                  <p className="text-xs uppercase tracking-[0.35em] text-white/60">紹介情報</p>
+                  <dl className="mt-2 grid gap-3 text-sm text-white/80 md:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <dt className="text-white/50">紹介コード</dt>
+                      <dd className="text-lg font-semibold text-white">{referralCode?.code ?? "未発行"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-white/50">紹介実績</dt>
+                      <dd className="text-lg font-semibold text-white">
+                        {referralStats.count}人 / +{referralStats.tickets}枚
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-white/50">紹介元</dt>
+                      <dd className="text-sm text-white/80">
+                        {referralOrigin ? `${referralOrigin.referrerName} (${referralOrigin.code})` : "---"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-white/50">ステータス</dt>
+                      <dd className="text-sm text-white/80">{user.referral_blocked ? "停止中" : "利用可能"}</dd>
+                    </div>
+                  </dl>
                 </div>
 
                 <UserGachaLogPanel userId={user.id} />

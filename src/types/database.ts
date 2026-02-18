@@ -53,6 +53,8 @@ export type Database = {
           deleted_at: string | null;
           login_bonus_last_claim_at: string | null;
           login_bonus_streak: number;
+          referral_blocked: boolean;
+          referred_by_user_id: string | null;
           created_at: string;
           updated_at: string;
           last_login_at: string | null;
@@ -69,12 +71,21 @@ export type Database = {
           deleted_at?: string | null;
           login_bonus_last_claim_at?: string | null;
           login_bonus_streak?: number;
+          referral_blocked?: boolean;
+          referred_by_user_id?: string | null;
           created_at?: string;
           updated_at?: string;
           last_login_at?: string | null;
         };
         Update: Partial<Database['public']['Tables']['app_users']['Row']>;
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'app_users_referred_by_user_id_fkey';
+            columns: ['referred_by_user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
       };
       characters: {
         Row: {
@@ -998,16 +1009,20 @@ export type Database = {
           id: string;
           referral_code_id: string;
           invited_user_id: string;
-          reward_tickets: number;
+          referrer_reward_tickets: number;
+          referee_reward_tickets: number;
           status: 'pending' | 'granted' | 'cancelled';
+          granted_at: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           referral_code_id: string;
           invited_user_id: string;
-          reward_tickets?: number;
+          referrer_reward_tickets?: number;
+          referee_reward_tickets?: number;
           status?: 'pending' | 'granted' | 'cancelled';
+          granted_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['referral_claims']['Row']>;
@@ -1022,6 +1037,33 @@ export type Database = {
             foreignKeyName: 'referral_claims_referral_code_id_fkey';
             columns: ['referral_code_id'];
             referencedRelation: 'referral_codes';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
+      referral_settings: {
+        Row: {
+          id: string;
+          referrer_ticket_amount: number;
+          referee_ticket_amount: number;
+          ticket_code: string;
+          updated_by: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          referrer_ticket_amount?: number;
+          referee_ticket_amount?: number;
+          ticket_code?: string;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['referral_settings']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'referral_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            referencedRelation: 'app_users';
             referencedColumns: ['id'];
           }
         ];

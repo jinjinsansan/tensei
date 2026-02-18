@@ -167,6 +167,15 @@ create table if not exists public.app_users (
   last_login_at timestamptz
 );
 
+alter table public.app_users
+  add column if not exists is_admin boolean not null default false,
+  add column if not exists is_blocked boolean not null default false,
+  add column if not exists deleted_at timestamptz,
+  add column if not exists login_bonus_last_claim_at timestamptz,
+  add column if not exists login_bonus_streak int not null default 0,
+  add column if not exists referral_blocked boolean not null default false,
+  add column if not exists referred_by_user_id uuid references public.app_users(id) on delete set null;
+
 -- Add columns to user_sessions if they don't exist
 do $$
 begin
@@ -214,6 +223,53 @@ on conflict (code) do update set
   color_token = excluded.color_token,
   sort_order = excluded.sort_order,
   purchasable = excluded.purchasable;
+
+-- Referral program tables
+create table if not exists public.referral_settings (
+  id text primary key default 'global',
+  referrer_ticket_amount int not null default 10,
+  referee_ticket_amount int not null default 10,
+  ticket_code text not null default 'basic',
+  updated_by uuid references public.app_users(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
+insert into public.referral_settings (id, referrer_ticket_amount, referee_ticket_amount, ticket_code)
+values ('global', 10, 10, 'basic')
+on conflict (id) do nothing;
+
+create table if not exists public.referral_codes (
+  id uuid primary key default gen_random_uuid(),
+  app_user_id uuid not null references public.app_users(id) on delete cascade,
+  code text not null unique,
+  usage_limit int,
+  uses int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.referral_claims (
+  id uuid primary key default gen_random_uuid(),
+  referral_code_id uuid not null references public.referral_codes(id) on delete cascade,
+  invited_user_id uuid not null references public.app_users(id) on delete cascade,
+  referrer_reward_tickets int not null default 0,
+  referee_reward_tickets int not null default 0,
+  status text not null default 'pending' check (status in ('pending','granted','cancelled')),
+  granted_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists referral_claims_invited_unique on public.referral_claims(invited_user_id);
+
+create table if not exists public.line_link_requests (
+  id uuid primary key default gen_random_uuid(),
+  app_user_id uuid not null references public.app_users(id) on delete cascade,
+  state_token text not null,
+  linked boolean not null default false,
+  created_at timestamptz not null default now(),
+  linked_at timestamptz
+);
+
+create index if not exists line_link_requests_user_idx on public.line_link_requests(app_user_id);
 
 -- RTP settings
 create table if not exists public.rtp_settings (
@@ -394,7 +450,10 @@ as $$
 declare
   ref_owner uuid;
 begin
-  if NEW.status <> 'granted' or OLD.status is not distinct from NEW.status then
+  if NEW.status <> 'granted' then
+    return NEW;
+  end if;
+  if TG_OP = 'UPDATE' and OLD.status is not distinct from NEW.status then
     return NEW;
   end if;
 
@@ -416,10 +475,11 @@ begin
 end;
 $$;
 
-create trigger referral_friendship_after_update
-after update of status on public.referral_claims
+drop trigger if exists referral_friendship_after_update on public.referral_claims;
+create trigger referral_friendship_after_change
+after insert or update of status on public.referral_claims
 for each row
-when (OLD.status is distinct from NEW.status and NEW.status = 'granted')
+when (NEW.status = 'granted')
 execute function public.handle_referral_friendship();
 
 -- ============================================================
