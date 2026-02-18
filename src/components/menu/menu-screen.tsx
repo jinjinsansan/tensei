@@ -15,8 +15,6 @@ const sections = [
   {
     title: "チケット / 特典",
     links: [
-      { title: "マイページ", description: "全体ダッシュボード", href: "/mypage" },
-      { title: "チケット管理", description: "残高・履歴・購入", href: "/mypage/tickets", badge: "NEW" },
       { title: "取引履歴", description: "決済・ガチャ・送付ログ", href: "/transactions", badge: "NEW" },
       { title: "友達紹介", description: "コード共有で+1枚", href: "/mypage/invite" },
       { title: "LINE特典", description: "LINE追加で+1枚", href: "/mypage/line" },
