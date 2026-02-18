@@ -164,7 +164,7 @@ async function findInventoryRow({ supabase, cardInventoryId, cardId, serialNumbe
 
   let query = supabase
     .from("card_inventory")
-    .select("id, app_user_id, card_id, serial_number")
+    .select("id, app_user_id, card_id, serial_number, obtained_at")
     .eq("app_user_id", userId)
     .eq("card_id", cardId)
     .order("obtained_at", { ascending: false })
