@@ -31,6 +31,7 @@ type DetailEntry = {
 type Props = {
   entry: DetailEntry;
   shareUrl: string;
+  referralShareActive?: boolean;
 };
 
 const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
@@ -52,7 +53,7 @@ const RARITY_BADGES: Record<string, string> = {
   LR: "text-cyan-200 border-cyan-300/40 bg-cyan-600/10",
 };
 
-export function CollectionDetailClient({ entry, shareUrl }: Props) {
+export function CollectionDetailClient({ entry, shareUrl, referralShareActive = false }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState("");
   const [sendState, setSendState] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -238,7 +239,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       ctx.strokeRect(borderWidth / 2, borderWidth / 2, img.width - borderWidth, img.height - borderWidth);
 
       // 上部ヘッダー
-      const headerHeight = Math.floor(img.height * 0.12);
+      const headerHeight = Math.floor(img.height * 0.15);
       const headerGradient = ctx.createLinearGradient(borderWidth, borderWidth, borderWidth, borderWidth + headerHeight);
       headerGradient.addColorStop(0, "rgba(20,20,25,0.95)");
       headerGradient.addColorStop(1, "rgba(10,10,15,0.8)");
@@ -249,36 +250,56 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       ctx.fillRect(borderWidth, borderWidth + headerHeight - 2, innerWidth, 2);
 
       const headerFont = Math.floor(headerHeight * 0.45);
+      const headerBaseline = borderWidth + headerHeight - Math.floor(headerHeight * 0.3);
       ctx.font = `600 ${headerFont}px 'Inter', 'Noto Sans JP', sans-serif`;
       ctx.fillStyle = "#fcd34d";
-      ctx.fillText(entry.rarity, borderWidth + padding, borderWidth + headerHeight - headerFont * 0.4);
+      ctx.fillText(entry.rarity, borderWidth + padding, headerBaseline);
+      const rarityWidth = ctx.measureText(entry.rarity).width;
 
       if (stars) {
-        const starFont = Math.floor(headerFont * 0.9);
-        ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
-        ctx.fillStyle = "#fde68a";
-        const starWidth = ctx.measureText(stars).width;
-        ctx.fillText(stars, img.width - padding - starWidth, borderWidth + headerHeight - headerFont * 0.4);
+        const baseStarFont = Math.floor(headerFont * 0.85);
+        const maxStarWidth = Math.max(0, innerWidth - padding * 2 - rarityWidth - Math.floor(padding * 1.5));
+        if (maxStarWidth > 0) {
+          let starFont = baseStarFont;
+          ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
+          let starWidth = ctx.measureText(stars).width;
+          if (starWidth > maxStarWidth && starWidth > 0) {
+            const scaledFont = Math.max(
+              Math.floor(headerFont * 0.5),
+              Math.floor(starFont * (maxStarWidth / starWidth) * 0.95),
+            );
+            starFont = scaledFont;
+            ctx.font = `700 ${starFont}px 'Inter', sans-serif`;
+            starWidth = ctx.measureText(stars).width;
+          }
+          const starX = Math.max(borderWidth + padding + rarityWidth + Math.floor(padding * 0.75), img.width - padding - starWidth);
+          ctx.fillStyle = "#fde68a";
+          ctx.fillText(stars, starX, headerBaseline);
+        }
       }
 
       // 下部フッター
-      const footerHeight = Math.floor(img.height * 0.3);
+      const footerHeight = Math.floor(img.height * 0.34);
       const footerY = img.height - footerHeight - borderWidth;
       const footerGradient = ctx.createLinearGradient(0, footerY, 0, footerY + footerHeight);
-      footerGradient.addColorStop(0, "rgba(0,0,0,0.02)");
-      footerGradient.addColorStop(0.35, "rgba(0,0,0,0.6)");
-      footerGradient.addColorStop(1, "rgba(0,0,0,0.95)");
+      footerGradient.addColorStop(0, "rgba(0,0,0,0.05)");
+      footerGradient.addColorStop(0.25, "rgba(0,0,0,0.35)");
+      footerGradient.addColorStop(0.6, "rgba(0,0,0,0.75)");
+      footerGradient.addColorStop(1, "rgba(0,0,0,0.96)");
       ctx.fillStyle = footerGradient;
       ctx.fillRect(borderWidth, footerY, innerWidth, footerHeight);
 
       ctx.fillStyle = "rgba(255,255,255,0.18)";
       ctx.fillRect(borderWidth, footerY, innerWidth, 2);
 
+      const footerPaddingTop = Math.max(padding, Math.floor(footerHeight * 0.12));
+      const footerPaddingBottom = Math.max(padding, Math.floor(footerHeight * 0.18));
+
       // タイトル
       const titleFont = Math.floor(img.width / 18);
       ctx.font = `700 ${titleFont}px 'Noto Sans JP', 'Inter', sans-serif`;
       ctx.fillStyle = "#ffffff";
-      const titleY = footerY + padding + titleFont;
+      const titleY = footerY + footerPaddingTop + titleFont;
       ctx.fillText(entry.cardName, borderWidth + padding, titleY);
 
       // 説明テキスト折り返し
@@ -316,7 +337,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       };
 
       if (displayDescription) {
-        drawWrappedText(displayDescription, titleY + padding);
+        drawWrappedText(displayDescription, titleY + Math.floor(titleFont * 0.7));
       }
 
       // シリアル番号（カード番号風）
@@ -324,7 +345,8 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       ctx.font = `700 ${serialFont}px 'Inter', sans-serif`;
       ctx.fillStyle = "#c4b5fd";
       const serialWidth = ctx.measureText(formattedSerial).width;
-      ctx.fillText(formattedSerial, img.width - padding - serialWidth, footerY + footerHeight - padding);
+      const serialBaseline = footerY + footerHeight - footerPaddingBottom;
+      ctx.fillText(formattedSerial, img.width - padding - serialWidth, serialBaseline);
 
       // 人名・スタイルなどラベル
       const metaFont = Math.floor(bodyFont * 0.75);
@@ -333,7 +355,7 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
       const metaTexts = [entry.personName, entry.cardStyle].filter(Boolean) as string[];
       if (metaTexts.length > 0) {
         let metaX = borderWidth + padding;
-        const metaY = footerY + footerHeight - padding - serialFont - Math.floor(metaFont * 1.4);
+        const metaY = serialBaseline - serialFont - Math.floor(metaFont * 1.2);
         for (const text of metaTexts) {
           const label = `● ${text}`;
           const width = ctx.measureText(label).width + padding;
@@ -496,6 +518,15 @@ export function CollectionDetailClient({ entry, shareUrl }: Props) {
             </div>
             {downloadState === "error" && (
               <p className="mt-2 text-xs text-red-300">ダウンロードを開始できませんでした。もう一度お試しください。</p>
+            )}
+            {!referralShareActive && (
+              <p className="mt-3 text-xs text-white/70">
+                紹介URLでシェアしたい場合は
+                <Link href="/referrals" className="text-neon-blue underline-offset-2 hover:underline">
+                  紹介コードを作成
+                </Link>
+                してください。
+              </p>
             )}
           </div>
 

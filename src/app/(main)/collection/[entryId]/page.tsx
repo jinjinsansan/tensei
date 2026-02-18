@@ -8,6 +8,7 @@ import { getSessionWithSnapshot } from "@/lib/app/session";
 import { fetchCollectionEntryById } from "@/lib/collection/supabase";
 import { getPublicEnv } from "@/lib/env";
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { fetchReferralCode } from "@/lib/data/referrals";
 
 type PageProps = {
   params: Promise<{
@@ -92,8 +93,13 @@ export default async function CollectionEntryPage({ params }: PageProps) {
   if (!entry || !entry.cards) {
     notFound();
   }
-
-  const shareUrl = await buildShareUrl(entry.id);
+  const referralCodeRow = context.user.referral_blocked
+    ? null
+    : await fetchReferralCode(supabase, context.user.id);
+  const referralShareUrl = referralCodeRow?.code
+    ? await buildReferralShareUrl(referralCodeRow.code, entry.card_id)
+    : null;
+  const shareUrl = referralShareUrl ?? (await buildShareUrl(entry.id));
 
   const detailEntry = {
     id: entry.id,
@@ -121,7 +127,11 @@ export default async function CollectionEntryPage({ params }: PageProps) {
         </Link>
         <p className="text-xs uppercase tracking-[0.4em] text-white/60">COLLECTION DETAIL</p>
       </div>
-      <CollectionDetailClient entry={detailEntry} shareUrl={shareUrl} />
+      <CollectionDetailClient
+        entry={detailEntry}
+        shareUrl={shareUrl}
+        referralShareActive={Boolean(referralShareUrl)}
+      />
     </section>
   );
 }
@@ -142,6 +152,29 @@ async function buildShareUrl(entryId: string) {
   }
 
   return `/collection/${entryId}`;
+}
+
+async function buildReferralShareUrl(code: string, cardId: string) {
+  const env = getPublicEnv();
+  const explicitBase = env.NEXT_PUBLIC_SITE_URL ?? env.NEXT_PUBLIC_APP_URL ?? "";
+  const normalized = explicitBase ? explicitBase.replace(/\/$/, "") : "";
+  const params = new URLSearchParams({ ref: code });
+  if (cardId) {
+    params.set("card", cardId);
+  }
+  const suffix = `/register?${params.toString()}`;
+  if (normalized) {
+    return `${normalized}${suffix}`;
+  }
+
+  const hdrs = await headers();
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host");
+  if (host) {
+    return `${proto}://${host}${suffix}`;
+  }
+
+  return suffix;
 }
 
 async function buildAbsoluteImageUrl(imagePath: string | null): Promise<string | null> {
