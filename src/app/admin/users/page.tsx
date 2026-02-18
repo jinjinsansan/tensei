@@ -5,6 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/service";
 import type { Tables, TablesUpdate } from "@/types/database";
 
 const USERS_LIMIT = 40;
+const RECENT_RESULTS_PER_USER = 20;
 
 type MetricsRow = {
   user_id: string;
@@ -34,6 +35,25 @@ type TicketSummary = {
   name: string;
   quantity: number;
   colorToken: string | null;
+};
+
+type GachaResultRow = {
+  id: string;
+  app_user_id: string | null;
+  created_at: string;
+  completed_at: string | null;
+  card_awarded: boolean;
+  card_id: string | null;
+  star_level: number;
+  obtained_via: string;
+  cards: {
+    card_name: string | null;
+    rarity: string | null;
+  } | null;
+  history: {
+    result: string | null;
+    result_detail: string | null;
+  } | null;
 };
 
 async function manageUserAction(formData: FormData) {
@@ -91,6 +111,21 @@ function formatDate(value: string | null | undefined) {
   }
 }
 
+function formatPreciseTimestamp(value: string | null | undefined) {
+  if (!value) return "—";
+  try {
+    return new Date(value).toLocaleString("ja-JP", {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch {
+    return value;
+  }
+}
+
 function buildTicketMap(rows: TicketRow[] = []): Map<string, TicketSummary[]> {
   const map = new Map<string, TicketSummary[]>();
   for (const row of rows) {
@@ -109,6 +144,43 @@ function buildTicketMap(rows: TicketRow[] = []): Map<string, TicketSummary[]> {
     list.sort((a, b) => a.code.localeCompare(b.code));
   }
   return map;
+}
+
+function buildGachaResultMap(rows: GachaResultRow[] = []): Map<string, GachaResultRow[]> {
+  const map = new Map<string, GachaResultRow[]>();
+  for (const row of rows) {
+    if (!row.app_user_id) continue;
+    const list = map.get(row.app_user_id) ?? [];
+    list.push(row);
+    map.set(row.app_user_id, list);
+  }
+  for (const [, list] of map) {
+    list.sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""));
+    if (list.length > RECENT_RESULTS_PER_USER) {
+      list.length = RECENT_RESULTS_PER_USER;
+    }
+  }
+  return map;
+}
+
+function resolveResultStatus(row: GachaResultRow) {
+  const status = row.history?.result ?? (row.card_awarded ? "success" : "pending");
+  if (status === "error") {
+    return {
+      label: "エラー",
+      className: "border-red-400/50 bg-red-500/10 text-red-200",
+    };
+  }
+  if (status === "success" || row.card_awarded) {
+    return {
+      label: "付与済み",
+      className: "border-emerald-400/40 bg-emerald-500/10 text-emerald-200",
+    };
+  }
+  return {
+    label: "未付与",
+    className: "border-amber-300/40 bg-amber-500/10 text-amber-100",
+  };
 }
 
 export default async function AdminUsersPage() {
@@ -149,6 +221,26 @@ export default async function AdminUsersPage() {
   }
   const ticketMap = buildTicketMap(ticketRows);
 
+  let gachaRows: GachaResultRow[] = [];
+  if (userIds.length) {
+    const totalLimit = RECENT_RESULTS_PER_USER * USERS_LIMIT;
+    const { data: gachaData, error: gachaError } = await supabase
+      .from("gacha_results")
+      .select(
+        `id, app_user_id, created_at, completed_at, card_awarded, card_id, star_level, obtained_via,
+         cards:card_id ( card_name, rarity ),
+         history:gacha_history!gacha_results_history_id_fkey ( result, result_detail )`,
+      )
+      .in("app_user_id", userIds)
+      .order("created_at", { ascending: false })
+      .limit(totalLimit);
+    if (gachaError) {
+      throw new Error(gachaError.message);
+    }
+    gachaRows = (gachaData ?? []) as GachaResultRow[];
+  }
+  const gachaResultMap = buildGachaResultMap(gachaRows);
+
   return (
     <div className="space-y-6">
       <AdminPageHero
@@ -171,6 +263,7 @@ export default async function AdminUsersPage() {
           {userList.map((user) => {
             const metrics = metricsMap.get(user.id);
             const tickets = ticketMap.get(user.id) ?? [];
+            const gachaResults = gachaResultMap.get(user.id) ?? [];
             const loginBonusText = user.login_bonus_last_claim_at
               ? `${formatDate(user.login_bonus_last_claim_at)} / 連続 ${user.login_bonus_streak ?? 0} 日`
               : "未取得";
@@ -288,6 +381,74 @@ export default async function AdminUsersPage() {
                       </form>
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.35em] text-white/60">GACHA RESULTS</p>
+                      <p className="text-xs text-white/50">最新 {RECENT_RESULTS_PER_USER} 件を表示</p>
+                    </div>
+                    <p className="text-[0.65rem] text-white/40">問い合わせ対応時の証跡に利用できます</p>
+                  </div>
+                  {gachaResults.length === 0 ? (
+                    <p className="mt-3 rounded-2xl border border-dashed border-white/15 px-4 py-3 text-center text-sm text-white/60">
+                      まだガチャ履歴がありません。
+                    </p>
+                  ) : (
+                    <div className="mt-3 overflow-x-auto">
+                      <table className="min-w-full text-left text-sm text-white/80">
+                        <thead>
+                          <tr className="text-xs uppercase tracking-[0.3em] text-white/40">
+                            <th className="pb-2 pr-4">日時</th>
+                            <th className="pb-2 pr-4">カード</th>
+                            <th className="pb-2 pr-4">レア</th>
+                            <th className="pb-2 pr-4">ルート</th>
+                            <th className="pb-2 pr-4">ステータス</th>
+                            <th className="pb-2">詳細</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5 text-sm">
+                          {gachaResults.map((result) => {
+                            const status = resolveResultStatus(result);
+                            const cardLabel = result.cards?.card_name ?? (result.card_id ? "不明カード" : "LOSS / 未付与");
+                            const rarityLabel = result.cards?.rarity ?? "-";
+                            const routeLabel = result.obtained_via ? result.obtained_via.toUpperCase() : "UNKNOWN";
+                            return (
+                              <tr key={result.id} className="align-top">
+                                <td className="py-2 pr-4 font-mono text-xs text-white/70">
+                                  {formatPreciseTimestamp(result.created_at)}
+                                </td>
+                                <td className="py-2 pr-4">
+                                  <p className="font-semibold text-white">{cardLabel}</p>
+                                  {result.star_level ? (
+                                    <p className="text-xs text-white/60">★{result.star_level}</p>
+                                  ) : null}
+                                  {result.card_id && (
+                                    <p className="text-[0.65rem] text-white/40">ID: {result.card_id}</p>
+                                  )}
+                                </td>
+                                <td className="py-2 pr-4 text-white/70">{rarityLabel}</td>
+                                <td className="py-2 pr-4 text-white/60">{routeLabel}</td>
+                                <td className="py-2 pr-4">
+                                  <span className={`inline-flex rounded-full border px-3 py-1 text-[0.65rem] font-semibold ${status.className}`}>
+                                    {status.label}
+                                  </span>
+                                </td>
+                                <td className="py-2 text-white/70">
+                                  {result.history?.result_detail ? (
+                                    <p className="text-xs text-white/70 line-clamp-2">{result.history.result_detail}</p>
+                                  ) : (
+                                    <p className="text-xs text-white/40">—</p>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               </div>
             );
