@@ -395,7 +395,8 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
-        const padding = Math.max(Math.floor(canvas.width * 0.04), 28);
+        const paddingX = Math.max(Math.floor(canvas.width * 0.03), 18);
+        const paddingY = Math.max(Math.floor(canvas.height * 0.022), 12);
         const fontSize = Math.max(Math.floor(canvas.width * 0.055), 36);
         const pillPaddingX = fontSize * 0.85;
         const pillPaddingY = fontSize * 0.45;
@@ -406,8 +407,21 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         const metrics = ctx.measureText(serialText);
         const pillWidth = metrics.width + pillPaddingX * 2;
         const pillHeight = fontSize + pillPaddingY * 2;
-        const pillX = canvas.width - padding - pillWidth;
-        const pillY = canvas.height - padding - pillHeight;
+        const pillX = canvas.width - paddingX - pillWidth;
+        const pillY = canvas.height - paddingY - pillHeight;
+
+        const coverExtraX = Math.max(fontSize * 0.6, 18);
+        const coverExtraY = Math.max(fontSize * 0.5, 14);
+        const coverWidth = pillWidth + coverExtraX * 2;
+        const coverHeight = pillHeight + coverExtraY * 2;
+        const coverX = Math.max(canvas.width - coverWidth - Math.max(paddingX * 0.4, 8), 0);
+        const coverY = canvas.height - coverHeight - Math.max(paddingY * 0.3, 6);
+
+        ctx.save();
+        ctx.fillStyle = "rgba(4,6,14,0.92)";
+        drawRoundedRect(ctx, coverX, coverY, coverWidth, coverHeight, coverHeight / 2.3);
+        ctx.fill();
+        ctx.restore();
 
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.45)";
