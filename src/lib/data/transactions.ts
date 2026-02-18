@@ -185,9 +185,7 @@ async function fetchCardTransfers(client: DbClient, userId: string, limit: numbe
          id,
          serial_number,
          cards:card_id (id, card_name, rarity)
-       ),
-       from_user:from_user_id!card_transfers_from_user_id_fkey (id, display_name, email),
-       to_user:to_user_id!card_transfers_to_user_id_fkey (id, display_name, email)`,
+       )`,
     )
     .or(`from_user_id.eq.${userId},to_user_id.eq.${userId}`)
     .order('created_at', { ascending: false })
@@ -197,11 +195,33 @@ async function fetchCardTransfers(client: DbClient, userId: string, limit: numbe
     throw error;
   }
 
-  const rows = (data ?? []) as CardTransferRow[];
+  const rows = (data ?? []) as Omit<CardTransferRow, 'from_user' | 'to_user'>[];
+  
+  // Collect all unique user IDs
+  const userIds = new Set<string>();
+  rows.forEach((row) => {
+    if (row.from_user_id) userIds.add(row.from_user_id);
+    if (row.to_user_id) userIds.add(row.to_user_id);
+  });
+
+  // Fetch user info in one query
+  const userMap = new Map<string, { id: string; display_name: string | null; email: string }>();
+  if (userIds.size > 0) {
+    const { data: users } = await client
+      .from('app_users')
+      .select('id, display_name, email')
+      .in('id', Array.from(userIds));
+    
+    (users ?? []).forEach((user) => {
+      userMap.set(user.id, user);
+    });
+  }
+
   return rows.map((row) => {
     const direction: 'sent' | 'received' = row.from_user_id === userId ? 'sent' : 'received';
-    const counterpart = direction === 'sent' ? row.to_user : row.from_user;
-    const counterpartId = counterpart?.id ?? (direction === 'sent' ? row.to_user_id : row.from_user_id) ?? 'unknown';
+    const counterpartUserId = direction === 'sent' ? row.to_user_id : row.from_user_id;
+    const counterpart = counterpartUserId ? userMap.get(counterpartUserId) : null;
+    const counterpartId = counterpartUserId ?? 'unknown';
     const counterpartLabel =
       counterpart?.display_name?.trim() || counterpart?.email?.trim() || counterpartId;
 
