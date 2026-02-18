@@ -6,42 +6,9 @@ import Link from "next/link";
 
 import { Check, ChevronDown } from "lucide-react";
 
+import type { CollectionEntry, CollectionResponse } from "@/lib/collection/types";
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
-
-
-type CollectionItem = {
-  id: string;
-  card_id: string;
-  serial_number: number | null;
-  obtained_at: string | null;
-  cards: {
-    id: string;
-    name: string;
-    rarity: string;
-    star_level: number | null;
-    description: string | null;
-    image_url: string | null;
-    max_supply: number | null;
-    current_supply: number | null;
-    person_name: string | null;
-    card_style: string | null;
-    is_loss_card: boolean | null;
-  } | null;
-};
-
-type ApiResponse = {
-  totalOwned: number;
-  distinctOwned: number;
-  totalAvailable: number;
-  collection: CollectionItem[];
-  cards: { id: string; name: string; rarity: string; image_url: string | null }[];
-  page?: {
-    limit: number;
-    offset: number;
-    hasMore: boolean;
-  };
-};
 
 const RARITY_LABELS: Record<string, string> = {
   N: "N",
@@ -79,17 +46,26 @@ const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
 const LOSS_CARD_NAME = "転生失敗";
 const LOSS_CARD_IMAGE = buildCommonAssetPath("loss_card.png");
 
-type LossAwareCard = { is_loss_card?: boolean | null; name?: string | null } | null;
+const PAGE_SIZE = 50;
 
-function isLossCardData(card: LossAwareCard): boolean {
+function isLossCardData(card: { is_loss_card?: boolean | null; name?: string | null } | null): boolean {
   if (!card) return false;
   if (card.is_loss_card) return true;
   return card.name === LOSS_CARD_NAME;
 }
 
+type CollectionListProps = {
+  initialData: CollectionResponse | null;
+};
 
-export function CollectionList() {
-  const [data, setData] = useState<ApiResponse | null>(null);
+type DateGroup = {
+  key: string;
+  label: string;
+  items: CollectionEntry[];
+};
+
+export function CollectionList({ initialData = null }: CollectionListProps) {
+  const [data, setData] = useState<CollectionResponse | null>(initialData);
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [keyword, setKeyword] = useState("");
@@ -98,23 +74,20 @@ export function CollectionList() {
   const [personFilter, setPersonFilter] = useState("all");
   const [styleFilter, setStyleFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState<"all" | "hit" | "loss">("all");
+  const [showHistorical, setShowHistorical] = useState(false);
 
   const mountedRef = useRef(false);
 
-  const PAGE_SIZE = 50;
-
   async function fetchPage(offset: number, append: boolean) {
-    const res = await fetch(`/api/collection?limit=${PAGE_SIZE}&offset=${offset}`);
+    const res = await fetch(`/api/collection?limit=${PAGE_SIZE}&offset=${offset}`, { cache: "no-store" });
     const json = await res.json();
     if (!res.ok) {
       throw new Error(json?.error ?? "取得に失敗しました");
     }
-    const payload = json as ApiResponse;
-    if (!mountedRef.current) {
-      return;
-    }
+    const payload = json as CollectionResponse;
+    if (!mountedRef.current) return;
     setData((prev) => {
-      if (!prev || !append) {
+      if (!prev || !append || offset === 0) {
         return payload;
       }
       return {
@@ -126,56 +99,53 @@ export function CollectionList() {
 
   useEffect(() => {
     mountedRef.current = true;
-    (async () => {
-      try {
-        await fetchPage(0, false);
-      } catch (err) {
-        if (!mountedRef.current) return;
-        setError(err instanceof Error ? err.message : "取得に失敗しました");
-      }
-    })();
-
+    if (!initialData) {
+      (async () => {
+        try {
+          await fetchPage(0, false);
+        } catch (err) {
+          if (!mountedRef.current) return;
+          setError(err instanceof Error ? err.message : "取得に失敗しました");
+        }
+      })();
+    }
     return () => {
       mountedRef.current = false;
     };
-  }, []);
+  }, [initialData]);
+
+  const safeData = data ?? initialData;
 
   const filterOptions = useMemo(() => {
-    if (!data) {
-      return { persons: [], styles: [], rarities: [] };
+    if (!safeData) {
+      return { persons: [] as string[], styles: [] as string[], rarities: [] as string[] };
     }
     const persons = Array.from(
-      new Set(
-        data.collection.map((item) => item.cards?.person_name).filter((value): value is string => Boolean(value)),
-      ),
+      new Set(safeData.collection.map((item) => item.cards?.person_name).filter((value): value is string => Boolean(value))),
     ).sort();
     const styles = Array.from(
-      new Set(
-        data.collection.map((item) => item.cards?.card_style).filter((value): value is string => Boolean(value)),
-      ),
+      new Set(safeData.collection.map((item) => item.cards?.card_style).filter((value): value is string => Boolean(value))),
     ).sort();
     const rarities = Array.from(
-      new Set(
-        data.collection.map((item) => item.cards?.rarity).filter((value): value is string => Boolean(value)),
-      ),
+      new Set(safeData.collection.map((item) => item.cards?.rarity).filter((value): value is string => Boolean(value))),
     ).sort((a, b) => (RARITY_ORDER[b] ?? 0) - (RARITY_ORDER[a] ?? 0));
 
     return { persons, styles, rarities };
-  }, [data]);
+  }, [safeData]);
 
   const signableSources = useMemo(() => {
-    if (!data) return [];
-    return data.collection
+    if (!safeData) return [];
+    return safeData.collection
       .map((item) => item.cards?.image_url)
       .filter((src): src is string => Boolean(src) && isSignableAsset(src));
-  }, [data]);
+  }, [safeData]);
 
   const { resolveAssetSrc, isSigning } = useSignedAssetResolver(signableSources);
 
   const filtered = useMemo(() => {
-    if (!data) return [];
+    if (!safeData) return [];
     const lower = keyword.toLowerCase();
-    const list = data.collection.filter((item) => {
+    const list = safeData.collection.filter((item) => {
       const name = item.cards?.name?.toLowerCase() ?? "";
       const rarity = item.cards?.rarity ?? "";
       const person = item.cards?.person_name ?? "";
@@ -185,8 +155,7 @@ export function CollectionList() {
       const matchesRarity = rarityFilter === "all" || rarity === rarityFilter;
       const matchesPerson = personFilter === "all" || person === personFilter;
       const matchesStyle = styleFilter === "all" || style === styleFilter;
-      const matchesOutcome =
-        outcomeFilter === "all" || (outcomeFilter === "loss" ? loss : !loss);
+      const matchesOutcome = outcomeFilter === "all" || (outcomeFilter === "loss" ? loss : !loss);
       return matchesKeyword && matchesRarity && matchesPerson && matchesStyle && matchesOutcome;
     });
 
@@ -199,13 +168,130 @@ export function CollectionList() {
       return list.sort((a, b) => (a.cards?.name ?? "").localeCompare(b.cards?.name ?? ""));
     }
     return list.sort((a, b) => (b.obtained_at ?? "").localeCompare(a.obtained_at ?? ""));
-  }, [data, keyword, sort, rarityFilter, personFilter, styleFilter, outcomeFilter]);
+  }, [safeData, keyword, sort, rarityFilter, personFilter, styleFilter, outcomeFilter]);
+
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+  const { todayEntries, historicalGroups, historicalCount } = useMemo(() => {
+    const todayList: CollectionEntry[] = [];
+    const historyMap = new Map<string, DateGroup>();
+
+    filtered.forEach((item) => {
+      const key = getLocalDateKey(item.obtained_at);
+      if (!key || key === todayKey) {
+        todayList.push(item);
+        return;
+      }
+      const existing = historyMap.get(key);
+      if (existing) {
+        existing.items.push(item);
+      } else {
+        historyMap.set(key, { key, label: formatDateLabel(key), items: [item] });
+      }
+    });
+
+    const groups = Array.from(historyMap.values()).sort((a, b) => b.key.localeCompare(a.key));
+    const count = groups.reduce((acc, group) => acc + group.items.length, 0);
+    return { todayEntries: todayList, historicalGroups: groups, historicalCount: count };
+  }, [filtered, todayKey]);
+
+  const visibleCount = showHistorical ? filtered.length : todayEntries.length;
+
+  const renderCollectionCard = (item: CollectionEntry) => {
+    const card = item.cards;
+    if (!card) return null;
+    const starLevel = card.star_level ?? null;
+    const isLossCard = isLossCardData(card);
+    const starIcons = !isLossCard && starLevel ? "★".repeat(Math.max(1, Math.min(starLevel, 12))) : "";
+    const serialLabel = item.serial_number != null ? `#${String(item.serial_number).padStart(3, "0")}` : "---";
+    const rarityBadge = RARITY_BADGES[card.rarity] ?? RARITY_BADGES.N;
+    const rarityGradient = RARITY_GRADIENTS[card.rarity] ?? RARITY_GRADIENTS.N;
+    const obtainedAtLabel = item.obtained_at
+      ? new Date(item.obtained_at).toLocaleString("ja-JP", {
+          month: "numeric",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
+
+    const rawImage = card.image_url ?? (isLossCard ? LOSS_CARD_IMAGE : null);
+    const shouldSign = isSignableAsset(rawImage);
+    const resolvedImage = shouldSign ? resolveAssetSrc(rawImage) : rawImage;
+    const isAwaitingImage = shouldSign && Boolean(rawImage) && !resolvedImage && isSigning;
+
+    return (
+      <Link
+        key={item.id}
+        href={`/collection/${item.id}`}
+        className="group relative overflow-hidden rounded-3xl border border-white/12 bg-black/40 p-4 shadow-panel-inset transition hover:border-white/40"
+      >
+        <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${rarityGradient} opacity-70`} />
+        <div className="relative z-10 flex gap-4">
+          <div className="relative h-20 w-20 flex-shrink-0">
+            {resolvedImage ? (
+              <Image
+                src={resolvedImage}
+                alt={card.name}
+                fill
+                sizes="80px"
+                unoptimized
+                onError={(event) => {
+                  if (event.currentTarget.src !== FALLBACK_CARD_IMAGE) {
+                    event.currentTarget.src = FALLBACK_CARD_IMAGE;
+                  }
+                }}
+                className="rounded-2xl object-cover shadow-[0_15px_25px_rgba(0,0,0,0.45)]"
+              />
+            ) : rawImage ? (
+              <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
+                {isAwaitingImage ? "LOADING" : "NO IMAGE"}
+              </div>
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
+                NO IMAGE
+              </div>
+            )}
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-display text-lg text-white">{card.name}</p>
+              <span className={`rounded-full border px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] ${rarityBadge}`}>
+                {RARITY_LABELS[card.rarity] ?? card.rarity}
+              </span>
+              {isLossCard && (
+                <span className="rounded-full border border-red-300/40 bg-red-500/10 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-red-200">
+                  LOSS
+                </span>
+              )}
+            </div>
+            {starIcons ? (
+              <p className="text-xs text-amber-200">{starIcons}</p>
+            ) : isLossCard ? (
+              <p className="text-xs uppercase tracking-[0.35em] text-white/70">LOSS ROUTE</p>
+            ) : null}
+            {card.description && <p className="text-sm text-white/80 line-clamp-2">{card.description}</p>}
+            <div className="flex flex-wrap gap-2 text-[0.65rem] uppercase tracking-[0.3em] text-white/60">
+              <span className="rounded-full border border-white/20 px-3 py-1">{serialLabel}</span>
+              {obtainedAtLabel && <span className="rounded-full border border-white/10 px-3 py-1">{obtainedAtLabel}</span>}
+            </div>
+            {(card.person_name || card.card_style) && (
+              <p className="text-xs text-white/70">
+                {card.person_name ?? ""}
+                {card.person_name && card.card_style ? " / " : ""}
+                {card.card_style ?? ""}
+              </p>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  };
 
   if (error) {
     return <p className="text-sm text-red-400">{error}</p>;
   }
 
-  if (!data) {
+  if (!safeData) {
     return <p className="text-sm text-zinc-400">ロード中...</p>;
   }
 
@@ -224,12 +310,12 @@ export function CollectionList() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
             <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">Unique</p>
-            <p className="font-display text-3xl">{data.distinctOwned}</p>
-            <p className="text-xs text-white/70">/ {data.totalAvailable}</p>
+            <p className="font-display text-3xl">{safeData.distinctOwned}</p>
+            <p className="text-xs text-white/70">/ {safeData.totalAvailable}</p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
             <p className="text-[0.6rem] uppercase tracking-[0.4em] text-white/60">Total</p>
-            <p className="font-display text-3xl">{data.totalOwned}</p>
+            <p className="font-display text-3xl">{safeData.totalOwned}</p>
             <p className="text-xs text-white/70">累計入手枚数</p>
           </div>
           <div className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white">
@@ -329,112 +415,58 @@ export function CollectionList() {
       <section className="space-y-4 rounded-3xl border border-white/10 bg-black/20 p-6 shadow-panel-inset">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs uppercase tracking-[0.4em] text-neon-purple">COLLECTION</p>
-          <p className="text-xs text-zinc-400">表示中 {filtered.length} 枚</p>
+          <p className="text-xs text-zinc-400">
+            表示中 {visibleCount} 枚{!showHistorical && historicalCount > 0 ? "（本日のカード）" : ""}
+          </p>
         </div>
-        <div className="grid gap-4">
-          {filtered.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-white/15 bg-black/30 px-6 py-10 text-center text-sm text-zinc-400">
-              該当するカードがありません
+        {filtered.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-white/15 bg-black/30 px-6 py-10 text-center text-sm text-zinc-400">
+            該当するカードがありません
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <div className="grid gap-4">
+              {todayEntries.length === 0 ? (
+                <div className="rounded-3xl border border-white/15 bg-black/30 px-6 py-10 text-center text-sm text-zinc-300">
+                  本日獲得したカードはありません。
+                </div>
+              ) : (
+                todayEntries.map(renderCollectionCard)
+              )}
             </div>
-          ) : (
-            filtered.map((item) => {
-              const card = item.cards;
-              if (!card) return null;
-              const starLevel = card.star_level ?? null;
-              const isLossCard = isLossCardData(card);
-              const starIcons = !isLossCard && starLevel ? "★".repeat(Math.max(1, Math.min(starLevel, 12))) : "";
-              const serialLabel =
-                item.serial_number != null ? `#${String(item.serial_number).padStart(3, "0")}` : "---";
-              const rarityBadge = RARITY_BADGES[card.rarity] ?? RARITY_BADGES.N;
-              const rarityGradient = RARITY_GRADIENTS[card.rarity] ?? RARITY_GRADIENTS.N;
-              const obtainedAtLabel = item.obtained_at
-                ? new Date(item.obtained_at).toLocaleString("ja-JP", {
-                    month: "numeric",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : null;
 
-              const rawImage = card.image_url ?? (isLossCard ? LOSS_CARD_IMAGE : null);
-              const shouldSign = isSignableAsset(rawImage);
-              const resolvedImage = shouldSign ? resolveAssetSrc(rawImage) : rawImage;
-              const isAwaitingImage = shouldSign && Boolean(rawImage) && !resolvedImage && isSigning;
-
-              return (
-                <Link
-                  key={item.id}
-                  href={`/collection/${item.id}`}
-                  className="group relative overflow-hidden rounded-3xl border border-white/12 bg-black/40 p-4 shadow-panel-inset transition hover:border-white/40"
-                >
-                  <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${rarityGradient} opacity-70`} />
-                  <div className="relative z-10 flex gap-4">
-                    <div className="relative h-20 w-20 flex-shrink-0">
-                      {resolvedImage ? (
-                        <Image
-                          src={resolvedImage}
-                          alt={card.name}
-                          fill
-                          sizes="80px"
-                          unoptimized
-                          onError={(event) => {
-                            if (event.currentTarget.src !== FALLBACK_CARD_IMAGE) {
-                              event.currentTarget.src = FALLBACK_CARD_IMAGE;
-                            }
-                          }}
-                          className="rounded-2xl object-cover shadow-[0_15px_25px_rgba(0,0,0,0.45)]"
-                        />
-                      ) : rawImage ? (
-                        <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
-                          {isAwaitingImage ? "LOADING" : "NO IMAGE"}
-                        </div>
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center rounded-2xl border border-white/10 bg-black/40 text-[0.6rem] text-zinc-400">
-                          NO IMAGE
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-display text-lg text-white">{card.name}</p>
-                        <span
-                          className={`rounded-full border px-3 py-1 text-[0.65rem] uppercase tracking-[0.35em] ${rarityBadge}`}
-                        >
-                          {RARITY_LABELS[card.rarity] ?? card.rarity}
-                        </span>
-                        {isLossCard && (
-                          <span className="rounded-full border border-red-300/40 bg-red-500/10 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.4em] text-red-200">
-                            LOSS
-                          </span>
-                        )}
-                      </div>
-                      {starIcons ? (
-                        <p className="text-xs text-amber-200">{starIcons}</p>
-                      ) : isLossCard ? (
-                        <p className="text-xs uppercase tracking-[0.35em] text-white/70">LOSS ROUTE</p>
-                      ) : null}
-                      {card.description && (
-                        <p className="text-sm text-white/80 line-clamp-2">{card.description}</p>
-                      )}
-                      <div className="flex flex-wrap gap-2 text-[0.65rem] uppercase tracking-[0.3em] text-white/60">
-                        <span className="rounded-full border border-white/20 px-3 py-1">{serialLabel}</span>
-                        {obtainedAtLabel && <span className="rounded-full border border-white/10 px-3 py-1">{obtainedAtLabel}</span>}
-                      </div>
-                      {(card.person_name || card.card_style) && (
-                        <p className="text-xs text-white/70">
-                          {card.person_name ?? ""}
-                          {card.person_name && card.card_style ? " / " : ""}
-                          {card.card_style ?? ""}
-                        </p>
-                      )}
-                    </div>
+            {historicalCount > 0 && (
+              <div className="rounded-3xl border border-white/12 bg-black/30 p-5 shadow-panel-inset">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.4em] text-neon-blue">HISTORY</p>
+                    <p className="text-sm text-white/70">{historicalCount}枚の過去カード</p>
                   </div>
-                </Link>
-              );
-            })
-          )}
-        </div>
-        {data.page?.hasMore && (
+                  <button
+                    type="button"
+                    onClick={() => setShowHistorical((prev) => !prev)}
+                    className="rounded-full border border-white/20 px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white/80 transition hover:border-white/40 hover:text-white"
+                  >
+                    {showHistorical ? "折りたたむ" : "過去のカードを展開"}
+                  </button>
+                </div>
+
+                {showHistorical && (
+                  <div className="mt-4 space-y-6">
+                    {historicalGroups.map((group) => (
+                      <div key={group.key} className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.35em] text-white/60">{group.label}</p>
+                        <div className="grid gap-4">{group.items.map(renderCollectionCard)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {safeData.page?.hasMore && (
           <div className="flex justify-center pt-2">
             <button
               type="button"
@@ -442,7 +474,7 @@ export function CollectionList() {
                 if (loadingMore) return;
                 setLoadingMore(true);
                 try {
-                  const nextOffset = (data.page?.offset ?? 0) + (data.page?.limit ?? PAGE_SIZE);
+                  const nextOffset = (safeData.page?.offset ?? 0) + (safeData.page?.limit ?? PAGE_SIZE);
                   await fetchPage(nextOffset, true);
                 } catch (err) {
                   setError(err instanceof Error ? err.message : "追加のカード取得に失敗しました");
@@ -571,4 +603,22 @@ function FilterSelect<T extends string>({ label, value, onChange, options }: Fil
       </div>
     </div>
   );
+}
+
+function getLocalDateKey(value: string | Date | null | undefined): string | null {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(key: string): string {
+  const date = new Date(`${key}T00:00:00`);
+  if (Number.isNaN(date.getTime())) {
+    return key;
+  }
+  return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
 }
