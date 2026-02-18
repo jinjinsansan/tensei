@@ -8,6 +8,7 @@ import { Check, ChevronDown } from "lucide-react";
 
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
+import { mapCardDbIdToModuleId } from "@/lib/gacha/characters/mapping";
 
 type Friend = {
   id: string;
@@ -174,6 +175,35 @@ const CARD_THEMES: Record<string, CardTheme> = {
 
 const CARD_LOGO_SRC = "/raise-gacha-logo.png";
 
+const CARD_DOWNLOAD_IMAGES: Record<string, string> = {
+  // Kenta
+  card01_convenience: "/gacha_cards_complete_all24/kenta_card01_convenience_complete.png",
+  card02_warehouse: "/gacha_cards_complete_all24/kenta_card02_warehouse_complete.png",
+  card03_youtuber: "/gacha_cards_complete_all24/kenta_card03_youtuber_complete.png",
+  card04_civil_servant: "/gacha_cards_complete_all24/kenta_card04_civil_servant_complete.png",
+  card05_ramen: "/gacha_cards_complete_all24/kenta_card05_ramen_complete.png",
+  card06_boxer: "/gacha_cards_complete_all24/kenta_card06_boxer_complete.png",
+  card07_surgeon: "/gacha_cards_complete_all24/kenta_card07_surgeon_complete.png",
+  card08_business_owner: "/gacha_cards_complete_all24/kenta_card08_business_complete.png",
+  card09_mercenary: "/gacha_cards_complete_all24/kenta_card09_mercenary_complete.png",
+  card10_rockstar: "/gacha_cards_complete_all24/kenta_card10_rockstar_complete.png",
+  card11_demon_king: "/gacha_cards_complete_all24/kenta_card11_demon_lord_complete.png",
+  card12_hero: "/gacha_cards_complete_all24/kenta_card12_hero_complete.png",
+  // Shoichi
+  card01_fish: "/gacha_cards_complete_all24/shoichi_card01_fish_complete.png",
+  card02_train: "/gacha_cards_complete_all24/shoichi_card02_train_complete.png",
+  card03_host: "/gacha_cards_complete_all24/shoichi_card03_host_complete.png",
+  card04_rehire: "/gacha_cards_complete_all24/shoichi_card04_rehire_complete.png",
+  card05_bear: "/gacha_cards_complete_all24/shoichi_card05_bear_complete.png",
+  card06_ikemen: "/gacha_cards_complete_all24/shoichi_card06_ikemen_complete.png",
+  card07_beach_bar: "/gacha_cards_complete_all24/shoichi_card07_beach_bar_complete.png",
+  card08_revenge_boss: "/gacha_cards_complete_all24/shoichi_card08_revenge_boss_complete.png",
+  card09_youth_love: "/gacha_cards_complete_all24/shoichi_card09_youth_love_complete.png",
+  card10_happy_family: "/gacha_cards_complete_all24/shoichi_card10_happy_family_complete.png",
+  card11_pilot: "/gacha_cards_complete_all24/shoichi_card11_pilot_complete.png",
+  card12_investor: "/gacha_cards_complete_all24/shoichi_card12_investor_complete.png",
+};
+
 export function CollectionDetailClient({ entry, shareUrl, referralShareActive = false }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState("");
@@ -185,6 +215,10 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
   const { resolveAssetSrc, isSigning } = useSignedAssetResolver(sources);
   const resolvedAsset = resolveAssetSrc(entry.imageUrl);
   const resolvedImage = pickDisplayImage(entry, resolvedAsset);
+  const downloadImageSrc = useMemo(() => {
+    const moduleCardId = mapCardDbIdToModuleId(entry.cardId);
+    return moduleCardId ? CARD_DOWNLOAD_IMAGES[moduleCardId] ?? null : null;
+  }, [entry.cardId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -279,96 +313,147 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
   );
 
   const handleDownload = useCallback(async () => {
-    if (!resolvedImage) return;
+    if (!resolvedImage && !downloadImageSrc) return;
     setDownloadState("pending");
     const shareMessage = entry.isLossCard ? "転生失敗...魂はまだ準備中。" : `${entry.cardName}を獲得しました！`;
-    
-    try {
-      // 署名付きURL（R2）の場合は画像合成をスキップして元画像をダウンロード
-      // R2はCORSヘッダーを返さないため、Canvasで操作するとtaintedエラーが発生する
-      const isSignedUrl = resolvedImage.includes('r2.cloudflarestorage.com') || 
-                          resolvedImage.includes('X-Amz-Signature');
-      
-      if (isSignedUrl) {
-        // 署名付きURLの場合は元画像をそのままダウンロード
-        const response = await fetch(resolvedImage);
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        
-        // モバイルデバイスの判定（タッチスクリーンと画面幅で判定）
-        const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && 
-                         window.innerWidth <= 768;
-        
-        if (isMobile && navigator.share && navigator.canShare) {
-          const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
-          if (navigator.canShare({ files: [file] })) {
-            try {
-              await navigator.share({
-                title: entry.cardName,
-                text: shareMessage,
-                files: [file],
-              });
-              setDownloadState("idle");
-              return;
-            } catch {
-              // ユーザーがキャンセルした場合などは通常ダウンロードにフォールバック
-              console.log("Share cancelled or failed, falling back to download");
-            }
+
+    const loadImageElement = (src: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new window.Image();
+        image.decoding = "async";
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("Image load failed"));
+        image.src = src;
+      });
+
+    const drawRoundedRect = (
+      context: CanvasRenderingContext2D,
+      x: number,
+      y: number,
+      width: number,
+      height: number,
+      radius: number,
+    ) => {
+      const r = Math.min(radius, width / 2, height / 2);
+      context.beginPath();
+      context.moveTo(x + r, y);
+      context.lineTo(x + width - r, y);
+      context.quadraticCurveTo(x + width, y, x + width, y + r);
+      context.lineTo(x + width, y + height - r);
+      context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      context.lineTo(x + r, y + height);
+      context.quadraticCurveTo(x, y + height, x, y + height - r);
+      context.lineTo(x, y + r);
+      context.quadraticCurveTo(x, y, x + r, y);
+      context.closePath();
+    };
+
+    const canvasToBlob = (canvas: HTMLCanvasElement) =>
+      new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error("Failed to create blob"));
+        }, "image/png");
+      });
+
+    const shareOrDownloadBlob = async (blob: Blob) => {
+      const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 768;
+      if (isMobile && navigator.share && navigator.canShare) {
+        const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: entry.cardName,
+              text: shareMessage,
+              files: [file],
+            });
+            return;
+          } catch {
+            console.log("Share cancelled or failed, falling back to download");
           }
         }
-        
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${entry.cardName || "card"}.png`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${entry.cardName || "card"}.png`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    try {
+      if (downloadImageSrc) {
+        const img = await loadImageElement(downloadImageSrc);
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error("Canvas not supported");
+        }
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const padding = Math.max(Math.floor(canvas.width * 0.04), 28);
+        const fontSize = Math.max(Math.floor(canvas.width * 0.055), 36);
+        const pillPaddingX = fontSize * 0.85;
+        const pillPaddingY = fontSize * 0.45;
+        const serialText = formattedSerial;
+        ctx.font = `700 ${fontSize}px 'Inter', 'Noto Sans JP', sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const metrics = ctx.measureText(serialText);
+        const pillWidth = metrics.width + pillPaddingX * 2;
+        const pillHeight = fontSize + pillPaddingY * 2;
+        const pillX = canvas.width - padding - pillWidth;
+        const pillY = canvas.height - padding - pillHeight;
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.45)";
+        ctx.shadowBlur = Math.max(10, fontSize * 0.25);
+        ctx.fillStyle = "rgba(6,8,20,0.78)";
+        drawRoundedRect(ctx, pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
+        ctx.fill();
+        ctx.lineWidth = Math.max(2, Math.floor(fontSize * 0.08));
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.shadowColor = "rgba(0,0,0,0.4)";
+        ctx.shadowBlur = Math.max(8, fontSize * 0.2);
+        ctx.fillText(serialText, pillX + pillWidth / 2, pillY + pillHeight / 2 + 1);
+        ctx.shadowColor = "transparent";
+
+        const blob = await canvasToBlob(canvas);
+        await shareOrDownloadBlob(blob);
         setDownloadState("idle");
         return;
       }
 
-      // Canvas で画像合成（publicフォルダ内の画像のみ）
-      const loadImageElement = (src: string) =>
-        new Promise<HTMLImageElement>((resolve, reject) => {
-          const image = new window.Image();
-          image.onload = () => resolve(image);
-          image.onerror = () => reject(new Error("Image load failed"));
-          image.src = src;
-        });
+      if (!resolvedImage) {
+        throw new Error("No image available for download");
+      }
 
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Canvas not supported");
+      const isSignedUrl = resolvedImage.includes('r2.cloudflarestorage.com') || resolvedImage.includes('X-Amz-Signature');
+      if (isSignedUrl) {
+        const response = await fetch(resolvedImage);
+        const blob = await response.blob();
+        await shareOrDownloadBlob(blob);
+        setDownloadState("idle");
+        return;
       }
 
       const img = await loadImageElement(resolvedImage);
       const logoImage = await loadImageElement(CARD_LOGO_SRC).catch(() => null);
       const theme = CARD_THEMES[entry.rarity] ?? DEFAULT_CARD_THEME;
 
-      const drawRoundedRect = (
-        context: CanvasRenderingContext2D,
-        x: number,
-        y: number,
-        width: number,
-        height: number,
-        radius: number,
-      ) => {
-        const r = Math.min(radius, width / 2, height / 2);
-        context.beginPath();
-        context.moveTo(x + r, y);
-        context.lineTo(x + width - r, y);
-        context.quadraticCurveTo(x + width, y, x + width, y + r);
-        context.lineTo(x + width, y + height - r);
-        context.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
-        context.lineTo(x + r, y + height);
-        context.quadraticCurveTo(x, y + height, x, y + height - r);
-        context.lineTo(x, y + r);
-        context.quadraticCurveTo(x, y, x + r, y);
-        context.closePath();
-      };
-
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Canvas not supported");
+      }
       canvas.width = img.width;
       canvas.height = img.height;
       ctx.drawImage(img, 0, 0);
@@ -536,46 +621,8 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
       ctx.fillText(formattedSerial, img.width - infoPaddingX, serialBaseline);
       ctx.textAlign = "left";
 
-      // Canvas を Blob に変換
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b);
-          else reject(new Error("Failed to create blob"));
-        }, "image/png");
-      });
-
-      // モバイルデバイスの判定
-      const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && 
-                       window.innerWidth <= 768;
-      
-      // Web Share API が使える場合（主にモバイル）
-      if (isMobile && navigator.share && navigator.canShare) {
-        const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              title: entry.cardName,
-              text: shareMessage,
-              files: [file],
-            });
-            setDownloadState("idle");
-            return;
-          } catch {
-            // ユーザーがキャンセルした場合などは通常ダウンロードにフォールバック
-            console.log("Share cancelled or failed, falling back to download");
-          }
-        }
-      }
-
-      // 通常のダウンロード
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${entry.cardName || "card"}.png`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+      const blob = await canvasToBlob(canvas);
+      await shareOrDownloadBlob(blob);
       setDownloadState("idle");
     } catch (error) {
       console.error("Download failed:", error);
@@ -594,6 +641,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
     resolvedImage,
     stars,
     formattedSerial,
+    downloadImageSrc,
   ]);
 
   return (
@@ -682,7 +730,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
               <button
                 type="button"
                 onClick={handleDownload}
-                disabled={!resolvedImage || downloadState === "pending"}
+                disabled={(!resolvedImage && !downloadImageSrc) || downloadState === "pending"}
                 className="inline-flex flex-1 items-center justify-center rounded-full border border-white/15 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.35em] text-white transition hover:border-white/40 disabled:opacity-40"
               >
                 {downloadState === "pending" ? "DOWNLOADING" : "ダウンロード"}
