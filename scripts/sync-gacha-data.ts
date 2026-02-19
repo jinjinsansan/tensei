@@ -2,9 +2,16 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createHash } from 'node:crypto';
 
 import { getServerEnv } from '@/lib/env';
+import type { CharacterId, CharacterModule, DondenRoute } from '@/lib/gacha/common/types';
 import { KENTA_CARDS, KENTA_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/kenta/kenta-cards';
 import { KENTA_DONDEN_ROUTES } from '@/lib/gacha/characters/kenta/kenta-donden';
 import { KENTA_MODULE } from '@/lib/gacha/characters/kenta/kenta-module';
+import { SHOICHI_CARDS, SHOICHI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/shoichi/shoichi-cards';
+import { SHOICHI_DONDEN_ROUTES } from '@/lib/gacha/characters/shoichi/shoichi-donden';
+import { SHOICHI_MODULE } from '@/lib/gacha/characters/shoichi/shoichi-module';
+import { TATUMI_CARDS, TATUMI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/tatumi/tatumi-cards';
+import { TATUMI_DONDEN_ROUTES } from '@/lib/gacha/characters/tatumi/tatumi-donden';
+import { TATUMI_MODULE } from '@/lib/gacha/characters/tatumi/tatumi-module';
 import {
   mapCardModuleIdToDbId,
   mapCharacterModuleIdToDbId,
@@ -20,9 +27,60 @@ function requireValue<T>(value: T | null | undefined, message: string): T {
   return value;
 }
 
-const CHARACTER_DB_ID = requireValue(mapCharacterModuleIdToDbId('kenta'), 'Kenta character mapping is not configured.');
+type CharacterSyncConfig = {
+  module: CharacterModule;
+  cards: typeof KENTA_CARDS;
+  descriptions: Record<string, string>;
+  dondenRoutes: DondenRoute[];
+  profile: string;
+  expectationLevel: number;
+  sortOrder: number;
+};
 
-const CARD_DB_ID_MAP: Record<string, string> = KENTA_CARDS.reduce((acc, card) => {
+const CHARACTER_CONFIGS: Record<CharacterId, CharacterSyncConfig> = {
+  kenta: {
+    module: KENTA_MODULE,
+    cards: KENTA_CARDS,
+    descriptions: KENTA_CARD_DESCRIPTIONS,
+    dondenRoutes: KENTA_DONDEN_ROUTES,
+    profile: '健太モジュール（来世ガチャ）',
+    expectationLevel: 2,
+    sortOrder: 1,
+  },
+  shoichi: {
+    module: SHOICHI_MODULE,
+    cards: SHOICHI_CARDS,
+    descriptions: SHOICHI_CARD_DESCRIPTIONS,
+    dondenRoutes: SHOICHI_DONDEN_ROUTES,
+    profile: '正一モジュール（来世ガチャ）',
+    expectationLevel: 3,
+    sortOrder: 2,
+  },
+  tatumi: {
+    module: TATUMI_MODULE,
+    cards: TATUMI_CARDS,
+    descriptions: TATUMI_CARD_DESCRIPTIONS,
+    dondenRoutes: TATUMI_DONDEN_ROUTES,
+    profile: '辰巳剛モジュール（来世ガチャ）',
+    expectationLevel: 4,
+    sortOrder: 3,
+  },
+};
+
+const targetCharacter = (process.argv[2] ?? 'kenta') as CharacterId;
+if (!CHARACTER_CONFIGS[targetCharacter]) {
+  console.error(`Unknown character: ${targetCharacter}. Supported: ${Object.keys(CHARACTER_CONFIGS).join(', ')}`);
+  process.exit(1);
+}
+
+const { module: characterModule, cards: CHARACTER_CARDS, descriptions: CARD_DESCRIPTIONS, dondenRoutes: CHARACTER_DONDEN_ROUTES, profile: CHARACTER_PROFILE, expectationLevel: CHARACTER_EXPECTATION, sortOrder: CHARACTER_SORT_ORDER } = CHARACTER_CONFIGS[targetCharacter];
+
+const CHARACTER_DB_ID = requireValue(
+  mapCharacterModuleIdToDbId(targetCharacter),
+  `${targetCharacter} character mapping is not configured.`,
+);
+
+const CARD_DB_ID_MAP: Record<string, string> = CHARACTER_CARDS.reduce((acc, card) => {
   const dbId = mapCardModuleIdToDbId(card.cardId);
   if (!dbId) {
     throw new Error(`Missing Supabase card ID mapping for ${card.cardId}`);
@@ -31,19 +89,19 @@ const CARD_DB_ID_MAP: Record<string, string> = KENTA_CARDS.reduce((acc, card) =>
   return acc;
 }, {} as Record<string, string>);
 
-const REVERSAL_TARGETS = new Set(KENTA_DONDEN_ROUTES.map((route) => route.toCardId));
+const REVERSAL_TARGETS = new Set(CHARACTER_DONDEN_ROUTES.map((route) => route.toCardId));
 
 async function upsertCharacter(client: DbClient) {
-  const thumbnailCard = KENTA_CARDS[0];
-  const thumbnail = thumbnailCard ? KENTA_MODULE.getCardImagePath(thumbnailCard.cardId) : null;
+  const thumbnailCard = CHARACTER_CARDS[0];
+  const thumbnail = thumbnailCard ? characterModule.getCardImagePath(thumbnailCard.cardId) : null;
   const payload = {
     id: CHARACTER_DB_ID,
-    name: KENTA_MODULE.characterName,
-    description: '健太モジュール（来世ガチャ）',
-    expectation_level: 2,
+    name: characterModule.characterName,
+    description: CHARACTER_PROFILE,
+    expectation_level: CHARACTER_EXPECTATION,
     thumbnail_url: thumbnail,
     is_active: true,
-    sort_order: 1,
+    sort_order: CHARACTER_SORT_ORDER,
     updated_at: new Date().toISOString(),
   };
   const { error } = await client.from('characters').upsert(payload, { onConflict: 'id' });
@@ -52,14 +110,14 @@ async function upsertCharacter(client: DbClient) {
 }
 
 async function upsertCards(client: DbClient) {
-  const payloads = KENTA_CARDS.map((card) => ({
+  const payloads = CHARACTER_CARDS.map((card) => ({
     id: CARD_DB_ID_MAP[card.cardId],
     character_id: CHARACTER_DB_ID,
     card_name: card.name,
     star_level: card.starRating,
     rarity: card.rarity,
-    card_image_url: KENTA_MODULE.getCardImagePath(card.cardId),
-    description: KENTA_CARD_DESCRIPTIONS[card.cardId] ?? `${card.name} の章`,
+    card_image_url: characterModule.getCardImagePath(card.cardId),
+    description: CARD_DESCRIPTIONS[card.cardId] ?? `${card.name} の章`,
     has_reversal: REVERSAL_TARGETS.has(card.cardId),
     is_active: true,
     sort_order: card.starRating,
@@ -72,13 +130,13 @@ async function upsertCards(client: DbClient) {
 }
 
 async function replacePreStories(client: DbClient) {
-  const rows = KENTA_MODULE.preScenePatterns.flatMap((pattern) =>
+  const rows = characterModule.preScenePatterns.flatMap((pattern) =>
     Array.from({ length: pattern.steps }).map((_, idx) => ({
-      id: stableUuid(`kenta-pre-${pattern.patternId}-${idx + 1}`),
+      id: stableUuid(`${targetCharacter}-pre-${pattern.patternId}-${idx + 1}`),
       character_id: CHARACTER_DB_ID,
       pattern: pattern.patternId,
       scene_order: idx + 1,
-      video_url: KENTA_MODULE.getPreSceneVideoPath(pattern.patternId, idx + 1),
+      video_url: characterModule.getPreSceneVideoPath(pattern.patternId, idx + 1),
       duration_seconds: 6,
       description: `転生前 ${pattern.patternId} / シーン${idx + 1}`,
     })),
@@ -94,11 +152,11 @@ async function replacePreStories(client: DbClient) {
 }
 
 async function replaceChanceScenes(client: DbClient) {
-  const rows = KENTA_MODULE.chanceScenes.map((scene) => ({
-    id: stableUuid(`kenta-chance-${scene.patternId}`),
+  const rows = characterModule.chanceScenes.map((scene) => ({
+    id: stableUuid(`${targetCharacter}-chance-${scene.patternId}`),
     character_id: CHARACTER_DB_ID,
     pattern: scene.patternId,
-    video_url: KENTA_MODULE.getChanceSceneVideoPath(scene.patternId),
+    video_url: characterModule.getChanceSceneVideoPath(scene.patternId),
     duration_seconds: 6,
     description: `転生チャンス ${scene.patternId}`,
   }));
@@ -113,13 +171,13 @@ async function replaceChanceScenes(client: DbClient) {
 }
 
 async function replaceScenarios(client: DbClient) {
-  const mainRows = KENTA_CARDS.flatMap((card) =>
+  const mainRows = CHARACTER_CARDS.flatMap((card) =>
     Array.from({ length: card.mainSceneSteps }).map((_, idx) => ({
-      id: stableUuid(`kenta-main-${card.cardId}-${idx + 1}`),
+      id: stableUuid(`${targetCharacter}-main-${card.cardId}-${idx + 1}`),
       card_id: CARD_DB_ID_MAP[card.cardId],
       phase: 'main_story' as const,
       scene_order: idx + 1,
-      video_url: KENTA_MODULE.getMainSceneVideoPath(card.cardId, idx + 1),
+      video_url: characterModule.getMainSceneVideoPath(card.cardId, idx + 1),
       duration_seconds: 8,
       telop_text: `${card.name} シーン${idx + 1}`,
       telop_type: 'neutral' as const,
@@ -127,16 +185,16 @@ async function replaceScenarios(client: DbClient) {
   );
 
   const reversalOrderOffsets: Record<string, number> = {};
-  const reversalRows = KENTA_DONDEN_ROUTES.flatMap((route) => {
+  const reversalRows = CHARACTER_DONDEN_ROUTES.flatMap((route) => {
     const toCardDbId = CARD_DB_ID_MAP[route.toCardId];
     const offset = reversalOrderOffsets[toCardDbId] ?? 0;
     reversalOrderOffsets[toCardDbId] = offset + route.steps;
     return Array.from({ length: route.steps }).map((_, idx) => ({
-      id: stableUuid(`kenta-reversal-${route.fromCardId}-${route.toCardId}-${idx + 1}`),
+      id: stableUuid(`${targetCharacter}-reversal-${route.fromCardId}-${route.toCardId}-${idx + 1}`),
       card_id: toCardDbId,
       phase: 'reversal' as const,
       scene_order: offset + idx + 1,
-      video_url: KENTA_MODULE.getDondenVideoPath(route.fromCardId, route.toCardId, idx + 1),
+      video_url: characterModule.getDondenVideoPath(route.fromCardId, route.toCardId, idx + 1),
       duration_seconds: 7,
       telop_text: `どんでん返し ${route.fromCardId} → ${route.toCardId}`,
       telop_type: 'reversal' as const,
@@ -176,7 +234,7 @@ async function main() {
   await replaceChanceScenes(client);
   await replaceScenarios(client);
 
-  console.log('🎉 Supabase gacha data synchronized.');
+  console.log(`🎉 Supabase gacha data synchronized for ${targetCharacter}.`);
 }
 
 main().catch((error) => {

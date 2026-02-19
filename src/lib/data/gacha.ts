@@ -3,6 +3,7 @@ import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/database';
 import { parseGachaConfig, type ParsedGachaConfig } from '@/lib/gacha/config';
 import type { CharacterId } from '@/lib/gacha/common/types';
+import { isValidCharacterId } from '@/lib/gacha/characters/character-registry';
 
 type DbClient = SupabaseClient<Database>;
 type HistoryStatus = 'pending' | 'success' | 'error';
@@ -53,8 +54,7 @@ export async function fetchGachaCharactersConfig(client: DbClient): Promise<Gach
   const rows = (data ?? []) as Tables<'gacha_characters'>[];
   return rows.map((row) => {
     const charId = row.character_id;
-    // 型安全性のため、有効なCharacterIdであることを検証
-    if (charId !== 'kenta' && charId !== 'shoichi') {
+    if (!isValidCharacterId(charId)) {
       throw new Error(`Invalid character_id in database: ${charId}`);
     }
     return {

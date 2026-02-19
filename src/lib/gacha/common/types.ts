@@ -18,7 +18,7 @@ export interface CountdownPattern {
 export type StandbyColor = 'black' | 'white' | 'yellow' | 'red' | 'blue' | 'rainbow';
 
 // v2: マルチキャラクターID
-export type CharacterId = 'kenta' | 'shoichi';
+export type CharacterId = 'kenta' | 'shoichi' | 'tatumi';
 
 export interface GachaResult {
   isLoss: boolean;
