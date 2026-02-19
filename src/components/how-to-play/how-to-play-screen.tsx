@@ -141,6 +141,40 @@ export function HowToPlayScreen() {
               </div>
             </div>
           </div>
+
+          {/* 辰巳編の画像 */}
+          <div className="rounded-2xl border border-red-400/30 bg-gradient-to-br from-red-950/40 to-transparent p-4">
+            <p className="mb-3 font-display text-lg text-red-300">辰巳編</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                <Image
+                  src="/tatumi_cards/tatumi_card01.png"
+                  alt="辰巳カード 石ころ転生"
+                  width={120}
+                  height={160}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                <Image
+                  src="/tatumi_cards/tatumi_card06.png"
+                  alt="辰巳カード 閻魔大王転生"
+                  width={120}
+                  height={160}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                <Image
+                  src="/tatumi_cards/tatumi_card12.png"
+                  alt="辰巳カード 閻魔大王（真）転生"
+                  width={120}
+                  height={160}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <Link
@@ -276,6 +310,26 @@ export function HowToPlayScreen() {
                 <p className="font-display text-xl text-purple-300">正一</p>
                 <p className="text-xs leading-relaxed text-zinc-400">
                   58歳　冴えないサラリーマン。チビハゲデブ独身の4重苦の人生。もう何もかも諦めかけていた時に転生チャンスが訪れる。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-red-400/30 bg-gradient-to-br from-red-950/40 to-transparent p-4">
+            <div className="flex items-center gap-4">
+              <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-red-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                <Image
+                  src="/tatumi_cards/tatumi_card05.png"
+                  alt="辰巳剛のアイコン"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="font-display text-xl text-red-300">辰巳剛</p>
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  45歳・元任侠の男。組の解散後も孤独に生きてきたが、義理人情を胸に再出発を願う。新たな来世で仲間と家族を取り戻せるのか？
                 </p>
               </div>
             </div>
