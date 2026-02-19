@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
       await grantTickets(supabase, stateRow.user_id, "n_point", rewardPoints);
       const { data: user } = await supabase
         .from("app_users")
-        .select("id, email, display_name")
+        .select("*")
         .eq("id", stateRow.user_id)
         .maybeSingle();
       if (user) {
