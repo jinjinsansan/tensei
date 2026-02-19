@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/lib/supabase/service';
 import { consumeTicket } from '@/lib/data/tickets';
 import { generateGachaBatchPlay, generateGuestGachaBatchPlay } from '@/lib/gacha/engine';
-import type { GachaEngineResult } from '@/lib/gacha/common/types';
+import type { GachaEngineResult } from '@/lib/gacha/types';
 import { fetchAuthedContext } from '@/lib/app/session';
 
 type PlayRequest = {
