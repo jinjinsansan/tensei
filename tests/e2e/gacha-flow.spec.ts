@@ -64,12 +64,21 @@ function fulfillWithJson<T>(route: Route, payload: T) {
 async function mockGachaApis(page: Page) {
   const playPayload: PlayResponse = {
     success: true,
-    resultId: RESULT_ID,
     ticketBalance: 99,
-    gachaResult: MOCK_GACHA_RESULT,
-    story: MOCK_STORY,
-    character: MOCK_CHARACTER,
-    card: MOCK_CARD,
+    session: {
+      multiSessionId: null,
+      totalPulls: 10,
+    },
+    pulls: [
+      {
+        order: 1,
+        resultId: RESULT_ID,
+        gachaResult: MOCK_GACHA_RESULT,
+        character: MOCK_CHARACTER,
+        card: MOCK_CARD,
+        story: MOCK_STORY,
+      },
+    ],
   };
 
   const resultPayload: ResultResponse = {

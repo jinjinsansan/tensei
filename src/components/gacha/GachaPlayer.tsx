@@ -43,6 +43,7 @@ type Props = {
   resultId?: string | null;
   onResultResolved?: (payload: ResultResolutionPayload) => void;
   cardRevealCtaLabel?: string;
+  onCurrentPhaseChange?: (phase: GachaPhase) => void;
 };
 
 type ResultResolutionPayload = {
@@ -79,6 +80,7 @@ export function GachaPlayer({
   resultId,
   onResultResolved,
   cardRevealCtaLabel,
+  onCurrentPhaseChange,
 }: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
@@ -112,6 +114,7 @@ export function GachaPlayer({
       resultId={resultId}
       onResultResolved={onResultResolved}
       cardRevealCtaLabel={cardRevealCtaLabel}
+      onCurrentPhaseChange={onCurrentPhaseChange}
     />,
     portalTarget,
   );
@@ -124,6 +127,7 @@ type ActivePlayerProps = {
   sessionKey: string;
   onResultResolved?: (payload: ResultResolutionPayload) => void;
   cardRevealCtaLabel?: string;
+  onCurrentPhaseChange?: (phase: GachaPhase) => void;
 };
 
 function ActiveGachaPlayer({
@@ -134,6 +138,7 @@ function ActiveGachaPlayer({
   resultId,
   onResultResolved,
   cardRevealCtaLabel,
+  onCurrentPhaseChange,
 }: ActivePlayerProps & { resultId?: string | null }) {
   const [phase, setPhase] = useState<GachaPhase>('STANDBY');
   const [countdownIndex, setCountdownIndex] = useState(0);
@@ -377,7 +382,8 @@ function ActiveGachaPlayer({
 
   useEffect(() => {
     onPhaseChange?.(phase);
-  }, [phase, onPhaseChange]);
+    onCurrentPhaseChange?.(phase);
+  }, [phase, onPhaseChange, onCurrentPhaseChange]);
 
   useEffect(() => {
     if (phase !== 'COUNTDOWN') {
@@ -628,7 +634,7 @@ function ActiveGachaPlayer({
               preload="auto"
               loop={phaseVideoLoop}
               playsInline
-              onPlay={handlePhaseVideoReady}
+              onCanPlayThrough={handlePhaseVideoReady}
               onLoadedData={handlePhaseVideoReady}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (

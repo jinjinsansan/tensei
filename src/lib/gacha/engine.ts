@@ -99,8 +99,15 @@ export async function generateGachaBatchPlay({
       });
     }
 
-    for (let index = 0; index < safeCount; index += 1) {
+    // シナリオを順次生成（供給制約を守るため）し、DB書き込みは並列化
+    const scenarios: ScenarioPayload[] = [];
+    for (let i = 0; i < safeCount; i += 1) {
       const scenario = await resolveScenario(supabase, configSlug, scenarioContext, scenarioCaches);
+      scenarios.push(scenario);
+    }
+
+    // 履歴と結果を並列挿入
+    const historyAndResultPromises = scenarios.map(async (scenario) => {
       const historyRow = await insertGachaHistory(supabase, {
         user_session_id: sessionId,
         app_user_id: appUserId,
@@ -123,6 +130,11 @@ export async function generateGachaBatchPlay({
         obtained_via: safeCount > 1 ? 'tenfold_gacha' : 'single_gacha',
         metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
       });
+      return { scenario, resultRow };
+    });
+
+    const results = await Promise.all(historyAndResultPromises);
+    for (const { scenario, resultRow } of results) {
       pulls.push(buildEngineResult(scenario, resultRow));
     }
 

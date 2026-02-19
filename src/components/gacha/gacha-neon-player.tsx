@@ -10,7 +10,7 @@ import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button
 import { CardReveal } from "@/components/gacha/CardReveal";
 import { playGacha, claimGachaResult } from "@/lib/api/gacha";
 import type { PlayResponse } from "@/lib/api/gacha";
-import type { GachaResult } from "@/lib/gacha/common/types";
+import type { GachaResult, GachaPhase } from "@/lib/gacha/common/types";
 
 type PlayVariant = "round" | "default" | "button";
 
@@ -49,6 +49,7 @@ export function GachaNeonPlayer({
   const [skipAllRequested, setSkipAllRequested] = useState(false);
   const [claims, setClaims] = useState<Record<string, ClaimState>>({});
   const [error, setError] = useState<string | null>(null);
+  const [currentPhase, setCurrentPhase] = useState<GachaPhase | null>(null);
 
   const totalPulls = sessionMeta?.totalPulls ?? activePulls?.length ?? 0;
   const currentPull = activePulls && currentIndex < totalPulls ? activePulls[currentIndex] : null;
@@ -63,12 +64,26 @@ export function GachaNeonPlayer({
     try {
       setIsLoading(true);
       const response = await playGacha();
-      setActivePulls(mapResponseToPulls(response));
+      const pulls = mapResponseToPulls(response);
+      setActivePulls(pulls);
       setSessionMeta(response.session);
       setCurrentIndex(0);
       setSummaryOpen(false);
       setSkipAllRequested(false);
       setClaims({});
+      // sessionStorageに保存
+      if (typeof sessionStorage !== "undefined") {
+        sessionStorage.setItem(
+          "gacha_session",
+          JSON.stringify({
+            pulls,
+            session: response.session,
+            currentIndex: 0,
+            claims: {},
+            summaryOpen: false,
+          }),
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "ガチャを開始できませんでした。");
     } finally {
@@ -135,15 +150,59 @@ export function GachaNeonPlayer({
     if (skipAllRequested || isLast) {
       setSummaryOpen(true);
     } else {
-      setCurrentIndex((index) => Math.min(index + 1, activePulls.length - 1));
+      const nextIndex = Math.min(currentIndex + 1, activePulls.length - 1);
+      setCurrentIndex(nextIndex);
+      // sessionStorageを更新
+      if (typeof sessionStorage !== "undefined") {
+        const stored = sessionStorage.getItem("gacha_session");
+        if (stored) {
+          try {
+            const data = JSON.parse(stored);
+            data.currentIndex = nextIndex;
+            sessionStorage.setItem("gacha_session", JSON.stringify(data));
+          } catch {
+            // ignore
+          }
+        }
+      }
     }
   }, [activePulls, currentIndex, skipAllRequested]);
 
-  const handleSkipAll = useCallback(() => {
+  const handleSkipAll = useCallback(async () => {
     if (!activePulls) return;
     setSkipAllRequested(true);
+    // 全カードのclaimを並列実行して完了を待つ
+    const claimPromises = activePulls
+      .filter((pull) => pull.resultId && !claims[pull.resultId])
+      .map((pull) => {
+        if (!pull.resultId) return Promise.resolve();
+        return claimGachaResult(pull.resultId)
+          .then((res) => {
+            setClaims((prev) => ({
+              ...prev,
+              [pull.resultId!]: {
+                serialNumber: res.serialNumber ?? null,
+                loading: false,
+                error: null,
+              },
+            }));
+          })
+          .catch((err) => {
+            const message = err instanceof Error ? err.message : "カードの確定に失敗しました。";
+            setClaims((prev) => ({
+              ...prev,
+              [pull.resultId!]: {
+                serialNumber: prev[pull.resultId!]?.serialNumber ?? null,
+                loading: false,
+                error: message,
+              },
+            }));
+          });
+      });
+    // 全てのclaim完了を待つ
+    await Promise.allSettled(claimPromises);
     setSummaryOpen(true);
-  }, [activePulls]);
+  }, [activePulls, claims]);
 
   const resetSession = useCallback(() => {
     setActivePulls(null);
@@ -152,7 +211,60 @@ export function GachaNeonPlayer({
     setSummaryOpen(false);
     setSkipAllRequested(false);
     setClaims({});
+    setCurrentPhase(null);
+    // sessionStorageをクリア
+    if (typeof sessionStorage !== "undefined") {
+      sessionStorage.removeItem("gacha_session");
+    }
   }, []);
+
+  // マウント時にsessionStorageから復元（サマリー状態のみ）
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined") return;
+    const stored = sessionStorage.getItem("gacha_session");
+    if (!stored) return;
+    try {
+      const data = JSON.parse(stored);
+      // サマリー表示中だった場合のみ復元（フェーズ途中は復元しない）
+      if (data.summaryOpen && data.pulls && Array.isArray(data.pulls) && data.pulls.length > 0) {
+        setActivePulls(data.pulls);
+        setSessionMeta(data.session ?? null);
+        setCurrentIndex(data.pulls.length - 1);
+        setClaims(data.claims ?? {});
+        setSummaryOpen(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  // claims状態の変更をsessionStorageに同期
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined" || !activePulls) return;
+    const stored = sessionStorage.getItem("gacha_session");
+    if (!stored) return;
+    try {
+      const data = JSON.parse(stored);
+      data.claims = claims;
+      sessionStorage.setItem("gacha_session", JSON.stringify(data));
+    } catch {
+      // ignore
+    }
+  }, [claims, activePulls]);
+
+  // summaryOpen状態の変更をsessionStorageに同期
+  useEffect(() => {
+    if (typeof sessionStorage === "undefined" || !activePulls) return;
+    const stored = sessionStorage.getItem("gacha_session");
+    if (!stored) return;
+    try {
+      const data = JSON.parse(stored);
+      data.summaryOpen = summaryOpen;
+      sessionStorage.setItem("gacha_session", JSON.stringify(data));
+    } catch {
+      // ignore
+    }
+  }, [summaryOpen, activePulls]);
 
   useEffect(() => {
     if (!summaryOpen || !activePulls) return;
@@ -223,6 +335,7 @@ export function GachaNeonPlayer({
   }, [normalizedLabel, playVariant, startPlay, isDisabled, isLoading, className]);
 
   const ctaLabel = currentIndex >= totalPulls - 1 ? "結果一覧へ" : "次の転生へ";
+  const showProgressOverlay = showPlayer && activePulls && currentPhase !== "CARD_REVEAL";
 
   return (
     <div className={cn("space-y-3 text-center", containerClassName)}>
@@ -236,9 +349,10 @@ export function GachaNeonPlayer({
           resultId={currentPull.resultId ?? undefined}
           onResultResolved={handleResultResolved}
           cardRevealCtaLabel={ctaLabel}
+          onCurrentPhaseChange={setCurrentPhase}
         />
       ) : null}
-      {showPlayer && activePulls ? (
+      {showProgressOverlay ? (
         <BatchProgressOverlay currentIndex={currentIndex} totalPulls={totalPulls} onSkipAll={handleSkipAll} />
       ) : null}
       {summaryOpen && activePulls ? (
