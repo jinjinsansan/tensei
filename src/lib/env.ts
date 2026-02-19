@@ -6,6 +6,7 @@ type ServerEnv = {
   RESEND_FROM_NAME: string;
   LINE_CHANNEL_SECRET?: string;
   LINE_CHANNEL_ACCESS_TOKEN?: string;
+  LINE_LOGIN_CHANNEL_ID?: string;
 };
 
 type PublicEnv = {
@@ -37,6 +38,7 @@ export function getServerEnv(): ServerEnv {
     RESEND_FROM_NAME: process.env.RESEND_FROM_NAME ?? 'Raise Gacha',
     LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET,
     LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+    LINE_LOGIN_CHANNEL_ID: process.env.LINE_LOGIN_CHANNEL_ID,
   };
 }
 

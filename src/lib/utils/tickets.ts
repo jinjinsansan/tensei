@@ -12,6 +12,7 @@ export const DEFAULT_TICKET_BALANCES: TicketBalanceItem[] = [
   { code: 'epic', name: 'エピックチケット', quantity: 0, colorToken: 'neon-pink', sortOrder: 2 },
   { code: 'premium', name: 'プレミアムチケット', quantity: 0, colorToken: 'neon-purple', sortOrder: 3 },
   { code: 'ex', name: 'EXチケット', quantity: 0, colorToken: 'glow-green', sortOrder: 4 },
+  { code: 'n_point', name: 'Nポイント', quantity: 0, colorToken: 'neon-green', sortOrder: 5 },
 ];
 
 export function canonicalizeGachaId(id?: string | null) {

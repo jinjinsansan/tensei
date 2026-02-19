@@ -536,6 +536,37 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['gacha_global_config']['Row']>;
         Relationships: [];
       };
+      line_link_states: {
+        Row: {
+          id: string;
+          user_id: string;
+          state: string;
+          nonce: string;
+          line_user_id: string | null;
+          rewarded_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          state: string;
+          nonce: string;
+          line_user_id?: string | null;
+          rewarded_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['line_link_states']['Row']>;
+        Relationships: [
+          {
+            foreignKeyName: 'line_link_states_user_id_fkey';
+            columns: ['user_id'];
+            referencedRelation: 'app_users';
+            referencedColumns: ['id'];
+          }
+        ];
+      };
       gacha_history: {
         Row: {
           id: string;
