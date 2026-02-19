@@ -17,7 +17,7 @@ const sections = [
     links: [
       { title: "取引履歴", description: "決済・ガチャ・送付ログ", href: "/transactions", badge: "NEW" },
       { title: "友達紹介", description: "コード共有で+1枚", href: "/mypage/invite" },
-      { title: "LINE特典", description: "LINE追加で+1枚", href: "/mypage/line" },
+      { title: "LINE特典", description: "公式LINE追加でNポイント", href: "/mypage/line" },
       { title: "チケット購入(準備中)", description: "有償パックを近日提供", href: "/purchase", badge: "SOON" },
     ],
   },

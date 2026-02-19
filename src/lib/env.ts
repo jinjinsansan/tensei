@@ -4,6 +4,8 @@ type ServerEnv = {
   RESEND_API_KEY: string;
   RESEND_FROM_EMAIL: string;
   RESEND_FROM_NAME: string;
+  LINE_CHANNEL_SECRET?: string;
+  LINE_CHANNEL_ACCESS_TOKEN?: string;
 };
 
 type PublicEnv = {
@@ -13,6 +15,7 @@ type PublicEnv = {
   NEXT_PUBLIC_SITE_URL?: string;
   NEXT_PUBLIC_APP_URL?: string;
   NEXT_PUBLIC_GACHA_ASSET_BASE_URL?: string;
+  NEXT_PUBLIC_LINE_OFFICIAL_URL?: string;
 };
 
 function ensureEnv(name: keyof ServerEnv, value: string | undefined) {
@@ -32,6 +35,8 @@ export function getServerEnv(): ServerEnv {
     RESEND_API_KEY: ensureEnv('RESEND_API_KEY', process.env.RESEND_API_KEY),
     RESEND_FROM_EMAIL: ensureEnv('RESEND_FROM_EMAIL', process.env.RESEND_FROM_EMAIL),
     RESEND_FROM_NAME: process.env.RESEND_FROM_NAME ?? 'Raise Gacha',
+    LINE_CHANNEL_SECRET: process.env.LINE_CHANNEL_SECRET,
+    LINE_CHANNEL_ACCESS_TOKEN: process.env.LINE_CHANNEL_ACCESS_TOKEN,
   };
 }
 
@@ -43,5 +48,6 @@ export function getPublicEnv(): PublicEnv {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_GACHA_ASSET_BASE_URL: process.env.NEXT_PUBLIC_GACHA_ASSET_BASE_URL,
+    NEXT_PUBLIC_LINE_OFFICIAL_URL: process.env.NEXT_PUBLIC_LINE_OFFICIAL_URL,
   };
 }

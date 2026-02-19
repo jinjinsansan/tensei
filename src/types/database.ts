@@ -524,11 +524,13 @@ export type Database = {
         Row: {
           id: string;
           loss_rate: number;
+          line_reward_points: number;
           updated_at: string | null;
         };
         Insert: {
           id?: string;
           loss_rate?: number;
+          line_reward_points?: number;
           updated_at?: string | null;
         };
         Update: Partial<Database['public']['Tables']['gacha_global_config']['Row']>;

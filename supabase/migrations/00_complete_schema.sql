@@ -649,6 +649,7 @@ create table if not exists public.gacha_rtp_config (
 create table if not exists public.gacha_global_config (
   id uuid primary key default gen_random_uuid(),
   loss_rate numeric not null default 60,
+  line_reward_points integer not null default 50,
   updated_at timestamptz default now()
 );
 
@@ -711,7 +712,7 @@ set loss_rate = excluded.loss_rate,
     donden_rate = excluded.donden_rate,
     updated_at = now();
 
-insert into public.gacha_global_config (id, loss_rate)
-values ('00000000-0000-0000-0000-000000000001', 60)
+insert into public.gacha_global_config (id, loss_rate, line_reward_points)
+values ('00000000-0000-0000-0000-000000000001', 60, 50)
 on conflict (id) do nothing;
 
