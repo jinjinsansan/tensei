@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
 import { consumeTicket } from '@/lib/data/tickets';
-import { generateGachaPlay, generateGuestGachaPlay } from '@/lib/gacha/engine';
+import { generateGachaBatchPlay, generateGuestGachaBatchPlay } from '@/lib/gacha/engine';
+import type { GachaEngineResult } from '@/lib/gacha/common/types';
 import { fetchAuthedContext } from '@/lib/app/session';
 
 type PlayRequest = {
@@ -11,6 +12,7 @@ type PlayRequest = {
 };
 
 const ALLOW_GUEST_GACHA = process.env.GACHA_ALLOW_GUEST !== 'false';
+const TENFOLD_PULLS = 10;
 
 export async function POST(request: Request) {
   try {
@@ -22,27 +24,15 @@ export async function POST(request: Request) {
       if (!ALLOW_GUEST_GACHA) {
         return NextResponse.json({ success: false, error: 'ログインが必要です。' }, { status: 401 });
       }
-      const gacha = await generateGuestGachaPlay(body?.configSlug);
+      const pulls = await generateGuestGachaBatchPlay({ configSlug: body?.configSlug, drawCount: TENFOLD_PULLS });
       return NextResponse.json({
         success: true,
-        resultId: null,
         ticketBalance: null,
-        gachaResult: gacha.gachaResult,
-        character: {
-          id: gacha.character.id,
-          name: gacha.character.name,
-          thumbnailUrl: gacha.character.thumbnail_url,
-          expectationLevel: gacha.character.expectation_level,
+        session: {
+          multiSessionId: null,
+          totalPulls: pulls.length,
         },
-        card: {
-          id: gacha.card.id,
-          name: gacha.card.card_name,
-          rarity: gacha.card.rarity,
-          starLevel: gacha.card.star_level,
-          imageUrl: gacha.card.card_image_url,
-          hasReversal: gacha.card.has_reversal,
-        },
-        story: gacha.story,
+        pulls: pulls.map((pull, index) => serializePull(pull, index + 1)),
       });
     }
 
@@ -55,32 +45,21 @@ export async function POST(request: Request) {
       remaining = result.remaining;
     }
 
-    const gacha = await generateGachaPlay({
+    const batch = await generateGachaBatchPlay({
       sessionId: session.id,
       appUserId: user.id,
       configSlug: body?.configSlug,
+      drawCount: TENFOLD_PULLS,
     });
 
     return NextResponse.json({
       success: true,
-      resultId: gacha.resultRow?.id ?? null,
       ticketBalance: remaining,
-      gachaResult: gacha.gachaResult,
-      character: {
-        id: gacha.character.id,
-        name: gacha.character.name,
-        thumbnailUrl: gacha.character.thumbnail_url,
-        expectationLevel: gacha.character.expectation_level,
+      session: {
+        multiSessionId: batch.multiSession?.id ?? null,
+        totalPulls: batch.pulls.length,
       },
-      card: {
-        id: gacha.card.id,
-        name: gacha.card.card_name,
-        rarity: gacha.card.rarity,
-        starLevel: gacha.card.star_level,
-        imageUrl: gacha.card.card_image_url,
-        hasReversal: gacha.card.has_reversal,
-      },
-      story: gacha.story,
+      pulls: batch.pulls.map((pull, index) => serializePull(pull, index + 1)),
     });
   } catch (error) {
     console.error('gacha/play error', error);
@@ -106,4 +85,27 @@ async function readJsonBody(request: Request): Promise<PlayRequest | null> {
     console.warn('Failed to parse gacha/play body', error);
     return null;
   }
+}
+
+function serializePull(pull: GachaEngineResult, order: number) {
+  return {
+    order,
+    resultId: pull.resultRow?.id ?? null,
+    gachaResult: pull.gachaResult,
+    story: pull.story,
+    character: {
+      id: pull.character.id,
+      name: pull.character.name,
+      thumbnailUrl: pull.character.thumbnail_url,
+      expectationLevel: pull.character.expectation_level,
+    },
+    card: {
+      id: pull.card.id,
+      name: pull.card.card_name,
+      rarity: pull.card.rarity,
+      starLevel: pull.card.star_level,
+      imageUrl: pull.card.card_image_url,
+      hasReversal: pull.card.has_reversal,
+    },
+  };
 }

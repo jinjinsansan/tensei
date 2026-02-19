@@ -86,14 +86,13 @@ export default async function GachaPage() {
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs text-white/75">
                   <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
-                    ガチャは１チケットを消費します
+                    1チケットで必ず10連プレイ
                   </span>
                 </div>
               </div>
               <div className="flex flex-1 items-center justify-center lg:justify-end">
                 <GachaNeonPlayer
                   playVariant="round"
-                  playLabel="ガチャを\n始める"
                   containerClassName="space-y-1 text-center w-full max-w-[150px]"
                   buttonWrapperClassName="justify-center"
                 />
@@ -137,7 +136,7 @@ export default async function GachaPage() {
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs text-white/70">
                   <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
-                    ガチャは１チケットを消費します（予定）
+                    1チケットで10連予定
                   </span>
                 </div>
               </div>

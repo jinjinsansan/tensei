@@ -41,6 +41,14 @@ type Props = {
   onPhaseChange?: (phase: GachaPhase) => void;
   sessionId?: string | null;
   resultId?: string | null;
+  onResultResolved?: (payload: ResultResolutionPayload) => void;
+  cardRevealCtaLabel?: string;
+};
+
+type ResultResolutionPayload = {
+  resultId: string | null;
+  serialNumber: number | null;
+  gachaResult: GachaResult;
 };
 
 const PHASE_META: Record<GachaPhase, { subtitle: string; title: string }> = {
@@ -63,7 +71,15 @@ function isControlsLocked(phase: GachaPhase, videoReady: boolean) {
   return phase !== 'CARD_REVEAL' && !videoReady;
 }
 
-export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId, resultId }: Props) {
+export function GachaPlayer({
+  gachaResult,
+  onClose,
+  onPhaseChange,
+  sessionId,
+  resultId,
+  onResultResolved,
+  cardRevealCtaLabel,
+}: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
 
@@ -94,6 +110,8 @@ export function GachaPlayer({ gachaResult, onClose, onPhaseChange, sessionId, re
       onPhaseChange={onPhaseChange}
       sessionKey={activeKey}
       resultId={resultId}
+      onResultResolved={onResultResolved}
+      cardRevealCtaLabel={cardRevealCtaLabel}
     />,
     portalTarget,
   );
@@ -104,9 +122,19 @@ type ActivePlayerProps = {
   onClose?: () => void;
   onPhaseChange?: (phase: GachaPhase) => void;
   sessionKey: string;
+  onResultResolved?: (payload: ResultResolutionPayload) => void;
+  cardRevealCtaLabel?: string;
 };
 
-function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, resultId }: ActivePlayerProps & { resultId?: string | null }) {
+function ActiveGachaPlayer({
+  gachaResult,
+  onClose,
+  onPhaseChange,
+  sessionKey,
+  resultId,
+  onResultResolved,
+  cardRevealCtaLabel,
+}: ActivePlayerProps & { resultId?: string | null }) {
   const [phase, setPhase] = useState<GachaPhase>('STANDBY');
   const [countdownIndex, setCountdownIndex] = useState(0);
   const [preSceneIndex, setPreSceneIndex] = useState(0);
@@ -282,24 +310,33 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
 
   const { resolveAssetSrc } = useSignedAssetResolver(assetSources);
 
-  const ensureClaimed = useCallback((currentResultId?: string | null) => {
-    if (!currentResultId || hasClaimedRef.current) return;
-    setClaimError(null);
-    setIsClaiming(true);
-    void claimGachaResult(currentResultId)
-      .then((res) => {
-        hasClaimedRef.current = true;
-        setSerialNumber(res.serialNumber ?? null);
-      })
-      .catch((error: unknown) => {
-        hasClaimedRef.current = false;
-        const message = error instanceof Error ? error.message : '結果の確定に失敗しました。時間をおいて再度お試しください。';
-        setClaimError(message);
-      })
-      .finally(() => {
-        setIsClaiming(false);
-      });
-  }, []);
+  const ensureClaimed = useCallback(
+    (currentResultId?: string | null) => {
+      if (!currentResultId || hasClaimedRef.current) return;
+      setClaimError(null);
+      setIsClaiming(true);
+      void claimGachaResult(currentResultId)
+        .then((res) => {
+          hasClaimedRef.current = true;
+          const resolvedSerial = res.serialNumber ?? null;
+          setSerialNumber(resolvedSerial);
+          onResultResolved?.({
+            resultId: currentResultId ?? null,
+            serialNumber: resolvedSerial,
+            gachaResult,
+          });
+        })
+        .catch((error: unknown) => {
+          hasClaimedRef.current = false;
+          const message = error instanceof Error ? error.message : '結果の確定に失敗しました。時間をおいて再度お試しください。';
+          setClaimError(message);
+        })
+        .finally(() => {
+          setIsClaiming(false);
+        });
+    },
+    [gachaResult, onResultResolved],
+  );
 
   // フェーズとは無関係に、結果IDが届いたら即座に確定処理を開始しておく
   useEffect(() => {
@@ -564,6 +601,7 @@ function ActiveGachaPlayer({ gachaResult, onClose, onPhaseChange, sessionKey, re
         errorMessage={claimError}
         onRetry={resultId ? () => ensureClaimed(resultId) : undefined}
         resultLabel={gachaResult.isLoss ? 'ハズレ' : '結果'}
+        primaryCtaLabel={cardRevealCtaLabel}
       />
     );
   }

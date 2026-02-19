@@ -11,6 +11,8 @@ import {
   fetchScenarios,
   insertGachaResult,
   insertGachaHistory,
+  createMultiGachaSession,
+  updateMultiGachaSession,
 } from '@/lib/data/gacha';
 import type { StoryPayload, VideoSegment, GachaEngineResult } from '@/lib/gacha/types';
 import type { Json, Tables } from '@/types/database';
@@ -40,54 +42,111 @@ type ScenarioPayload = {
   hadReversal: boolean;
 };
 
-export async function generateGachaPlay({
-  sessionId,
-  appUserId,
-  configSlug = 'default',
-}: GenerateOptions): Promise<GachaEngineResult> {
-  const supabase = getServiceSupabase();
-  const scenario = await resolveScenario(supabase, configSlug);
-  const historyRow = await insertGachaHistory(supabase, {
-    user_session_id: sessionId,
-    app_user_id: appUserId,
-    star_level: scenario.star,
-    scenario: scenario.story as Json,
-    had_reversal: scenario.hadReversal,
-    gacha_type: 'single',
-  });
-  const resultRow = await insertGachaResult(supabase, {
-    user_session_id: sessionId,
-    app_user_id: appUserId,
-    character_id: scenario.character.id,
-    card_id: scenario.card.id,
-    star_level: scenario.star,
-    had_reversal: scenario.hadReversal,
-    scenario_snapshot: scenario.story as Json,
-    card_awarded: false,
-    history_id: historyRow.id,
-    obtained_via: 'single_gacha',
-    metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
-  });
+type BatchGenerateOptions = GenerateOptions & { drawCount?: number };
+type GuestBatchOptions = { configSlug?: string; drawCount?: number };
 
-  return {
-    story: scenario.story,
-    gachaResult: scenario.gachaResult,
-    resultRow,
-    card: scenario.card,
-    character: scenario.character,
-  };
+type BatchGenerateResult = {
+  pulls: GachaEngineResult[];
+  multiSession: Tables<'multi_gacha_sessions'> | null;
+};
+
+export async function generateGachaPlay(options: GenerateOptions): Promise<GachaEngineResult> {
+  const batch = await generateGachaBatchPlay({ ...options, drawCount: 1 });
+  return batch.pulls[0];
 }
 
 export async function generateGuestGachaPlay(configSlug = 'default'): Promise<GachaEngineResult> {
+  const pulls = await generateGuestGachaBatchPlay({ configSlug, drawCount: 1 });
+  return pulls[0];
+}
+
+export async function generateGachaBatchPlay({
+  sessionId,
+  appUserId,
+  configSlug = 'default',
+  drawCount = 10,
+}: BatchGenerateOptions): Promise<BatchGenerateResult> {
   const supabase = getServiceSupabase();
-  const scenario = await resolveScenario(supabase, configSlug);
-  return {
-    story: scenario.story,
-    gachaResult: scenario.gachaResult,
-    resultRow: null,
-    card: scenario.card,
-    character: scenario.character,
-  };
+  if (!sessionId || !appUserId) {
+    throw new Error('Session とユーザー情報が不足しています。');
+  }
+
+  const safeCount = Math.max(1, drawCount);
+  const pulls: GachaEngineResult[] = [];
+  let sessionRow: Tables<'multi_gacha_sessions'> | null = null;
+
+  try {
+    if (safeCount > 1) {
+      sessionRow = await createMultiGachaSession(supabase, {
+        app_user_id: appUserId,
+        total_pulls: safeCount,
+        pulls_completed: 0,
+        status: 'running',
+        metadata: ({ configSlug } as unknown) as Json,
+      });
+    }
+
+    for (let index = 0; index < safeCount; index += 1) {
+      const scenario = await resolveScenario(supabase, configSlug);
+      const historyRow = await insertGachaHistory(supabase, {
+        user_session_id: sessionId,
+        app_user_id: appUserId,
+        multi_session_id: sessionRow?.id ?? null,
+        star_level: scenario.star,
+        scenario: scenario.story as Json,
+        had_reversal: scenario.hadReversal,
+        gacha_type: safeCount > 1 ? 'tenfold' : 'single',
+      });
+      const resultRow = await insertGachaResult(supabase, {
+        user_session_id: sessionId,
+        app_user_id: appUserId,
+        character_id: scenario.character.id,
+        card_id: scenario.card.id,
+        star_level: scenario.star,
+        had_reversal: scenario.hadReversal,
+        scenario_snapshot: scenario.story as Json,
+        card_awarded: false,
+        history_id: historyRow.id,
+        obtained_via: safeCount > 1 ? 'tenfold_gacha' : 'single_gacha',
+        metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
+      });
+      pulls.push(buildEngineResult(scenario, resultRow));
+    }
+
+    if (sessionRow) {
+      await updateMultiGachaSession(supabase, sessionRow.id, {
+        pulls_completed: safeCount,
+        status: 'completed',
+        updated_at: new Date().toISOString(),
+      });
+    }
+
+    return { pulls, multiSession: sessionRow };
+  } catch (error) {
+    if (sessionRow) {
+      await updateMultiGachaSession(supabase, sessionRow.id, {
+        status: 'error',
+        updated_at: new Date().toISOString(),
+      }).catch((updateError) => {
+        console.error('Failed to update multi session state', updateError);
+      });
+    }
+    throw error;
+  }
+}
+
+export async function generateGuestGachaBatchPlay({
+  configSlug = 'default',
+  drawCount = 10,
+}: GuestBatchOptions = {}): Promise<GachaEngineResult[]> {
+  const supabase = getServiceSupabase();
+  const safeCount = Math.max(1, drawCount);
+  const pulls: GachaEngineResult[] = [];
+  for (let index = 0; index < safeCount; index += 1) {
+    const scenario = await resolveScenario(supabase, configSlug);
+    pulls.push(buildEngineResult(scenario, null));
+  }
+  return pulls;
 }
 
 function groupByPattern<T extends { pattern: string }>(rows: T[]): T[][] {
@@ -442,4 +501,17 @@ function drawStarLevel(distribution: number[]): number {
     }
   }
   return source.length;
+}
+
+function buildEngineResult(
+  scenario: ScenarioPayload,
+  resultRow: Tables<'gacha_results'> | null,
+): GachaEngineResult {
+  return {
+    story: scenario.story,
+    gachaResult: scenario.gachaResult,
+    resultRow,
+    card: scenario.card,
+    character: scenario.character,
+  };
 }

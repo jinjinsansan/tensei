@@ -46,7 +46,7 @@ const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
 const LOSS_CARD_NAME = "転生失敗";
 const LOSS_CARD_IMAGE = buildCommonAssetPath("loss_card.png");
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 24;
 
 function isLossCardData(card: { is_loss_card?: boolean | null; name?: string | null } | null): boolean {
   if (!card) return false;
@@ -75,6 +75,8 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
   const [styleFilter, setStyleFilter] = useState("all");
   const [outcomeFilter, setOutcomeFilter] = useState<"all" | "hit" | "loss">("all");
   const [showHistorical, setShowHistorical] = useState(false);
+  const [visibleTodayCount, setVisibleTodayCount] = useState(20);
+  const [historyLimit, setHistoryLimit] = useState(30);
 
   const mountedRef = useRef(false);
 
@@ -142,6 +144,11 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
 
   const { resolveAssetSrc, isSigning } = useSignedAssetResolver(signableSources);
 
+  useEffect(() => {
+    setVisibleTodayCount(20);
+    setHistoryLimit(30);
+  }, [keyword, sort, rarityFilter, personFilter, styleFilter, outcomeFilter]);
+
   const filtered = useMemo(() => {
     if (!safeData) return [];
     const lower = keyword.toLowerCase();
@@ -194,11 +201,34 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
     return { todayEntries: todayList, historicalGroups: groups, historicalCount: count };
   }, [filtered, todayKey]);
 
-  const visibleCount = showHistorical ? filtered.length : todayEntries.length;
+  const visibleTodayActual = Math.min(todayEntries.length, visibleTodayCount);
+  const visibleHistoryActual = showHistorical ? Math.min(historyLimit, historicalCount) : 0;
+  const visibleCount = visibleTodayActual + visibleHistoryActual;
   const uniqueCompletionPercent = safeData && safeData.totalAvailable > 0
     ? Math.round((safeData.distinctOwned / safeData.totalAvailable) * 100)
     : 0;
   const duplicateCount = safeData ? Math.max(safeData.totalOwned - safeData.distinctOwned, 0) : 0;
+  const todayVisibleEntries = todayEntries.slice(0, visibleTodayCount);
+  const hasMoreToday = todayEntries.length > visibleTodayCount;
+  const limitedHistoricalGroups = useMemo(() => {
+    if (!showHistorical) return [] as DateGroup[];
+    let remaining = historyLimit;
+    const groups: DateGroup[] = [];
+    for (const group of historicalGroups) {
+      if (remaining <= 0) break;
+      if (group.items.length <= remaining) {
+        groups.push(group);
+        remaining -= group.items.length;
+      } else {
+        groups.push({ ...group, items: group.items.slice(0, remaining) });
+        remaining = 0;
+      }
+    }
+    return groups;
+  }, [historicalGroups, historyLimit, showHistorical]);
+
+  const hasMoreHistory = showHistorical && historyLimit < historicalCount;
+
   const todayCount = todayEntries.length;
   const historicalVisibleCount = Math.max(filtered.length - todayCount, 0);
 
@@ -446,14 +476,25 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
         ) : (
           <div className="space-y-5">
             <div className="grid gap-4">
-              {todayEntries.length === 0 ? (
+              {todayVisibleEntries.length === 0 ? (
                 <div className="rounded-3xl border border-white/15 bg-black/30 px-6 py-10 text-center text-sm text-zinc-300">
                   本日獲得したカードはありません。
                 </div>
               ) : (
-                todayEntries.map(renderCollectionCard)
+                todayVisibleEntries.map(renderCollectionCard)
               )}
             </div>
+            {hasMoreToday ? (
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setVisibleTodayCount((prev) => prev + 20)}
+                  className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/80 transition hover:border-white/40 hover:text-white"
+                >
+                  本日のカードをさらに表示
+                </button>
+              </div>
+            ) : null}
 
             {historicalCount > 0 && (
               <div className="rounded-3xl border border-white/12 bg-black/30 p-5 shadow-panel-inset">
@@ -473,12 +514,23 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
 
                 {showHistorical && (
                   <div className="mt-4 space-y-6">
-                    {historicalGroups.map((group) => (
+                    {limitedHistoricalGroups.map((group) => (
                       <div key={group.key} className="space-y-2">
                         <p className="text-xs uppercase tracking-[0.35em] text-white/60">{group.label}</p>
                         <div className="grid gap-4">{group.items.map(renderCollectionCard)}</div>
                       </div>
                     ))}
+                    {hasMoreHistory ? (
+                      <div className="flex justify-center pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setHistoryLimit((prev) => prev + 30)}
+                          className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white/80 transition hover:border-white/40 hover:text-white"
+                        >
+                          履歴をさらに表示
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>

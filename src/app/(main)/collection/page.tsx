@@ -13,7 +13,7 @@ export default async function CollectionPage() {
     notFound();
   }
 
-  const initialData = await fetchCollectionPageData(supabase, context.user.id, { limit: 50, offset: 0 });
+  const initialData = await fetchCollectionPageData(supabase, context.user.id, { limit: 24, offset: 0 });
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-8 pb-10">

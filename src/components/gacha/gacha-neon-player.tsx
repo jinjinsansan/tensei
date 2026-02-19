@@ -1,15 +1,30 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils/cn";
 
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
-import { playGacha } from "@/lib/api/gacha";
+import { CardReveal } from "@/components/gacha/CardReveal";
+import { playGacha, claimGachaResult } from "@/lib/api/gacha";
+import type { PlayResponse } from "@/lib/api/gacha";
 import type { GachaResult } from "@/lib/gacha/common/types";
 
 type PlayVariant = "round" | "default" | "button";
+
+type PlayerPull = {
+  order: number;
+  resultId: string | null;
+  gachaResult: GachaResult;
+};
+
+type ClaimState = {
+  loading: boolean;
+  serialNumber: number | null;
+  error: string | null;
+};
 
 type Props = {
   playLabel?: string;
@@ -20,18 +35,27 @@ type Props = {
 };
 
 export function GachaNeonPlayer({
-  playLabel = "ガチャを\n始める",
+  playLabel = "10連ガチャ\nスタート",
   playVariant = "round",
   className,
   containerClassName,
   buttonWrapperClassName,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
-  const [activeResult, setActiveResult] = useState<GachaResult | null>(null);
-  const [resultId, setResultId] = useState<string | null>(null);
+  const [activePulls, setActivePulls] = useState<PlayerPull[] | null>(null);
+  const [sessionMeta, setSessionMeta] = useState<{ multiSessionId: string | null; totalPulls: number } | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [skipAllRequested, setSkipAllRequested] = useState(false);
+  const [claims, setClaims] = useState<Record<string, ClaimState>>({});
   const [error, setError] = useState<string | null>(null);
 
-  const isDisabled = isLoading || Boolean(activeResult);
+  const totalPulls = sessionMeta?.totalPulls ?? activePulls?.length ?? 0;
+  const currentPull = activePulls && currentIndex < totalPulls ? activePulls[currentIndex] : null;
+  const showPlayer = Boolean(currentPull) && !summaryOpen && !skipAllRequested;
+  const activeResult = showPlayer ? currentPull?.gachaResult ?? null : null;
+  const normalizedLabel = typeof playLabel === "string" ? playLabel.replace(/\\n/g, "\n") : playLabel;
+  const isDisabled = isLoading || Boolean(activePulls);
 
   const startPlay = useCallback(async () => {
     if (isDisabled) return;
@@ -39,8 +63,12 @@ export function GachaNeonPlayer({
     try {
       setIsLoading(true);
       const response = await playGacha();
-      setActiveResult(response.gachaResult);
-      setResultId(response.resultId);
+      setActivePulls(mapResponseToPulls(response));
+      setSessionMeta(response.session);
+      setCurrentIndex(0);
+      setSummaryOpen(false);
+      setSkipAllRequested(false);
+      setClaims({});
     } catch (err) {
       setError(err instanceof Error ? err.message : "ガチャを開始できませんでした。");
     } finally {
@@ -48,32 +76,136 @@ export function GachaNeonPlayer({
     }
   }, [isDisabled]);
 
-  const handlePlayerClose = useCallback(() => {
-    setActiveResult(null);
-    setResultId(null);
+  const ensureClaimForResult = useCallback((resultId: string) => {
+    if (!resultId) return;
+    setClaims((prev) => {
+      const existing = prev[resultId];
+      if (existing?.loading || existing?.serialNumber != null) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [resultId]: {
+          serialNumber: existing?.serialNumber ?? null,
+          loading: true,
+          error: null,
+        },
+      };
+    });
+
+    void claimGachaResult(resultId)
+      .then((res) => {
+        setClaims((prev) => ({
+          ...prev,
+          [resultId]: {
+            serialNumber: res.serialNumber ?? null,
+            loading: false,
+            error: null,
+          },
+        }));
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : "カードの確定に失敗しました。";
+        setClaims((prev) => ({
+          ...prev,
+          [resultId]: {
+            serialNumber: prev[resultId]?.serialNumber ?? null,
+            loading: false,
+            error: message,
+          },
+        }));
+      });
   }, []);
 
-  const normalizedLabel = typeof playLabel === "string" ? playLabel.replace(/\\n/g, "\n") : playLabel;
+  const handleResultResolved = useCallback(({ resultId, serialNumber }: { resultId: string | null; serialNumber: number | null }) => {
+    if (!resultId) return;
+    setClaims((prev) => ({
+      ...prev,
+      [resultId]: {
+        serialNumber,
+        loading: false,
+        error: null,
+      },
+    }));
+  }, []);
+
+  const handlePlayerClose = useCallback(() => {
+    if (!activePulls) return;
+    const isLast = currentIndex >= activePulls.length - 1;
+    if (skipAllRequested || isLast) {
+      setSummaryOpen(true);
+    } else {
+      setCurrentIndex((index) => Math.min(index + 1, activePulls.length - 1));
+    }
+  }, [activePulls, currentIndex, skipAllRequested]);
+
+  const handleSkipAll = useCallback(() => {
+    if (!activePulls) return;
+    setSkipAllRequested(true);
+    setSummaryOpen(true);
+  }, [activePulls]);
+
+  const resetSession = useCallback(() => {
+    setActivePulls(null);
+    setSessionMeta(null);
+    setCurrentIndex(0);
+    setSummaryOpen(false);
+    setSkipAllRequested(false);
+    setClaims({});
+  }, []);
+
+  useEffect(() => {
+    if (!summaryOpen || !activePulls) return;
+    activePulls.forEach((pull) => {
+      if (!pull.resultId) return;
+      if (!claims[pull.resultId]) {
+        ensureClaimForResult(pull.resultId);
+      }
+    });
+  }, [summaryOpen, activePulls, claims, ensureClaimForResult]);
+
+  const summaryCards = useMemo(() => {
+    if (!activePulls) return [];
+    return activePulls.map((pull, index) => ({
+      id: pull.resultId ?? `${pull.gachaResult.cardId}-${index}`,
+      cardName: pull.gachaResult.cardName,
+      imageUrl: pull.gachaResult.cardImagePath,
+      starRating: pull.gachaResult.starRating,
+      serialNumber: pull.resultId ? claims[pull.resultId]?.serialNumber ?? null : null,
+      description: pull.gachaResult.cardTitle,
+    }));
+  }, [activePulls, claims]);
+
+  const summaryStarRating = useMemo(() => {
+    if (!activePulls || !activePulls.length) return 0;
+    return activePulls.reduce((max, pull) => Math.max(max, pull.gachaResult.starRating), 0);
+  }, [activePulls]);
+
+  const summaryLoading = useMemo(() => {
+    if (!activePulls) return false;
+    return activePulls.some((pull) => pull.resultId && claims[pull.resultId]?.loading);
+  }, [activePulls, claims]);
+
+  const erroredResultId = useMemo(() => {
+    if (!activePulls) return null;
+    for (const pull of activePulls) {
+      if (!pull.resultId) continue;
+      if (claims[pull.resultId]?.error) {
+        return pull.resultId;
+      }
+    }
+    return null;
+  }, [activePulls, claims]);
 
   const button = useMemo(() => {
     if (playVariant === "round") {
       return (
-        <RoundMetalButton
-          label={normalizedLabel}
-          subLabel="START"
-          onClick={startPlay}
-          disabled={isDisabled}
-        />
+        <RoundMetalButton label={normalizedLabel} subLabel="START" onClick={startPlay} disabled={isDisabled} />
       );
     }
     if (playVariant === "button") {
       return (
-        <button
-          type="button"
-          onClick={startPlay}
-          disabled={isDisabled}
-          className={className}
-        >
+        <button type="button" onClick={startPlay} disabled={isDisabled} className={className}>
           {isLoading ? "準備中..." : normalizedLabel}
         </button>
       );
@@ -90,17 +222,116 @@ export function GachaNeonPlayer({
     );
   }, [normalizedLabel, playVariant, startPlay, isDisabled, isLoading, className]);
 
+  const ctaLabel = currentIndex >= totalPulls - 1 ? "結果一覧へ" : "次の転生へ";
+
   return (
     <div className={cn("space-y-3 text-center", containerClassName)}>
       <div className={cn("flex justify-center", buttonWrapperClassName)}>{button}</div>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      <GachaPlayer
-        gachaResult={activeResult}
-        onClose={handlePlayerClose}
-        sessionId={resultId ?? undefined}
-        resultId={resultId ?? undefined}
-      />
-      {/* GachaPlayer 内のカードリビールを正式版として使用するため、旧RESULTモーダルは撤去 */}
+      {showPlayer && currentPull ? (
+        <GachaPlayer
+          gachaResult={activeResult}
+          onClose={handlePlayerClose}
+          sessionId={currentPull.resultId ?? undefined}
+          resultId={currentPull.resultId ?? undefined}
+          onResultResolved={handleResultResolved}
+          cardRevealCtaLabel={ctaLabel}
+        />
+      ) : null}
+      {showPlayer && activePulls ? (
+        <BatchProgressOverlay currentIndex={currentIndex} totalPulls={totalPulls} onSkipAll={handleSkipAll} />
+      ) : null}
+      {summaryOpen && activePulls ? (
+        <BatchSummaryOverlay
+          cards={summaryCards}
+          starRating={summaryStarRating}
+          loading={summaryLoading}
+          errorMessage={erroredResultId ? claims[erroredResultId]?.error ?? null : null}
+          onRetry={erroredResultId ? () => ensureClaimForResult(erroredResultId) : undefined}
+          onClose={resetSession}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function mapResponseToPulls(response: PlayResponse): PlayerPull[] {
+  return response.pulls.map((pull) => ({
+    order: pull.order,
+    resultId: pull.resultId,
+    gachaResult: pull.gachaResult,
+  }));
+}
+
+type ProgressOverlayProps = {
+  currentIndex: number;
+  totalPulls: number;
+  onSkipAll: () => void;
+};
+
+function BatchProgressOverlay({ currentIndex, totalPulls, onSkipAll }: ProgressOverlayProps) {
+  if (typeof document === "undefined") return null;
+  const remaining = Math.max(totalPulls - currentIndex - 1, 0);
+  return createPortal(
+    <div className="pointer-events-none fixed inset-x-0 top-6 z-[150] flex flex-col items-center gap-3 text-white">
+      <div className="rounded-full border border-white/15 bg-white/10 px-6 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-white/80">
+        10連 PLAYING
+      </div>
+      <div className="text-sm text-white/70">
+        {currentIndex + 1}/{totalPulls} ・ 残り {remaining} 回
+      </div>
+      <div className="flex gap-1">
+        {Array.from({ length: totalPulls }).map((_, idx) => (
+          <span
+            key={`progress-dot-${idx}`}
+            className={cn(
+              "h-1.5 w-6 rounded-full",
+              idx < currentIndex ? "bg-white" : idx === currentIndex ? "bg-neon-yellow animate-pulse" : "bg-white/20",
+            )}
+          />
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={onSkipAll}
+        className="pointer-events-auto rounded-full border border-white/20 bg-black/50 px-4 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white/80 transition hover:border-white/40 hover:text-white"
+      >
+        10連をスキップ
+      </button>
+    </div>,
+    document.body,
+  );
+}
+
+type SummaryOverlayProps = {
+  cards: {
+    id: string;
+    cardName: string;
+    imageUrl: string;
+    starRating: number;
+    serialNumber: number | null;
+    description?: string | null;
+  }[];
+  starRating: number;
+  loading: boolean;
+  errorMessage: string | null;
+  onRetry?: () => void;
+  onClose: () => void;
+};
+
+function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry, onClose }: SummaryOverlayProps) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <CardReveal
+      starRating={starRating}
+      cards={cards}
+      loading={loading}
+      onClose={onClose}
+      resultLabel="10連の結果"
+      errorMessage={errorMessage}
+      onRetry={onRetry}
+      primaryCtaLabel="ガチャを閉じる"
+    />,
+    document.body,
   );
 }

@@ -20,9 +20,19 @@ type Props = {
   resultLabel?: string;
   errorMessage?: string | null;
   onRetry?: () => void;
+  primaryCtaLabel?: string;
 };
 
-export function CardReveal({ starRating, cards, loading, onClose, resultLabel = '結果', errorMessage, onRetry }: Props) {
+export function CardReveal({
+  starRating,
+  cards,
+  loading,
+  onClose,
+  resultLabel = '結果',
+  errorMessage,
+  onRetry,
+  primaryCtaLabel = 'もう一度',
+}: Props) {
   const list = cards ?? [];
   const displayCount = list.length;
 
@@ -155,7 +165,7 @@ export function CardReveal({ starRating, cards, loading, onClose, resultLabel = 
             onClick={onClose}
             className="w-full rounded-full bg-gradient-to-r from-pink-500 to-yellow-400 px-6 py-3 text-sm font-bold uppercase tracking-[0.25em] text-black shadow-lg transition hover:brightness-110 sm:w-auto"
           >
-            もう一度
+            {primaryCtaLabel}
           </button>
         </div>
       </div>

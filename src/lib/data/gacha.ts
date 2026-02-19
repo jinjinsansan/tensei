@@ -399,6 +399,32 @@ export async function fetchGachaResultById(
   return data as Tables<'gacha_results'>;
 }
 
+export async function createMultiGachaSession(
+  client: DbClient,
+  payload: TablesInsert<'multi_gacha_sessions'>,
+): Promise<Tables<'multi_gacha_sessions'>> {
+  const { data, error } = await client
+    .from('multi_gacha_sessions')
+    .insert(payload)
+    .select('*')
+    .single();
+  handleError(error);
+  if (!data) throw new Error('Failed to create multi gacha session');
+  return data as Tables<'multi_gacha_sessions'>;
+}
+
+export async function updateMultiGachaSession(
+  client: DbClient,
+  sessionId: string,
+  updates: TablesUpdate<'multi_gacha_sessions'>,
+): Promise<void> {
+  const { error } = await client
+    .from('multi_gacha_sessions')
+    .update(updates)
+    .eq('id', sessionId);
+  handleError(error);
+}
+
 export async function completeGachaResult(
   client: DbClient,
   resultId: string,
