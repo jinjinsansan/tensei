@@ -42,6 +42,17 @@ type ScenarioPayload = {
   hadReversal: boolean;
 };
 
+type ScenarioContext = {
+  globalConfig: Awaited<ReturnType<typeof fetchGachaGlobalConfig>>;
+  gachaCharacters: Awaited<ReturnType<typeof fetchGachaCharactersConfig>>;
+};
+
+type ScenarioCaches = {
+  characterRows: Map<string, Tables<'characters'>>;
+  cardsByCharacter: Map<string, Tables<'cards'>[]>;
+  rtpByCharacter: Map<CharacterId, Awaited<ReturnType<typeof fetchCharacterRtpConfig>>>;
+};
+
 type BatchGenerateOptions = GenerateOptions & { drawCount?: number };
 type GuestBatchOptions = { configSlug?: string; drawCount?: number };
 
@@ -74,6 +85,8 @@ export async function generateGachaBatchPlay({
   const safeCount = Math.max(1, drawCount);
   const pulls: GachaEngineResult[] = [];
   let sessionRow: Tables<'multi_gacha_sessions'> | null = null;
+  const scenarioContext = await loadScenarioContext(supabase, configSlug);
+  const scenarioCaches = createScenarioCaches();
 
   try {
     if (safeCount > 1) {
@@ -87,7 +100,7 @@ export async function generateGachaBatchPlay({
     }
 
     for (let index = 0; index < safeCount; index += 1) {
-      const scenario = await resolveScenario(supabase, configSlug);
+      const scenario = await resolveScenario(supabase, configSlug, scenarioContext, scenarioCaches);
       const historyRow = await insertGachaHistory(supabase, {
         user_session_id: sessionId,
         app_user_id: appUserId,
@@ -142,8 +155,10 @@ export async function generateGuestGachaBatchPlay({
   const supabase = getServiceSupabase();
   const safeCount = Math.max(1, drawCount);
   const pulls: GachaEngineResult[] = [];
+  const scenarioContext = await loadScenarioContext(supabase, configSlug);
+  const scenarioCaches = createScenarioCaches();
   for (let index = 0; index < safeCount; index += 1) {
-    const scenario = await resolveScenario(supabase, configSlug);
+    const scenario = await resolveScenario(supabase, configSlug, scenarioContext, scenarioCaches);
     pulls.push(buildEngineResult(scenario, null));
   }
   return pulls;
@@ -303,14 +318,14 @@ function coerceRarity(value: string | null | undefined): Rarity {
 }
 async function resolveScenario(
   supabase: ReturnType<typeof getServiceSupabase>,
-  _configSlug: string,
+  configSlug: string,
+  context?: ScenarioContext,
+  caches?: ScenarioCaches,
 ): Promise<ScenarioPayload> {
-  // 1. 共通ハズレ率 & キャラクター設定を取得
-  void _configSlug;
-  const [globalConfig, gachaCharacters] = await Promise.all([
-    fetchGachaGlobalConfig(supabase),
-    fetchGachaCharactersConfig(supabase),
-  ]);
+  void configSlug;
+  const runtimeContext = context ?? (await loadScenarioContext(supabase, configSlug));
+  const runtimeCaches = caches ?? createScenarioCaches();
+  const { globalConfig, gachaCharacters } = runtimeContext;
 
   const activeCharacters = gachaCharacters.filter((c) => c.isActive && c.weight > 0);
   if (!activeCharacters.length) {
@@ -327,7 +342,7 @@ async function resolveScenario(
       throw new Error('Kenta character mapping is missing.');
     }
 
-    const cards = await fetchCardsByCharacter(supabase, kentaDbId);
+    const cards = await getCachedCardsByCharacter(supabase, kentaDbId, runtimeCaches);
     if (!cards.length) {
       throw new Error('LOSS処理用のカードが見つかりません。');
     }
@@ -354,15 +369,7 @@ async function resolveScenario(
       },
     };
 
-    const { data: characterRow, error } = await supabase
-      .from('characters')
-      .select('*')
-      .eq('id', kentaDbId)
-      .limit(1)
-      .single();
-    if (error || !characterRow) {
-      throw error ?? new Error('Kenta character row not found.');
-    }
+    const characterRow = await getCachedCharacterRow(supabase, kentaDbId, runtimeCaches);
 
     const gachaResult: GachaResult = {
       isLoss: true,
@@ -399,24 +406,14 @@ async function resolveScenario(
     throw new Error(`Character mapping not found for module id: ${moduleCharacterId}`);
   }
 
-  const { data: supabaseCharacterRow, error: characterError } = await supabase
-    .from('characters')
-    .select('*')
-    .eq('id', characterDbId)
-    .limit(1)
-    .single();
-  if (characterError || !supabaseCharacterRow) {
-    throw characterError ?? new Error('Character row not found');
-  }
-
-  const supabaseCharacter = supabaseCharacterRow as Tables<'characters'>;
+  const supabaseCharacter = await getCachedCharacterRow(supabase, characterDbId, runtimeCaches);
 
   // 4. キャラ別RTP取得 & レア度抽選
-  const rtp = await fetchCharacterRtpConfig(supabase, moduleCharacterId);
+  const rtp = await getCachedCharacterRtp(supabase, moduleCharacterId, runtimeCaches);
   const desiredStarLevel = drawStarLevel(rtp.starDistribution);
 
   // 5. カードプール取得（max_supply / current_supply を考慮）
-  const cards = await fetchCardsByCharacter(supabase, characterDbId);
+  const cards = await getCachedCardsByCharacter(supabase, characterDbId, runtimeCaches);
   if (!cards.length) {
     throw new Error(`Character ${supabaseCharacter.name} has no active cards.`);
   }
@@ -514,4 +511,75 @@ function buildEngineResult(
     card: scenario.card,
     character: scenario.character,
   };
+}
+
+function createScenarioCaches(): ScenarioCaches {
+  return {
+    characterRows: new Map(),
+    cardsByCharacter: new Map(),
+    rtpByCharacter: new Map(),
+  };
+}
+
+async function loadScenarioContext(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  configSlug: string,
+): Promise<ScenarioContext> {
+  void configSlug;
+  const [globalConfig, gachaCharacters] = await Promise.all([
+    fetchGachaGlobalConfig(supabase),
+    fetchGachaCharactersConfig(supabase),
+  ]);
+  return { globalConfig, gachaCharacters };
+}
+
+async function getCachedCharacterRow(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  characterDbId: string,
+  caches: ScenarioCaches,
+): Promise<Tables<'characters'>> {
+  const cached = caches.characterRows.get(characterDbId);
+  if (cached) {
+    return cached;
+  }
+  const { data, error } = await supabase
+    .from('characters')
+    .select('*')
+    .eq('id', characterDbId)
+    .limit(1)
+    .single();
+  if (error || !data) {
+    throw error ?? new Error(`Character row not found for ${characterDbId}`);
+  }
+  const row = data as Tables<'characters'>;
+  caches.characterRows.set(characterDbId, row);
+  return row;
+}
+
+async function getCachedCardsByCharacter(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  characterDbId: string,
+  caches: ScenarioCaches,
+): Promise<Tables<'cards'>[]> {
+  const cached = caches.cardsByCharacter.get(characterDbId);
+  if (cached) {
+    return cached;
+  }
+  const cards = await fetchCardsByCharacter(supabase, characterDbId);
+  caches.cardsByCharacter.set(characterDbId, cards);
+  return cards;
+}
+
+async function getCachedCharacterRtp(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  moduleCharacterId: CharacterId,
+  caches: ScenarioCaches,
+) {
+  const cached = caches.rtpByCharacter.get(moduleCharacterId);
+  if (cached) {
+    return cached;
+  }
+  const rtp = await fetchCharacterRtpConfig(supabase, moduleCharacterId);
+  caches.rtpByCharacter.set(moduleCharacterId, rtp);
+  return rtp;
 }
