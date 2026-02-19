@@ -55,7 +55,7 @@ async function checkReferralSchema() {
 
   // Check referral_claims table structure
   console.log('📋 Checking referral_claims table...');
-  const { data: claimsColumns, error: claimsError } = await supabase
+  const { error: claimsError } = await supabase
     .from('referral_claims')
     .select('*')
     .limit(1);

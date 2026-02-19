@@ -29,6 +29,8 @@ const sections = [
       { title: "ヘルプセンター", description: "よくある質問 (準備中)", href: "mailto:support@raisegacha.com", badge: "EMAIL" },
       { title: "パスワード変更", description: "メール経由で更新", href: "/reset" },
       { title: "利用規約", description: "注意事項を確認", href: "/terms" },
+      { title: "プライバシーポリシー", description: "データの取り扱い", href: "/privacy" },
+      { title: "特定商取引法に基づく表示", description: "事業者情報", href: "/legal" },
     ],
   },
 ];

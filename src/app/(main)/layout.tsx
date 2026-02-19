@@ -1,18 +1,11 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { TabBar, type TabBarItem } from "@/components/layout/tab-bar";
+import { TabBar } from "@/components/layout/tab-bar";
 import { MainAppProvider } from "@/components/providers/main-app-provider";
 import { loadMainAppSnapshot } from "@/lib/app/main-app";
 import { getSessionWithSnapshot } from "@/lib/app/session";
 import { Toaster } from "sonner";
-
-const tabs: TabBarItem[] = [
-  { label: "TICKET", href: "/home", icon: "ticket" },
-  { label: "CARD", href: "/collection", icon: "collection" },
-  { label: "GACHA", href: "/gacha", icon: "gacha", primary: true },
-  { label: "SOCIAL", href: "/social", icon: "social" },
-  { label: "MENU", href: "/mypage", icon: "menu" },
-];
+import { MAIN_TAB_ITEMS } from "@/components/layout/main-tab-items";
 
 type MainLayoutProps = {
   children: ReactNode;
@@ -61,7 +54,7 @@ export default async function MainLayout({ children }: MainLayoutProps) {
         </div>
       </MainAppProvider>
 
-      <TabBar items={tabs} />
+      <TabBar items={MAIN_TAB_ITEMS} />
     </div>
   );
 }
