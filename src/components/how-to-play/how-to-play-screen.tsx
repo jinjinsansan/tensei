@@ -2,6 +2,11 @@ import { Fragment } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import tatumiCard02 from '../../../tatumi_cards/tatumi_card02.png';
+import tatumiCard05 from '../../../tatumi_cards/tatumi_card05.png';
+import tatumiCard07 from '../../../tatumi_cards/tatumi_card07.png';
+import tatumiCard11 from '../../../tatumi_cards/tatumi_card11.png';
+
 export function HowToPlayScreen() {
   return (
     <section className="space-y-8 pb-8">
@@ -148,28 +153,22 @@ export function HowToPlayScreen() {
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/tatumi_cards/tatumi_card01.png"
-                  alt="辰巳カード 石ころ転生"
-                  width={120}
-                  height={160}
+                  src={tatumiCard02}
+                  alt="辰巳カード 虫転生"
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/tatumi_cards/tatumi_card06.png"
-                  alt="辰巳カード 閻魔大王転生"
-                  width={120}
-                  height={160}
+                  src={tatumiCard07}
+                  alt="辰巳カード 探偵所長転生"
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/tatumi_cards/tatumi_card12.png"
-                  alt="辰巳カード 閻魔大王（真）転生"
-                  width={120}
-                  height={160}
+                  src={tatumiCard11}
+                  alt="辰巳カード 神龍転生"
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -319,7 +318,7 @@ export function HowToPlayScreen() {
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-red-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                 <Image
-                  src="/tatumi_cards/tatumi_card05.png"
+                  src={tatumiCard05}
                   alt="辰巳剛のアイコン"
                   fill
                   sizes="64px"
