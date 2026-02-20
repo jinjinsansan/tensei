@@ -2,15 +2,13 @@ import { NextResponse } from 'next/server';
 
 import { getServiceSupabase } from '@/lib/supabase/service';
 import {
-  completeGachaResult,
   fetchCardById,
   fetchGachaResultById,
-  upsertCardCollection,
-  insertCardInventoryEntry,
   setGachaHistoryStatus,
+  ensureGachaResultAwarded,
 } from '@/lib/data/gacha';
 import { fetchAuthedContext } from '@/lib/app/session';
-import { buildCollectionEntryFromInventory, hasUserCollectedCard } from '@/lib/collection/supabase';
+import { buildCollectionEntryFromInventory } from '@/lib/collection/supabase';
 import type { StoryPayload } from '@/lib/gacha/types';
 import type { GachaResult } from '@/lib/gacha/common/types';
 import type { Tables } from '@/types/database';
@@ -45,60 +43,32 @@ export async function POST(request: Request) {
       throw new Error('カード情報が見つかりません。');
     }
 
-    let serialNumber: number | null = null;
-    let inventoryId: string | null = null;
-
     const card = await fetchCardById(supabase, cardId);
-
-    let alreadyOwnedBeforeAward = true;
 
     historyId = resultRow.history_id ?? null;
 
-    if (!resultRow.card_awarded) {
-      alreadyOwnedBeforeAward = await hasUserCollectedCard(supabase, user.id, cardId);
-      const { data: serialData, error: serialError } = await supabase
-        .rpc('next_card_serial', { target_card_id: cardId });
-      if (serialError || typeof serialData !== 'number') {
-        throw serialError ?? new Error('シリアル番号の取得に失敗しました。');
-      }
-      const inventoryRow = await insertCardInventoryEntry(supabase, {
-        app_user_id: user.id,
-        card_id: cardId,
-        serial_number: serialData,
-        obtained_via: resultRow.obtained_via ?? 'single_gacha',
-        gacha_result_id: resultRow.id,
-      });
-      serialNumber = serialData;
-      inventoryId = inventoryRow.id;
-      await upsertCardCollection(supabase, {
-        user_session_id: session.id,
-        app_user_id: user.id,
-        card_id: cardId,
-        gacha_result_id: resultRow.id,
-      });
-      resultRow = await completeGachaResult(supabase, resultRow.id);
+    const awardOutcome = await ensureGachaResultAwarded(supabase, {
+      resultRow,
+      card,
+      appUserId: user.id,
+      userSessionId: session.id,
+    });
+    resultRow = awardOutcome.resultRow;
 
-      const entry = buildCollectionEntryFromInventory(inventoryRow, card);
+    const serialNumber = awardOutcome.serialNumber;
+    const inventoryId = awardOutcome.inventoryRow?.id ?? null;
+
+    if (awardOutcome.didAward && awardOutcome.inventoryRow) {
+      const entry = buildCollectionEntryFromInventory(awardOutcome.inventoryRow, awardOutcome.card);
       void emitCollectionEventToEdge(user.id, {
         type: 'add',
         entry,
         totalOwnedDelta: 1,
-        distinctOwnedDelta: alreadyOwnedBeforeAward ? 0 : 1,
+        distinctOwnedDelta: awardOutcome.alreadyOwnedBeforeAward ? 0 : 1,
       });
-      await setGachaHistoryStatus(supabase, historyId, 'success');
-    } else {
-      const { data: inventoryRow } = await supabase
-        .from('card_inventory')
-        .select('id, serial_number')
-        .eq('gacha_result_id', resultRow.id)
-        .eq('app_user_id', user.id)
-        .maybeSingle();
-      if (inventoryRow) {
-        serialNumber = typeof inventoryRow.serial_number === 'number' ? inventoryRow.serial_number : null;
-        inventoryId = inventoryRow.id as string;
-      }
-      await setGachaHistoryStatus(supabase, historyId, 'success');
     }
+
+    await setGachaHistoryStatus(supabase, historyId, 'success');
 
     const story = resultRow.scenario_snapshot as StoryPayload;
     const storedGachaResult = (resultRow.metadata as { gachaResult?: GachaResult } | null)?.gachaResult;

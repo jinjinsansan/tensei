@@ -4,6 +4,7 @@ import type { Database, Tables, TablesInsert, TablesUpdate } from '@/types/datab
 import { parseGachaConfig, type ParsedGachaConfig } from '@/lib/gacha/config';
 import type { CharacterId } from '@/lib/gacha/common/types';
 import { isValidCharacterId } from '@/lib/gacha/characters/character-registry';
+import { hasUserCollectedCard } from '@/lib/collection/supabase';
 
 type DbClient = SupabaseClient<Database>;
 type HistoryStatus = 'pending' | 'success' | 'error';
@@ -496,4 +497,96 @@ export async function insertCardInventoryEntry(
   handleError(error);
   if (!data) throw new Error('カードの登録に失敗しました。');
   return data as Tables<'card_inventory'>;
+}
+
+export type EnsureAwardedResult = {
+  resultRow: Tables<'gacha_results'>;
+  card: Tables<'cards'>;
+  inventoryRow: Tables<'card_inventory'> | null;
+  serialNumber: number | null;
+  alreadyOwnedBeforeAward: boolean;
+  didAward: boolean;
+};
+
+type EnsureAwardParams = {
+  resultRow: Tables<'gacha_results'>;
+  card?: Tables<'cards'> | null;
+  appUserId: string;
+  userSessionId: string;
+};
+
+export async function ensureGachaResultAwarded(
+  client: DbClient,
+  params: EnsureAwardParams,
+): Promise<EnsureAwardedResult> {
+  const { resultRow, card: providedCard, appUserId, userSessionId } = params;
+  const cardId = resultRow.card_id;
+  if (!cardId) {
+    throw new Error('カード情報が見つかりません。');
+  }
+
+  const cardRow = providedCard ?? (await fetchCardById(client, cardId));
+
+  const fetchExistingInventory = async () => {
+    const { data, error } = await client
+      .from('card_inventory')
+      .select('*')
+      .eq('gacha_result_id', resultRow.id)
+      .eq('app_user_id', appUserId)
+      .maybeSingle();
+    if (error && error.code !== 'PGRST116') {
+      throw error;
+    }
+    return (data as Tables<'card_inventory'> | null) ?? null;
+  };
+
+  if (resultRow.card_awarded) {
+    const existingInventory = await fetchExistingInventory();
+    if (existingInventory) {
+      const serialNumber =
+        typeof existingInventory.serial_number === 'number' ? existingInventory.serial_number : null;
+      return {
+        resultRow,
+        card: cardRow,
+        inventoryRow: existingInventory,
+        serialNumber,
+        alreadyOwnedBeforeAward: true,
+        didAward: false,
+      };
+    }
+    // card_awarded が true なのに在庫が無い場合は再度付与処理を行う
+  }
+
+  const alreadyOwnedBeforeAward = await hasUserCollectedCard(client, appUserId, cardId);
+  const { data: serialData, error: serialError } = await client
+    .rpc('next_card_serial', { target_card_id: cardId });
+  if (serialError || typeof serialData !== 'number') {
+    throw serialError ?? new Error('シリアル番号の取得に失敗しました。');
+  }
+
+  const inventoryRow = await insertCardInventoryEntry(client, {
+    app_user_id: appUserId,
+    card_id: cardId,
+    serial_number: serialData,
+    obtained_via: resultRow.obtained_via ?? 'single_gacha',
+    gacha_result_id: resultRow.id,
+  });
+
+  await upsertCardCollection(client, {
+    user_session_id: userSessionId,
+    app_user_id: appUserId,
+    card_id: cardId,
+    gacha_result_id: resultRow.id,
+  });
+
+  const updatedResultRow = await completeGachaResult(client, resultRow.id);
+
+  return {
+    resultRow: updatedResultRow,
+    card: cardRow,
+    inventoryRow,
+    serialNumber: serialData,
+    alreadyOwnedBeforeAward,
+    didAward: true,
+  };
 }

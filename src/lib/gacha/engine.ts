@@ -13,6 +13,8 @@ import {
   insertGachaHistory,
   createMultiGachaSession,
   updateMultiGachaSession,
+  ensureGachaResultAwarded,
+  setGachaHistoryStatus,
 } from '@/lib/data/gacha';
 import type { StoryPayload, VideoSegment, GachaEngineResult } from '@/lib/gacha/types';
 import type { Json, Tables } from '@/types/database';
@@ -20,6 +22,8 @@ import type { CharacterId, GachaResult, Rarity } from '@/lib/gacha/common/types'
 import { buildCommonAssetPath } from '@/lib/gacha/assets';
 import { getCharacter } from '@/lib/gacha/characters';
 import { mapCardDbIdToModuleId, mapCharacterModuleIdToDbId } from '@/lib/gacha/characters/mapping';
+import { buildCollectionEntryFromInventory } from '@/lib/collection/supabase';
+import { emitCollectionEventToEdge } from '@/lib/cloudflare/collection-cache';
 
 type GenerateOptions = {
   sessionId: string;
@@ -117,7 +121,7 @@ export async function generateGachaBatchPlay({
         had_reversal: scenario.hadReversal,
         gacha_type: safeCount > 1 ? 'tenfold' : 'single',
       });
-      const resultRow = await insertGachaResult(supabase, {
+      let resultRow = await insertGachaResult(supabase, {
         user_session_id: sessionId,
         app_user_id: appUserId,
         character_id: scenario.character.id,
@@ -130,6 +134,30 @@ export async function generateGachaBatchPlay({
         obtained_via: safeCount > 1 ? 'tenfold_gacha' : 'single_gacha',
         metadata: ({ gachaResult: scenario.gachaResult } as unknown) as Json,
       });
+
+      if (scenario.gachaResult.isLoss) {
+        const awardOutcome = await ensureGachaResultAwarded(supabase, {
+          resultRow,
+          card: scenario.card,
+          appUserId,
+          userSessionId: sessionId,
+        });
+        resultRow = awardOutcome.resultRow;
+
+        await setGachaHistoryStatus(supabase, historyRow.id, 'success');
+
+        if (awardOutcome.didAward && awardOutcome.inventoryRow) {
+          const entry = buildCollectionEntryFromInventory(awardOutcome.inventoryRow, awardOutcome.card);
+          const distinctDelta = awardOutcome.alreadyOwnedBeforeAward ? 0 : 1;
+          void emitCollectionEventToEdge(appUserId, {
+            type: 'add',
+            entry,
+            totalOwnedDelta: 1,
+            distinctOwnedDelta: distinctDelta,
+          });
+        }
+      }
+
       return { scenario, resultRow };
     });
 
