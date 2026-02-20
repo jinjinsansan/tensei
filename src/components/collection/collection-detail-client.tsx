@@ -12,6 +12,9 @@ import { mapCardDbIdToModuleId } from "@/lib/gacha/characters/mapping";
 import {
   CARD_IMAGE_OVERRIDES,
   SERIAL_OVERLAY_TOP_RATIO,
+  SERIAL_OVERLAY_MIN_OFFSET_PX,
+  SERIAL_OVERLAY_MAX_OFFSET_PX,
+  SERIAL_OVERLAY_TOP_CSS,
   getModuleCardImageOverride,
   shouldInsetSerialOverlay,
 } from "@/lib/gacha/card-image-overrides";
@@ -45,6 +48,8 @@ type Props = {
 
 const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
 const LOSS_CARD_IMAGE = buildCommonAssetPath("loss_card.png");
+
+const clampNumber = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 function pickDisplayImage(entry: DetailEntry, resolvedAsset?: string | null, override?: string | null) {
   if (override) return override;
@@ -416,24 +421,29 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         const pillWidth = metrics.width + pillPaddingX * 2;
         const pillHeight = fontSize + pillPaddingY * 2;
         const offsetX = Math.max(Math.floor(canvas.width * 0.035), 22);
-        const baseOffsetRatio = shouldInsetSerial ? SERIAL_OVERLAY_TOP_RATIO : 0.05;
-        const offsetY = Math.max(Math.floor(canvas.height * baseOffsetRatio), 26);
+        const offsetY = shouldInsetSerial
+          ? clampNumber(
+              Math.floor(canvas.height * SERIAL_OVERLAY_TOP_RATIO),
+              SERIAL_OVERLAY_MIN_OFFSET_PX,
+              SERIAL_OVERLAY_MAX_OFFSET_PX,
+            )
+          : Math.max(Math.floor(canvas.height * 0.05), 26);
         const pillX = canvas.width - offsetX - pillWidth;
         const pillY = offsetY;
 
         ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = Math.max(12, fontSize * 0.25);
-        ctx.fillStyle = "rgba(4,6,18,0.88)";
+        ctx.fillStyle = "rgba(9,13,36,0.58)";
         drawRoundedRect(ctx, pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
         ctx.fill();
         ctx.lineWidth = Math.max(2, Math.floor(fontSize * 0.08));
-        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.strokeStyle = "rgba(255,255,255,0.22)";
         ctx.stroke();
         ctx.restore();
 
-        ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = "rgba(0,0,0,0.35)";
+        ctx.fillStyle = "rgba(250,251,255,0.95)";
+        ctx.shadowColor = "rgba(0,0,0,0.25)";
         ctx.shadowBlur = Math.max(8, fontSize * 0.2);
         ctx.fillText(serialText, pillX + pillWidth / 2, pillY + pillHeight / 2 + 1);
         ctx.shadowColor = "transparent";
@@ -634,23 +644,29 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
       const serialWidth = serialMetrics.width + serialPaddingX * 2;
       const serialHeight = serialFont + serialPaddingY * 2;
       const overlayMarginX = Math.max(infoPaddingX * 0.4, 28);
-      const overlayMarginY = Math.max(padding * 0.9, 26);
+      const overlayMarginY = shouldInsetSerial
+        ? clampNumber(
+            Math.floor(img.height * SERIAL_OVERLAY_TOP_RATIO),
+            SERIAL_OVERLAY_MIN_OFFSET_PX,
+            SERIAL_OVERLAY_MAX_OFFSET_PX,
+          )
+        : Math.max(padding * 0.9, 26);
       const serialX = img.width - borderWidth - overlayMarginX - serialWidth;
       const serialY = borderWidth + headerHeight + overlayMarginY;
 
       ctx.save();
-      ctx.shadowColor = "rgba(0,0,0,0.45)";
+      ctx.shadowColor = "rgba(0,0,0,0.35)";
       ctx.shadowBlur = Math.max(12, serialFont * 0.35);
-      ctx.fillStyle = "rgba(4,6,18,0.85)";
+      ctx.fillStyle = "rgba(9,13,36,0.58)";
       drawRoundedRect(ctx, serialX, serialY, serialWidth, serialHeight, serialHeight / 2);
       ctx.fill();
       ctx.lineWidth = Math.max(2, Math.floor(serialFont * 0.08));
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.strokeStyle = "rgba(255,255,255,0.22)";
       ctx.stroke();
       ctx.restore();
 
       ctx.textAlign = "center";
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = "rgba(250,251,255,0.95)";
       ctx.fillText(serialText, serialX + serialWidth / 2, serialY + serialHeight / 2 + 1);
       ctx.textAlign = "left";
 
@@ -693,9 +709,9 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
               {serialDigits ? (
                 <div
                   className={`pointer-events-none absolute right-4 z-10 ${shouldInsetSerial ? "" : "top-4"}`}
-                  style={shouldInsetSerial ? { top: `${SERIAL_OVERLAY_TOP_RATIO * 100}%` } : undefined}
+                  style={shouldInsetSerial ? { top: SERIAL_OVERLAY_TOP_CSS } : undefined}
                 >
-                  <span className="inline-flex items-center rounded-full border border-white/25 bg-[rgba(5,6,18,0.78)] px-4 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white shadow-[0_6px_25px_rgba(0,0,0,0.45)] backdrop-blur-[2px]">
+                  <span className="inline-flex items-center rounded-full border border-white/20 bg-[rgba(8,12,34,0.55)] px-4 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.35em] text-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-[3px]">
                     No.
                     <span className="ml-1 font-mono tracking-normal">{serialDigits}</span>
                   </span>

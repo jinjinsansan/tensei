@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
-import { SERIAL_OVERLAY_TOP_RATIO, shouldInsetSerialOverlay } from '@/lib/gacha/card-image-overrides';
+import { SERIAL_OVERLAY_TOP_CSS, shouldInsetSerialOverlay } from '@/lib/gacha/card-image-overrides';
 
 type CardData = {
   id: string;
@@ -86,9 +86,9 @@ export function CardReveal({
                 {card.serialNumber ? (
                   <div
                     className={`pointer-events-none absolute right-3 z-10 ${shouldInsetSerial ? '' : 'top-3'}`}
-                    style={shouldInsetSerial ? { top: `${SERIAL_OVERLAY_TOP_RATIO * 100}%` } : undefined}
+                    style={shouldInsetSerial ? { top: SERIAL_OVERLAY_TOP_CSS } : undefined}
                   >
-                    <span className="inline-flex items-center rounded-full border border-white/25 bg-[rgba(5,6,18,0.75)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white backdrop-blur-[2px] shadow-[0_6px_20px_rgba(0,0,0,0.45)]">
+                    <span className="inline-flex items-center rounded-full border border-white/20 bg-[rgba(8,12,34,0.55)] px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.35em] text-white/90 backdrop-blur-[3px] shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
                       No.
                       <span className="ml-1 font-mono tracking-normal">{`${card.serialNumber}`.padStart(3, '0')}</span>
                     </span>

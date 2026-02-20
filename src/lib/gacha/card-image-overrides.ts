@@ -69,7 +69,10 @@ const CARD_IMAGE_OVERRIDES: Record<string, string> = {
 
 const SERIAL_INSET_CARD_IDS = new Set(Object.keys(CARD_IMAGE_OVERRIDES));
 
-export const SERIAL_OVERLAY_TOP_RATIO = 0.18;
+export const SERIAL_OVERLAY_TOP_RATIO = 0.015;
+export const SERIAL_OVERLAY_MIN_OFFSET_PX = 18;
+export const SERIAL_OVERLAY_MAX_OFFSET_PX = 48;
+export const SERIAL_OVERLAY_TOP_CSS = "clamp(0.7rem, 1.5vw, 1.25rem)";
 
 export function getModuleCardImageOverride(moduleCardId: string | null | undefined): string | null {
   if (!moduleCardId) return null;
