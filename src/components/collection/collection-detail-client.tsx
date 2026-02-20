@@ -240,6 +240,8 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
   }, []);
 
   const formattedSerial = entry.serialNumber != null ? `#${String(entry.serialNumber).padStart(3, "0")}` : "---";
+  const serialDigits = entry.serialNumber != null ? String(entry.serialNumber).padStart(3, "0") : null;
+  const serialOverlayLabel = serialDigits ? `No.${serialDigits}` : formattedSerial;
   const formattedObtainedAt = useMemo(() => {
     if (!entry.obtainedAt) return "---";
     try {
@@ -395,38 +397,25 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
 
-        const paddingX = Math.max(Math.floor(canvas.width * 0.03), 18);
-        const paddingY = Math.max(Math.floor(canvas.height * 0.022), 12);
-        const fontSize = Math.max(Math.floor(canvas.width * 0.055), 36);
+        const fontSize = Math.max(Math.floor(canvas.width * 0.05), 34);
         const pillPaddingX = fontSize * 0.85;
-        const pillPaddingY = fontSize * 0.45;
-        const serialText = formattedSerial;
+        const pillPaddingY = fontSize * 0.4;
+        const serialText = serialOverlayLabel;
         ctx.font = `700 ${fontSize}px 'Inter', 'Noto Sans JP', sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         const metrics = ctx.measureText(serialText);
         const pillWidth = metrics.width + pillPaddingX * 2;
         const pillHeight = fontSize + pillPaddingY * 2;
-        const pillX = canvas.width - paddingX - pillWidth;
-        const pillY = canvas.height - paddingY - pillHeight;
-
-        const coverExtraX = Math.max(fontSize * 0.6, 18);
-        const coverExtraY = Math.max(fontSize * 0.5, 14);
-        const coverWidth = pillWidth + coverExtraX * 2;
-        const coverHeight = pillHeight + coverExtraY * 2;
-        const coverX = Math.max(canvas.width - coverWidth - Math.max(paddingX * 0.4, 8), 0);
-        const coverY = canvas.height - coverHeight - Math.max(paddingY * 0.3, 6);
+        const offsetX = Math.max(Math.floor(canvas.width * 0.035), 22);
+        const offsetY = Math.max(Math.floor(canvas.height * 0.05), 26);
+        const pillX = canvas.width - offsetX - pillWidth;
+        const pillY = offsetY;
 
         ctx.save();
-        ctx.fillStyle = "rgba(4,6,14,0.92)";
-        drawRoundedRect(ctx, coverX, coverY, coverWidth, coverHeight, coverHeight / 2.3);
-        ctx.fill();
-        ctx.restore();
-
-        ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.45)";
-        ctx.shadowBlur = Math.max(10, fontSize * 0.25);
-        ctx.fillStyle = "rgba(6,8,20,0.78)";
+        ctx.shadowColor = "rgba(0,0,0,0.5)";
+        ctx.shadowBlur = Math.max(12, fontSize * 0.25);
+        ctx.fillStyle = "rgba(4,6,18,0.88)";
         drawRoundedRect(ctx, pillX, pillY, pillWidth, pillHeight, pillHeight / 2);
         ctx.fill();
         ctx.lineWidth = Math.max(2, Math.floor(fontSize * 0.08));
@@ -435,7 +424,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         ctx.restore();
 
         ctx.fillStyle = "#ffffff";
-        ctx.shadowColor = "rgba(0,0,0,0.4)";
+        ctx.shadowColor = "rgba(0,0,0,0.35)";
         ctx.shadowBlur = Math.max(8, fontSize * 0.2);
         ctx.fillText(serialText, pillX + pillWidth / 2, pillY + pillHeight / 2 + 1);
         ctx.shadowColor = "transparent";
@@ -628,11 +617,32 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
       }
 
       const serialFont = Math.floor(titleFont * 0.55);
-      const serialBaseline = panelY + footerHeight - infoPaddingY;
-      ctx.textAlign = "right";
+      const serialPaddingX = serialFont * 0.9;
+      const serialPaddingY = serialFont * 0.45;
+      const serialText = serialOverlayLabel;
       ctx.font = `700 ${serialFont}px 'Inter', sans-serif`;
-      ctx.fillStyle = theme.serialColor;
-      ctx.fillText(formattedSerial, img.width - infoPaddingX, serialBaseline);
+      const serialMetrics = ctx.measureText(serialText);
+      const serialWidth = serialMetrics.width + serialPaddingX * 2;
+      const serialHeight = serialFont + serialPaddingY * 2;
+      const overlayMarginX = Math.max(infoPaddingX * 0.4, 28);
+      const overlayMarginY = Math.max(padding * 0.9, 26);
+      const serialX = img.width - borderWidth - overlayMarginX - serialWidth;
+      const serialY = borderWidth + headerHeight + overlayMarginY;
+
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.45)";
+      ctx.shadowBlur = Math.max(12, serialFont * 0.35);
+      ctx.fillStyle = "rgba(4,6,18,0.85)";
+      drawRoundedRect(ctx, serialX, serialY, serialWidth, serialHeight, serialHeight / 2);
+      ctx.fill();
+      ctx.lineWidth = Math.max(2, Math.floor(serialFont * 0.08));
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(serialText, serialX + serialWidth / 2, serialY + serialHeight / 2 + 1);
       ctx.textAlign = "left";
 
       const blob = await canvasToBlob(canvas);
@@ -654,7 +664,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
     entry.isLossCard,
     resolvedImage,
     stars,
-    formattedSerial,
+    serialOverlayLabel,
     downloadImageSrc,
   ]);
 
@@ -670,6 +680,14 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
           <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-white/0 to-white/0 p-4 shadow-[0_25px_80px_rgba(0,0,0,0.55)]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_60%)]" />
             <div className="relative aspect-[3/4] w-full">
+              {serialDigits ? (
+                <div className="pointer-events-none absolute right-4 top-4 z-10">
+                  <span className="inline-flex items-center rounded-full border border-white/25 bg-[rgba(5,6,18,0.78)] px-4 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white shadow-[0_6px_25px_rgba(0,0,0,0.45)] backdrop-blur-[2px]">
+                    No.
+                    <span className="ml-1 font-mono tracking-normal">{serialDigits}</span>
+                  </span>
+                </div>
+              ) : null}
               <Image
                 src={resolvedImage}
                 alt={entry.cardName}

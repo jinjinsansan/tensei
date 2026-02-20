@@ -70,21 +70,22 @@ export function CardReveal({
               key={card.id}
               className="group relative flex flex-col gap-4 rounded-[28px] border border-white/12 bg-gradient-to-b from-white/10 via-white/5 to-black/60 p-4 shadow-[0_25px_55px_rgba(0,0,0,0.65)]"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[0.8rem] text-amber-200">{starIcons}</p>
-                  <p className="font-display text-xl text-white drop-shadow-[0_6px_25px_rgba(0,0,0,0.8)]">{displayName}</p>
-                  {card.description ? (
-                    <p className="mt-1 text-[0.75rem] text-white/70">{card.description}</p>
-                  ) : null}
-                </div>
-                {card.serialNumber ? (
-                  <span className="rounded-full border border-white/20 px-3 py-1 text-[0.7rem] text-white/80">
-                    No.{`${card.serialNumber}`.padStart(3, '0')}
-                  </span>
+              <div>
+                <p className="text-[0.8rem] text-amber-200">{starIcons}</p>
+                <p className="font-display text-xl text-white drop-shadow-[0_6px_25px_rgba(0,0,0,0.8)]">{displayName}</p>
+                {card.description ? (
+                  <p className="mt-1 text-[0.75rem] text-white/70">{card.description}</p>
                 ) : null}
               </div>
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[22px] border border-white/15 bg-black/40">
+                {card.serialNumber ? (
+                  <div className="pointer-events-none absolute right-3 top-3 z-10">
+                    <span className="inline-flex items-center rounded-full border border-white/25 bg-[rgba(5,6,18,0.75)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white backdrop-blur-[2px] shadow-[0_6px_20px_rgba(0,0,0,0.45)]">
+                      No.
+                      <span className="ml-1 font-mono tracking-normal">{`${card.serialNumber}`.padStart(3, '0')}</span>
+                    </span>
+                  </div>
+                ) : null}
                 {card.imageUrl ? (
                   isLossCard ? (
                     <div className="flex h-full w-full items-center justify-center">
