@@ -12,6 +12,9 @@ import { SHOICHI_MODULE } from '@/lib/gacha/characters/shoichi/shoichi-module';
 import { TATUMI_CARDS, TATUMI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/tatumi/tatumi-cards';
 import { TATUMI_DONDEN_ROUTES } from '@/lib/gacha/characters/tatumi/tatumi-donden';
 import { TATUMI_MODULE } from '@/lib/gacha/characters/tatumi/tatumi-module';
+import { YAHEI_CARDS, YAHEI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/yahei/yahei-cards';
+import { YAHEI_DONDEN_ROUTES } from '@/lib/gacha/characters/yahei/yahei-donden';
+import { YAHEI_MODULE } from '@/lib/gacha/characters/yahei/yahei-module';
 import {
   mapCardModuleIdToDbId,
   mapCharacterModuleIdToDbId,
@@ -64,6 +67,15 @@ const CHARACTER_CONFIGS: Record<CharacterId, CharacterSyncConfig> = {
     profile: '辰巳剛モジュール（来世ガチャ）',
     expectationLevel: 4,
     sortOrder: 3,
+  },
+  yahei: {
+    module: YAHEI_MODULE,
+    cards: YAHEI_CARDS,
+    descriptions: YAHEI_CARD_DESCRIPTIONS,
+    dondenRoutes: YAHEI_DONDEN_ROUTES,
+    profile: '弥平モジュール（来世ガチャ）',
+    expectationLevel: 4,
+    sortOrder: 4,
   },
 };
 
