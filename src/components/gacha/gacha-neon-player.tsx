@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils/cn";
+import { KENTA_CARD_IMAGE_OVERRIDES } from "@/lib/gacha/card-image-overrides";
 
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
@@ -445,18 +446,18 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
 }
 
 const LOADING_SHUFFLE_CARDS = [
-  "/kenta_cards/card01_convenience.png",
-  "/kenta_cards/card02_warehouse.png",
-  "/kenta_cards/card03_youtuber.png",
-  "/kenta_cards/card04_civil_servant.png",
-  "/kenta_cards/card05_ramen.png",
-  "/kenta_cards/card06_boxer.png",
-  "/kenta_cards/card07_surgeon.png",
-  "/kenta_cards/card08_business_owner.png",
-  "/kenta_cards/card09_mercenary.png",
-  "/kenta_cards/card10_rockstar.png",
-  "/kenta_cards/card11_demon_king.png",
-  "/kenta_cards/card12_hero.png",
+  KENTA_CARD_IMAGE_OVERRIDES.card01_convenience,
+  KENTA_CARD_IMAGE_OVERRIDES.card02_warehouse,
+  KENTA_CARD_IMAGE_OVERRIDES.card03_youtuber,
+  KENTA_CARD_IMAGE_OVERRIDES.card04_civil_servant,
+  KENTA_CARD_IMAGE_OVERRIDES.card05_ramen,
+  KENTA_CARD_IMAGE_OVERRIDES.card06_boxer,
+  KENTA_CARD_IMAGE_OVERRIDES.card07_surgeon,
+  KENTA_CARD_IMAGE_OVERRIDES.card08_business_owner,
+  KENTA_CARD_IMAGE_OVERRIDES.card09_mercenary,
+  KENTA_CARD_IMAGE_OVERRIDES.card10_rockstar,
+  KENTA_CARD_IMAGE_OVERRIDES.card11_demon_king,
+  KENTA_CARD_IMAGE_OVERRIDES.card12_hero,
   "/shoichi_cards/shoichi_card01_fish.png",
   "/shoichi_cards/shoichi_card02_train.png",
   "/shoichi_cards/shoichi_card03_host.png",

@@ -9,6 +9,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
 import { mapCardDbIdToModuleId } from "@/lib/gacha/characters/mapping";
+import { KENTA_CARD_IMAGE_OVERRIDES, getModuleCardImageOverride } from "@/lib/gacha/card-image-overrides";
 
 type Friend = {
   id: string;
@@ -40,7 +41,8 @@ type Props = {
 const FALLBACK_CARD_IMAGE = "/placeholders/card-default.svg";
 const LOSS_CARD_IMAGE = buildCommonAssetPath("loss_card.png");
 
-function pickDisplayImage(entry: DetailEntry, resolvedAsset?: string | null) {
+function pickDisplayImage(entry: DetailEntry, resolvedAsset?: string | null, override?: string | null) {
+  if (override) return override;
   if (resolvedAsset) return resolvedAsset;
   if (entry.imageUrl) return entry.imageUrl;
   if (entry.isLossCard) return LOSS_CARD_IMAGE;
@@ -176,19 +178,7 @@ const CARD_THEMES: Record<string, CardTheme> = {
 const CARD_LOGO_SRC = "/raise-gacha-logo.png";
 
 const CARD_DOWNLOAD_IMAGES: Record<string, string> = {
-  // Kenta
-  card01_convenience: "/gacha_cards_complete_all24/kenta_card01_convenience_complete.png",
-  card02_warehouse: "/gacha_cards_complete_all24/kenta_card02_warehouse_complete.png",
-  card03_youtuber: "/gacha_cards_complete_all24/kenta_card03_youtuber_complete.png",
-  card04_civil_servant: "/gacha_cards_complete_all24/kenta_card04_civil_servant_complete.png",
-  card05_ramen: "/gacha_cards_complete_all24/kenta_card05_ramen_complete.png",
-  card06_boxer: "/gacha_cards_complete_all24/kenta_card06_boxer_complete.png",
-  card07_surgeon: "/gacha_cards_complete_all24/kenta_card07_surgeon_complete.png",
-  card08_business_owner: "/gacha_cards_complete_all24/kenta_card08_business_complete.png",
-  card09_mercenary: "/gacha_cards_complete_all24/kenta_card09_mercenary_complete.png",
-  card10_rockstar: "/gacha_cards_complete_all24/kenta_card10_rockstar_complete.png",
-  card11_demon_king: "/gacha_cards_complete_all24/kenta_card11_demon_lord_complete.png",
-  card12_hero: "/gacha_cards_complete_all24/kenta_card12_hero_complete.png",
+  ...KENTA_CARD_IMAGE_OVERRIDES,
   // Shoichi
   card01_fish: "/gacha_cards_complete_all24/shoichi_card01_fish_complete.png",
   card02_train: "/gacha_cards_complete_all24/shoichi_card02_train_complete.png",
@@ -211,14 +201,21 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
   const [sendMessage, setSendMessage] = useState<string | null>(null);
   const [downloadState, setDownloadState] = useState<"idle" | "pending" | "error">("idle");
 
-  const sources = useMemo(() => (entry.imageUrl ? [entry.imageUrl] : []), [entry.imageUrl]);
+  const moduleCardId = useMemo(() => mapCardDbIdToModuleId(entry.cardId), [entry.cardId]);
+  const localCardImage = useMemo(() => getModuleCardImageOverride(moduleCardId), [moduleCardId]);
+  const sources = useMemo(() => {
+    if (localCardImage || !entry.imageUrl) return [];
+    return [entry.imageUrl];
+  }, [entry.imageUrl, localCardImage]);
   const { resolveAssetSrc, isSigning } = useSignedAssetResolver(sources);
-  const resolvedAsset = resolveAssetSrc(entry.imageUrl);
-  const resolvedImage = pickDisplayImage(entry, resolvedAsset);
+  const resolvedAsset = localCardImage ? null : resolveAssetSrc(entry.imageUrl);
+  const resolvedImage = pickDisplayImage(entry, resolvedAsset, localCardImage);
   const downloadImageSrc = useMemo(() => {
-    const moduleCardId = mapCardDbIdToModuleId(entry.cardId);
-    return moduleCardId ? CARD_DOWNLOAD_IMAGES[moduleCardId] ?? null : null;
-  }, [entry.cardId]);
+    if (moduleCardId) {
+      return localCardImage ?? CARD_DOWNLOAD_IMAGES[moduleCardId] ?? null;
+    }
+    return localCardImage ?? null;
+  }, [moduleCardId, localCardImage]);
 
   useEffect(() => {
     let cancelled = false;

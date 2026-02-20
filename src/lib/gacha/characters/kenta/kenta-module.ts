@@ -3,6 +3,7 @@ import { buildCharacterAssetPath } from '@/lib/gacha/assets';
 import { registerCharacter } from '@/lib/gacha/characters/character-registry';
 import { KENTA_CARDS, KENTA_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/kenta/kenta-cards';
 import { KENTA_DONDEN_ROUTES } from '@/lib/gacha/characters/kenta/kenta-donden';
+import { getModuleCardImageOverride } from '@/lib/gacha/card-image-overrides';
 
 const PRE_SCENE_PATTERNS = [
   { patternId: 'A', steps: 2 },
@@ -34,7 +35,7 @@ const KENTA_MODULE: CharacterModule = {
       'donden',
       `kenta_rev_${getCardCode(fromCardId)}_${getCardCode(toCardId)}_${step}.mp4`,
     ),
-  getCardImagePath: (cardId) => `/kenta_cards/${cardId}.png`,
+  getCardImagePath: (cardId) => getModuleCardImageOverride(cardId) ?? `/kenta_cards/${cardId}.png`,
   getCardDisplayInfo: (cardId) => buildCardDisplayInfo(cardId),
 };
 

@@ -9,6 +9,7 @@ import { Check, ChevronDown } from "lucide-react";
 import type { CollectionEntry, CollectionResponse } from "@/lib/collection/types";
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
+import { getDbCardImageOverride } from "@/lib/gacha/card-image-overrides";
 
 const RARITY_LABELS: Record<string, string> = {
   N: "N",
@@ -250,9 +251,10 @@ export function CollectionList({ initialData = null }: CollectionListProps) {
         })
       : null;
 
-    const rawImage = card.image_url ?? (isLossCard ? LOSS_CARD_IMAGE : null);
-    const shouldSign = isSignableAsset(rawImage);
-    const resolvedImage = shouldSign ? resolveAssetSrc(rawImage) : rawImage;
+    const localCardImage = getDbCardImageOverride(card.id);
+    const rawImage = localCardImage ?? card.image_url ?? (isLossCard ? LOSS_CARD_IMAGE : null);
+    const shouldSign = !localCardImage && isSignableAsset(rawImage);
+    const resolvedImage = localCardImage ?? (shouldSign ? resolveAssetSrc(rawImage) : rawImage);
     const isAwaitingImage = shouldSign && Boolean(rawImage) && !resolvedImage && isSigning;
 
     return (
