@@ -51,6 +51,7 @@ export function GachaNeonPlayer({
   const [claims, setClaims] = useState<Record<string, ClaimState>>({});
   const [error, setError] = useState<string | null>(null);
   const [currentPhase, setCurrentPhase] = useState<GachaPhase | null>(null);
+  const [isSkipping, setIsSkipping] = useState(false);
 
   const totalPulls = sessionMeta?.totalPulls ?? activePulls?.length ?? 0;
   const currentPull = activePulls && currentIndex < totalPulls ? activePulls[currentIndex] : null;
@@ -175,7 +176,8 @@ export function GachaNeonPlayer({
 
   const handleSkipAll = useCallback(async () => {
     if (!activePulls) return;
-    // すぐにskipフラグを立ててUIを隠す
+    // すぐにskipフラグとローディングフラグを立ててUIを完全に隠す
+    setIsSkipping(true);
     setSkipAllRequested(true);
     setCurrentPhase(null);
     
@@ -209,6 +211,7 @@ export function GachaNeonPlayer({
       });
     // 全てのclaim完了を待つ
     await Promise.allSettled(claimPromises);
+    setIsSkipping(false);
     setSummaryOpen(true);
   }, [activePulls, claims]);
 
@@ -218,6 +221,7 @@ export function GachaNeonPlayer({
     setCurrentIndex(0);
     setSummaryOpen(false);
     setSkipAllRequested(false);
+    setIsSkipping(false);
     setClaims({});
     setCurrentPhase(null);
     // sessionStorageをクリア
@@ -351,8 +355,8 @@ export function GachaNeonPlayer({
     <div className={cn("space-y-3 text-center", containerClassName)}>
       <div className={cn("flex justify-center", buttonWrapperClassName)}>{button}</div>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      {isLoading && !activePulls ? <LoadingOverlay /> : null}
-      {showPlayer && currentPull ? (
+      {(isLoading && !activePulls) || isSkipping ? <LoadingOverlay message={isSkipping ? "結果を集計中..." : undefined} /> : null}
+      {showPlayer && currentPull && !isSkipping ? (
         <GachaPlayer
           gachaResult={activeResult}
           onClose={handlePlayerClose}
@@ -363,7 +367,7 @@ export function GachaNeonPlayer({
           onCurrentPhaseChange={setCurrentPhase}
         />
       ) : null}
-      {showProgressOverlay ? (
+      {showProgressOverlay && !isSkipping ? (
         <BatchProgressOverlay currentIndex={currentIndex} totalPulls={totalPulls} onSkipAll={handleSkipAll} />
       ) : null}
       {summaryOpen && activePulls ? (
@@ -500,7 +504,7 @@ const LOADING_SHUFFLE_CARDS = [
   "/tatumi_cards/card12_hero.png",
 ];
 
-function LoadingOverlay() {
+function LoadingOverlay({ message }: { message?: string }) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
 
   useEffect(() => {
@@ -511,6 +515,8 @@ function LoadingOverlay() {
   }, []);
 
   if (typeof document === "undefined") return null;
+  
+  const displayMessage = message ?? "シナリオを抽選しています...";
   
   return createPortal(
     <div className="fixed inset-0 z-[140] bg-black">
@@ -534,7 +540,7 @@ function LoadingOverlay() {
             <div className="h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-neon-yellow" />
             <div className="space-y-2 text-center">
               <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/90">10連ガチャ準備中</p>
-              <p className="text-xs text-white/60">シナリオを抽選しています...</p>
+              <p className="text-xs text-white/60">{displayMessage}</p>
             </div>
           </div>
         </div>
