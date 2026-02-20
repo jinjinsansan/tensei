@@ -3,6 +3,7 @@ import { buildCharacterAssetPath } from '@/lib/gacha/assets';
 import { registerCharacter } from '@/lib/gacha/characters/character-registry';
 import { SHOICHI_CARDS, SHOICHI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/shoichi/shoichi-cards';
 import { SHOICHI_DONDEN_ROUTES } from '@/lib/gacha/characters/shoichi/shoichi-donden';
+import { getModuleCardImageOverride } from '@/lib/gacha/card-image-overrides';
 
 const PRE_SCENE_PATTERNS = [
   { patternId: 'A', steps: 2 },
@@ -34,7 +35,7 @@ const SHOICHI_MODULE: CharacterModule = {
       'donden',
       `shoichi_rev_${getCardCode(fromCardId)}_${getCardCode(toCardId)}_${step}.mp4`,
     ),
-  getCardImagePath: (cardId) => `/shoichi_cards/shoichi_${cardId}.png`,
+  getCardImagePath: (cardId) => getModuleCardImageOverride(cardId) ?? `/shoichi_cards/shoichi_${cardId}.png`,
   getCardDisplayInfo: (cardId) => buildCardDisplayInfo(cardId),
 };
 

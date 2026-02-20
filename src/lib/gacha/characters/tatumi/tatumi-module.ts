@@ -3,6 +3,7 @@ import { buildCharacterAssetPath } from '@/lib/gacha/assets';
 import { registerCharacter } from '@/lib/gacha/characters/character-registry';
 import { TATUMI_CARDS, TATUMI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/tatumi/tatumi-cards';
 import { TATUMI_DONDEN_ROUTES } from '@/lib/gacha/characters/tatumi/tatumi-donden';
+import { getModuleCardImageOverride } from '@/lib/gacha/card-image-overrides';
 
 const PRE_SCENE_PATTERNS = [
   { patternId: 'a', steps: 2 },
@@ -34,7 +35,7 @@ const TATUMI_MODULE: CharacterModule = {
       'donden',
       `tatumi_rev_${getCardCode(fromCardId)}_${getCardCode(toCardId)}_${step}.mp4`,
     ),
-  getCardImagePath: (cardId) => buildCardImagePath(cardId),
+  getCardImagePath: (cardId) => getModuleCardImageOverride(cardId) ?? buildCardImagePath(cardId),
   getCardDisplayInfo: (cardId) => buildCardDisplayInfo(cardId),
 };
 

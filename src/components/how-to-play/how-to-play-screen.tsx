@@ -2,11 +2,6 @@ import { Fragment } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-import tatumiCard02 from '../../../tatumi_cards/tatumi_card02.png';
-import tatumiCard05 from '../../../tatumi_cards/tatumi_card05.png';
-import tatumiCard07 from '../../../tatumi_cards/tatumi_card07.png';
-import tatumiCard11 from '../../../tatumi_cards/tatumi_card11.png';
-
 export function HowToPlayScreen() {
   return (
     <section className="space-y-8 pb-8">
@@ -84,7 +79,7 @@ export function HowToPlayScreen() {
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/kenta_cards/card01_convenience.png"
+                  src="/kenta_cards_v2/kenta_card01_convenience.png"
                   alt="健太カード1"
                   width={120}
                   height={160}
@@ -93,7 +88,7 @@ export function HowToPlayScreen() {
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/kenta_cards/card06_boxer.png"
+                  src="/kenta_cards_v2/kenta_card06_boxer.png"
                   alt="健太カード2"
                   width={120}
                   height={160}
@@ -102,7 +97,7 @@ export function HowToPlayScreen() {
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/kenta_cards/card12_hero.png"
+                  src="/kenta_cards_v2/kenta_card12_hero.png"
                   alt="健太カード3"
                   width={120}
                   height={160}
@@ -118,7 +113,7 @@ export function HowToPlayScreen() {
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/shoichi_cards/shoichi_card02_train.png"
+                  src="/shoichi_cards_v2/shoichi_card02_train.png"
                   alt="正一カード 満員電車"
                   width={120}
                   height={160}
@@ -128,7 +123,7 @@ export function HowToPlayScreen() {
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/shoichi_cards/shoichi_card06_ikemen.png"
+                  src="/shoichi_cards_v2/shoichi_card06_ikemen.png"
                   alt="正一カード2"
                   width={120}
                   height={160}
@@ -137,7 +132,7 @@ export function HowToPlayScreen() {
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src="/shoichi_cards/shoichi_card12_investor.png"
+                  src="/shoichi_cards_v2/shoichi_card12_investor.png"
                   alt="正一カード3"
                   width={120}
                   height={160}
@@ -153,22 +148,28 @@ export function HowToPlayScreen() {
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src={tatumiCard02}
+                  src="/tatumi_cards_v2/tatumi_card02.png"
                   alt="辰巳カード 虫転生"
+                  width={120}
+                  height={160}
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src={tatumiCard07}
+                  src="/tatumi_cards_v2/tatumi_card07.png"
                   alt="辰巳カード 探偵所長転生"
+                  width={120}
+                  height={160}
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
                 <Image
-                  src={tatumiCard11}
+                  src="/tatumi_cards_v2/tatumi_card11.png"
                   alt="辰巳カード 神龍転生"
+                  width={120}
+                  height={160}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -278,7 +279,7 @@ export function HowToPlayScreen() {
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-orange-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                 <Image
-                  src="/kenta_cards/card01_convenience.png"
+                  src="/kenta_cards_v2/kenta_card01_convenience.png"
                   alt="健太のアイコン"
                   fill
                   sizes="64px"
@@ -298,7 +299,7 @@ export function HowToPlayScreen() {
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-purple-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                 <Image
-                  src="/shoichi_cards/shoichi_card06_ikemen.png"
+                  src="/shoichi_cards_v2/shoichi_card06_ikemen.png"
                   alt="正一のアイコン"
                   fill
                   sizes="64px"
@@ -318,7 +319,7 @@ export function HowToPlayScreen() {
             <div className="flex items-center gap-4">
               <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-red-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
                 <Image
-                  src={tatumiCard05}
+                  src="/tatumi_cards_v2/tatumi_card05.png"
                   alt="辰巳剛のアイコン"
                   fill
                   sizes="64px"

@@ -5,7 +5,11 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils/cn";
-import { KENTA_CARD_IMAGE_OVERRIDES } from "@/lib/gacha/card-image-overrides";
+import {
+  KENTA_CARD_IMAGE_OVERRIDES,
+  SHOICHI_CARD_IMAGE_OVERRIDES,
+  TATUMI_CARD_IMAGE_OVERRIDES,
+} from "@/lib/gacha/card-image-overrides";
 
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
@@ -458,30 +462,30 @@ const LOADING_SHUFFLE_CARDS = [
   KENTA_CARD_IMAGE_OVERRIDES.card10_rockstar,
   KENTA_CARD_IMAGE_OVERRIDES.card11_demon_king,
   KENTA_CARD_IMAGE_OVERRIDES.card12_hero,
-  "/shoichi_cards/shoichi_card01_fish.png",
-  "/shoichi_cards/shoichi_card02_train.png",
-  "/shoichi_cards/shoichi_card03_host.png",
-  "/shoichi_cards/shoichi_card04_rehire.png",
-  "/shoichi_cards/shoichi_card05_bear.png",
-  "/shoichi_cards/shoichi_card06_ikemen.png",
-  "/shoichi_cards/shoichi_card07_beach_bar.png",
-  "/shoichi_cards/shoichi_card08_revenge_boss.png",
-  "/shoichi_cards/shoichi_card09_youth_love.png",
-  "/shoichi_cards/shoichi_card10_happy_family.png",
-  "/shoichi_cards/shoichi_card11_pilot.png",
-  "/shoichi_cards/shoichi_card12_investor.png",
-  "/tatumi_cards/tatumi_card01.png",
-  "/tatumi_cards/tatumi_card02.png",
-  "/tatumi_cards/tatumi_card03.png",
-  "/tatumi_cards/tatumi_card04.png",
-  "/tatumi_cards/tatumi_card05.png",
-  "/tatumi_cards/tatumi_card06.png",
-  "/tatumi_cards/tatumi_card07.png",
-  "/tatumi_cards/tatumi_card08.png",
-  "/tatumi_cards/tatumi_card09.png",
-  "/tatumi_cards/tatumi_card10.png",
-  "/tatumi_cards/tatumi_card11.png",
-  "/tatumi_cards/tatumi_card12.png",
+  SHOICHI_CARD_IMAGE_OVERRIDES.card01_fish,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card02_train,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card03_host,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card04_rehire,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card05_bear,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card06_ikemen,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card07_beach_bar,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card08_revenge_boss,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card09_youth_love,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card10_happy_family,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card11_pilot,
+  SHOICHI_CARD_IMAGE_OVERRIDES.card12_investor,
+  TATUMI_CARD_IMAGE_OVERRIDES.card01_stone,
+  TATUMI_CARD_IMAGE_OVERRIDES.card02_bug,
+  TATUMI_CARD_IMAGE_OVERRIDES.card03_flower,
+  TATUMI_CARD_IMAGE_OVERRIDES.card04_prison,
+  TATUMI_CARD_IMAGE_OVERRIDES.card05_father,
+  TATUMI_CARD_IMAGE_OVERRIDES.card06_enma,
+  TATUMI_CARD_IMAGE_OVERRIDES.card07_detective,
+  TATUMI_CARD_IMAGE_OVERRIDES.card08_buddha,
+  TATUMI_CARD_IMAGE_OVERRIDES.card09_martial,
+  TATUMI_CARD_IMAGE_OVERRIDES.card10_actor,
+  TATUMI_CARD_IMAGE_OVERRIDES.card11_dragon,
+  TATUMI_CARD_IMAGE_OVERRIDES.card12_enma_true,
 ];
 
 function LoadingOverlay({ message }: { message?: string }) {

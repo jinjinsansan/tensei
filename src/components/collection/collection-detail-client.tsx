@@ -9,7 +9,12 @@ import { Check, ChevronDown } from "lucide-react";
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 import { buildCommonAssetPath } from "@/lib/gacha/assets";
 import { mapCardDbIdToModuleId } from "@/lib/gacha/characters/mapping";
-import { KENTA_CARD_IMAGE_OVERRIDES, getModuleCardImageOverride } from "@/lib/gacha/card-image-overrides";
+import {
+  CARD_IMAGE_OVERRIDES,
+  SERIAL_OVERLAY_TOP_RATIO,
+  getModuleCardImageOverride,
+  shouldInsetSerialOverlay,
+} from "@/lib/gacha/card-image-overrides";
 
 type Friend = {
   id: string;
@@ -178,20 +183,7 @@ const CARD_THEMES: Record<string, CardTheme> = {
 const CARD_LOGO_SRC = "/raise-gacha-logo.png";
 
 const CARD_DOWNLOAD_IMAGES: Record<string, string> = {
-  ...KENTA_CARD_IMAGE_OVERRIDES,
-  // Shoichi
-  card01_fish: "/gacha_cards_complete_all24/shoichi_card01_fish_complete.png",
-  card02_train: "/gacha_cards_complete_all24/shoichi_card02_train_complete.png",
-  card03_host: "/gacha_cards_complete_all24/shoichi_card03_host_complete.png",
-  card04_rehire: "/gacha_cards_complete_all24/shoichi_card04_rehire_complete.png",
-  card05_bear: "/gacha_cards_complete_all24/shoichi_card05_bear_complete.png",
-  card06_ikemen: "/gacha_cards_complete_all24/shoichi_card06_ikemen_complete.png",
-  card07_beach_bar: "/gacha_cards_complete_all24/shoichi_card07_beach_bar_complete.png",
-  card08_revenge_boss: "/gacha_cards_complete_all24/shoichi_card08_revenge_boss_complete.png",
-  card09_youth_love: "/gacha_cards_complete_all24/shoichi_card09_youth_love_complete.png",
-  card10_happy_family: "/gacha_cards_complete_all24/shoichi_card10_happy_family_complete.png",
-  card11_pilot: "/gacha_cards_complete_all24/shoichi_card11_pilot_complete.png",
-  card12_investor: "/gacha_cards_complete_all24/shoichi_card12_investor_complete.png",
+  ...CARD_IMAGE_OVERRIDES,
 };
 
 export function CollectionDetailClient({ entry, shareUrl, referralShareActive = false }: Props) {
@@ -202,6 +194,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
   const [downloadState, setDownloadState] = useState<"idle" | "pending" | "error">("idle");
 
   const moduleCardId = useMemo(() => mapCardDbIdToModuleId(entry.cardId), [entry.cardId]);
+  const shouldInsetSerial = useMemo(() => shouldInsetSerialOverlay(moduleCardId), [moduleCardId]);
   const localCardImage = useMemo(() => getModuleCardImageOverride(moduleCardId), [moduleCardId]);
   const sources = useMemo(() => {
     if (localCardImage || !entry.imageUrl) return [];
@@ -405,7 +398,8 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
         const pillWidth = metrics.width + pillPaddingX * 2;
         const pillHeight = fontSize + pillPaddingY * 2;
         const offsetX = Math.max(Math.floor(canvas.width * 0.035), 22);
-        const offsetY = Math.max(Math.floor(canvas.height * 0.05), 26);
+        const baseOffsetRatio = shouldInsetSerial ? SERIAL_OVERLAY_TOP_RATIO : 0.05;
+        const offsetY = Math.max(Math.floor(canvas.height * baseOffsetRatio), 26);
         const pillX = canvas.width - offsetX - pillWidth;
         const pillY = offsetY;
 
@@ -663,6 +657,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
     stars,
     serialOverlayLabel,
     downloadImageSrc,
+    shouldInsetSerial,
   ]);
 
   return (
@@ -678,7 +673,10 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_60%)]" />
             <div className="relative aspect-[3/4] w-full">
               {serialDigits ? (
-                <div className="pointer-events-none absolute right-4 top-4 z-10">
+                <div
+                  className={`pointer-events-none absolute right-4 z-10 ${shouldInsetSerial ? "" : "top-4"}`}
+                  style={shouldInsetSerial ? { top: `${SERIAL_OVERLAY_TOP_RATIO * 100}%` } : undefined}
+                >
                   <span className="inline-flex items-center rounded-full border border-white/25 bg-[rgba(5,6,18,0.78)] px-4 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white shadow-[0_6px_25px_rgba(0,0,0,0.45)] backdrop-blur-[2px]">
                     No.
                     <span className="ml-1 font-mono tracking-normal">{serialDigits}</span>

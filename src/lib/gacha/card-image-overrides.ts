@@ -15,9 +15,49 @@ const KENTA_CARD_IMAGE_OVERRIDES: Record<string, string> = {
   card12_hero: '/kenta_cards_v2/kenta_card12_hero.png',
 };
 
+const SHOICHI_CARD_IMAGE_OVERRIDES: Record<string, string> = {
+  card01_fish: '/shoichi_cards_v2/shoichi_card01_fish.png',
+  card02_train: '/shoichi_cards_v2/shoichi_card02_train.png',
+  card03_host: '/shoichi_cards_v2/shoichi_card03_host.png',
+  card04_rehire: '/shoichi_cards_v2/shoichi_card04_rehire.png',
+  card05_bear: '/shoichi_cards_v2/shoichi_card05_bear.png',
+  card06_ikemen: '/shoichi_cards_v2/shoichi_card06_ikemen.png',
+  card07_beach_bar: '/shoichi_cards_v2/shoichi_card07_beach_bar.png',
+  card08_revenge_boss: '/shoichi_cards_v2/shoichi_card08_revenge_boss.png',
+  card09_youth_love: '/shoichi_cards_v2/shoichi_card09_youth_love.png',
+  card10_happy_family: '/shoichi_cards_v2/shoichi_card10_happy_family.png',
+  card11_pilot: '/shoichi_cards_v2/shoichi_card11_pilot.png',
+  card12_investor: '/shoichi_cards_v2/shoichi_card12_investor.png',
+};
+
+const TATUMI_CARD_IMAGE_OVERRIDES: Record<string, string> = {
+  card01_stone: '/tatumi_cards_v2/tatumi_card01.png',
+  card02_bug: '/tatumi_cards_v2/tatumi_card02.png',
+  card03_flower: '/tatumi_cards_v2/tatumi_card03.png',
+  card04_prison: '/tatumi_cards_v2/tatumi_card04.png',
+  card05_father: '/tatumi_cards_v2/tatumi_card05.png',
+  card06_enma: '/tatumi_cards_v2/tatumi_card06.png',
+  card07_detective: '/tatumi_cards_v2/tatumi_card07.png',
+  card08_buddha: '/tatumi_cards_v2/tatumi_card08.png',
+  card09_martial: '/tatumi_cards_v2/tatumi_card09.png',
+  card10_actor: '/tatumi_cards_v2/tatumi_card10.png',
+  card11_dragon: '/tatumi_cards_v2/tatumi_card11.png',
+  card12_enma_true: '/tatumi_cards_v2/tatumi_card12.png',
+};
+
+const CARD_IMAGE_OVERRIDES: Record<string, string> = {
+  ...KENTA_CARD_IMAGE_OVERRIDES,
+  ...SHOICHI_CARD_IMAGE_OVERRIDES,
+  ...TATUMI_CARD_IMAGE_OVERRIDES,
+};
+
+const SERIAL_INSET_CARD_IDS = new Set(Object.keys(CARD_IMAGE_OVERRIDES));
+
+export const SERIAL_OVERLAY_TOP_RATIO = 0.18;
+
 export function getModuleCardImageOverride(moduleCardId: string | null | undefined): string | null {
   if (!moduleCardId) return null;
-  return KENTA_CARD_IMAGE_OVERRIDES[moduleCardId] ?? null;
+  return CARD_IMAGE_OVERRIDES[moduleCardId] ?? null;
 }
 
 export function getDbCardImageOverride(cardDbId: string | null | undefined): string | null {
@@ -26,4 +66,14 @@ export function getDbCardImageOverride(cardDbId: string | null | undefined): str
   return getModuleCardImageOverride(moduleCardId);
 }
 
-export { KENTA_CARD_IMAGE_OVERRIDES };
+export function shouldInsetSerialOverlay(moduleCardId: string | null | undefined): boolean {
+  if (!moduleCardId) return false;
+  return SERIAL_INSET_CARD_IDS.has(moduleCardId);
+}
+
+export {
+  KENTA_CARD_IMAGE_OVERRIDES,
+  SHOICHI_CARD_IMAGE_OVERRIDES,
+  TATUMI_CARD_IMAGE_OVERRIDES,
+  CARD_IMAGE_OVERRIDES,
+};
