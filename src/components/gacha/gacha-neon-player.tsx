@@ -61,8 +61,12 @@ export function GachaNeonPlayer({
   const startPlay = useCallback(async () => {
     if (isDisabled) return;
     setError(null);
+    setIsLoading(true);
+    
+    // ローディング開始を即座に反映するため、少し待つ
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    
     try {
-      setIsLoading(true);
       const response = await playGacha();
       const pulls = mapResponseToPulls(response);
       setActivePulls(pulls);
@@ -170,7 +174,10 @@ export function GachaNeonPlayer({
 
   const handleSkipAll = useCallback(async () => {
     if (!activePulls) return;
+    // すぐにskipフラグを立ててUIを隠す
     setSkipAllRequested(true);
+    setCurrentPhase(null);
+    
     // 全カードのclaimを並列実行して完了を待つ
     const claimPromises = activePulls
       .filter((pull) => pull.resultId && !claims[pull.resultId])
@@ -218,20 +225,22 @@ export function GachaNeonPlayer({
     }
   }, []);
 
-  // マウント時にsessionStorageから復元（サマリー状態のみ）
+  // マウント時にsessionStorageから復元
   useEffect(() => {
     if (typeof sessionStorage === "undefined") return;
     const stored = sessionStorage.getItem("gacha_session");
     if (!stored) return;
     try {
       const data = JSON.parse(stored);
-      // サマリー表示中だった場合のみ復元（フェーズ途中は復元しない）
-      if (data.summaryOpen && data.pulls && Array.isArray(data.pulls) && data.pulls.length > 0) {
+      if (data.pulls && Array.isArray(data.pulls) && data.pulls.length > 0) {
         setActivePulls(data.pulls);
         setSessionMeta(data.session ?? null);
-        setCurrentIndex(data.pulls.length - 1);
+        setCurrentIndex(data.currentIndex ?? 0);
         setClaims(data.claims ?? {});
-        setSummaryOpen(true);
+        // サマリー表示中だった場合はサマリーを開く
+        if (data.summaryOpen) {
+          setSummaryOpen(true);
+        }
       }
     } catch {
       // ignore
@@ -341,6 +350,7 @@ export function GachaNeonPlayer({
     <div className={cn("space-y-3 text-center", containerClassName)}>
       <div className={cn("flex justify-center", buttonWrapperClassName)}>{button}</div>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      {isLoading && !activePulls ? <LoadingOverlay /> : null}
       {showPlayer && currentPull ? (
         <GachaPlayer
           gachaResult={activeResult}
@@ -446,6 +456,22 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
       onRetry={onRetry}
       primaryCtaLabel="ガチャを閉じる"
     />,
+    document.body,
+  );
+}
+
+function LoadingOverlay() {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
+      <div className="flex flex-col items-center gap-6 text-white">
+        <div className="h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-neon-yellow" />
+        <div className="space-y-2 text-center">
+          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/90">10連ガチャ準備中</p>
+          <p className="text-xs text-white/60">シナリオを生成しています...</p>
+        </div>
+      </div>
+    </div>,
     document.body,
   );
 }
