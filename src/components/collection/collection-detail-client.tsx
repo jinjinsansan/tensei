@@ -186,6 +186,24 @@ const CARD_DOWNLOAD_IMAGES: Record<string, string> = {
   ...CARD_IMAGE_OVERRIDES,
 };
 
+const MOBILE_UA_REGEX = /Android|iPhone|iPad|iPod|iOS|Mobile/i;
+
+type NavigatorWithUAData = Navigator & {
+  userAgentData?: {
+    mobile?: boolean;
+  };
+};
+
+function isMobileDevice() {
+  if (typeof navigator === "undefined") return false;
+  const nav = navigator as NavigatorWithUAData;
+  if (typeof nav.userAgentData?.mobile === "boolean") {
+    return Boolean(nav.userAgentData.mobile);
+  }
+  const ua = navigator.userAgent || "";
+  return MOBILE_UA_REGEX.test(ua);
+}
+
 export function CollectionDetailClient({ entry, shareUrl, referralShareActive = false }: Props) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [selectedFriend, setSelectedFriend] = useState("");
@@ -349,8 +367,8 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
       });
 
     const shareOrDownloadBlob = async (blob: Blob) => {
-      const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 768;
-      if (isMobile && navigator.share && navigator.canShare) {
+      const useShareSheet = isMobileDevice();
+      if (useShareSheet && navigator.share && typeof navigator.canShare === "function") {
         const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
         if (navigator.canShare({ files: [file] })) {
           try {
