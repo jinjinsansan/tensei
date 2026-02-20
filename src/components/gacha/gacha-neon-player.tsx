@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils/cn";
 
@@ -460,15 +461,82 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
   );
 }
 
+const LOADING_SHUFFLE_CARDS = [
+  "/kenta_cards/card01_convenience.png",
+  "/kenta_cards/card02_warehouse.png",
+  "/kenta_cards/card03_youtuber.png",
+  "/kenta_cards/card04_civil_servant.png",
+  "/kenta_cards/card05_ramen.png",
+  "/kenta_cards/card06_boxer.png",
+  "/kenta_cards/card07_surgeon.png",
+  "/kenta_cards/card08_business_owner.png",
+  "/kenta_cards/card09_mercenary.png",
+  "/kenta_cards/card10_rockstar.png",
+  "/kenta_cards/card11_demon_king.png",
+  "/kenta_cards/card12_hero.png",
+  "/shoichi_cards/card01_convenience.png",
+  "/shoichi_cards/card02_warehouse.png",
+  "/shoichi_cards/card03_youtuber.png",
+  "/shoichi_cards/card04_civil_servant.png",
+  "/shoichi_cards/card05_ramen.png",
+  "/shoichi_cards/card06_boxer.png",
+  "/shoichi_cards/card07_surgeon.png",
+  "/shoichi_cards/card08_business_owner.png",
+  "/shoichi_cards/card09_mercenary.png",
+  "/shoichi_cards/card10_rockstar.png",
+  "/shoichi_cards/card11_demon_king.png",
+  "/shoichi_cards/card12_hero.png",
+  "/tatumi_cards/card01_convenience.png",
+  "/tatumi_cards/card02_warehouse.png",
+  "/tatumi_cards/card03_youtuber.png",
+  "/tatumi_cards/card04_civil_servant.png",
+  "/tatumi_cards/card05_ramen.png",
+  "/tatumi_cards/card06_boxer.png",
+  "/tatumi_cards/card07_surgeon.png",
+  "/tatumi_cards/card08_business_owner.png",
+  "/tatumi_cards/card09_mercenary.png",
+  "/tatumi_cards/card10_rockstar.png",
+  "/tatumi_cards/card11_demon_king.png",
+  "/tatumi_cards/card12_hero.png",
+];
+
 function LoadingOverlay() {
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentCardIndex((prev) => (prev + 1) % LOADING_SHUFFLE_CARDS.length);
+    }, 60);
+    return () => clearInterval(interval);
+  }, []);
+
   if (typeof document === "undefined") return null;
+  
   return createPortal(
-    <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black">
-      <div className="flex flex-col items-center gap-6 text-white">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-neon-yellow" />
-        <div className="space-y-2 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/90">10連ガチャ準備中</p>
-          <p className="text-xs text-white/60">シナリオを生成しています...</p>
+    <div className="fixed inset-0 z-[140] bg-black">
+      {/* カード高速シャッフル表示 */}
+      <div className="relative h-full w-full">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative h-[70vh] w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 bg-black/50 shadow-[0_0_45px_rgba(0,0,0,0.5)]">
+            <Image
+              src={LOADING_SHUFFLE_CARDS[currentCardIndex]}
+              alt="シャッフル中"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        </div>
+        
+        {/* オーバーレイ：スピナー＋テキスト */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60">
+          <div className="flex flex-col items-center gap-6 text-white">
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-neon-yellow" />
+            <div className="space-y-2 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/90">10連ガチャ準備中</p>
+              <p className="text-xs text-white/60">シナリオを抽選しています...</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>,
