@@ -156,21 +156,7 @@ export function GachaNeonPlayer({
     if (skipAllRequested || isLast) {
       setSummaryOpen(true);
     } else {
-      const nextIndex = Math.min(currentIndex + 1, activePulls.length - 1);
-      setCurrentIndex(nextIndex);
-      // sessionStorageを更新
-      if (typeof sessionStorage !== "undefined") {
-        const stored = sessionStorage.getItem("gacha_session");
-        if (stored) {
-          try {
-            const data = JSON.parse(stored);
-            data.currentIndex = nextIndex;
-            sessionStorage.setItem("gacha_session", JSON.stringify(data));
-          } catch {
-            // ignore
-          }
-        }
-      }
+      setCurrentIndex((prev) => Math.min(prev + 1, activePulls.length - 1));
     }
   }, [activePulls, currentIndex, skipAllRequested]);
 
@@ -252,33 +238,26 @@ export function GachaNeonPlayer({
     }
   }, []);
 
-  // claims状態の変更をsessionStorageに同期
+  // claims、summaryOpen、currentIndex状態の変更をsessionStorageに同期（デバウンス）
   useEffect(() => {
     if (typeof sessionStorage === "undefined" || !activePulls) return;
-    const stored = sessionStorage.getItem("gacha_session");
-    if (!stored) return;
-    try {
-      const data = JSON.parse(stored);
-      data.claims = claims;
-      sessionStorage.setItem("gacha_session", JSON.stringify(data));
-    } catch {
-      // ignore
-    }
-  }, [claims, activePulls]);
-
-  // summaryOpen状態の変更をsessionStorageに同期
-  useEffect(() => {
-    if (typeof sessionStorage === "undefined" || !activePulls) return;
-    const stored = sessionStorage.getItem("gacha_session");
-    if (!stored) return;
-    try {
-      const data = JSON.parse(stored);
-      data.summaryOpen = summaryOpen;
-      sessionStorage.setItem("gacha_session", JSON.stringify(data));
-    } catch {
-      // ignore
-    }
-  }, [summaryOpen, activePulls]);
+    
+    const timeoutId = setTimeout(() => {
+      const stored = sessionStorage.getItem("gacha_session");
+      if (!stored) return;
+      try {
+        const data = JSON.parse(stored);
+        data.claims = claims;
+        data.summaryOpen = summaryOpen;
+        data.currentIndex = currentIndex;
+        sessionStorage.setItem("gacha_session", JSON.stringify(data));
+      } catch {
+        // ignore
+      }
+    }, 300); // 300msデバウンス
+    
+    return () => clearTimeout(timeoutId);
+  }, [claims, summaryOpen, currentIndex, activePulls]);
 
   useEffect(() => {
     if (!summaryOpen || !activePulls) return;
@@ -510,7 +489,7 @@ function LoadingOverlay({ message }: { message?: string }) {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentCardIndex((prev) => (prev + 1) % LOADING_SHUFFLE_CARDS.length);
-    }, 60);
+    }, 80); // 60ms → 80msに変更（負荷軽減）
     return () => clearInterval(interval);
   }, []);
 
