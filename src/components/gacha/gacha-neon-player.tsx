@@ -478,30 +478,30 @@ const LOADING_SHUFFLE_CARDS = [
   "/kenta_cards/card10_rockstar.png",
   "/kenta_cards/card11_demon_king.png",
   "/kenta_cards/card12_hero.png",
-  "/shoichi_cards/card01_convenience.png",
-  "/shoichi_cards/card02_warehouse.png",
-  "/shoichi_cards/card03_youtuber.png",
-  "/shoichi_cards/card04_civil_servant.png",
-  "/shoichi_cards/card05_ramen.png",
-  "/shoichi_cards/card06_boxer.png",
-  "/shoichi_cards/card07_surgeon.png",
-  "/shoichi_cards/card08_business_owner.png",
-  "/shoichi_cards/card09_mercenary.png",
-  "/shoichi_cards/card10_rockstar.png",
-  "/shoichi_cards/card11_demon_king.png",
-  "/shoichi_cards/card12_hero.png",
-  "/tatumi_cards/card01_convenience.png",
-  "/tatumi_cards/card02_warehouse.png",
-  "/tatumi_cards/card03_youtuber.png",
-  "/tatumi_cards/card04_civil_servant.png",
-  "/tatumi_cards/card05_ramen.png",
-  "/tatumi_cards/card06_boxer.png",
-  "/tatumi_cards/card07_surgeon.png",
-  "/tatumi_cards/card08_business_owner.png",
-  "/tatumi_cards/card09_mercenary.png",
-  "/tatumi_cards/card10_rockstar.png",
-  "/tatumi_cards/card11_demon_king.png",
-  "/tatumi_cards/card12_hero.png",
+  "/shoichi_cards/shoichi_card01_fish.png",
+  "/shoichi_cards/shoichi_card02_train.png",
+  "/shoichi_cards/shoichi_card03_host.png",
+  "/shoichi_cards/shoichi_card04_rehire.png",
+  "/shoichi_cards/shoichi_card05_bear.png",
+  "/shoichi_cards/shoichi_card06_ikemen.png",
+  "/shoichi_cards/shoichi_card07_beach_bar.png",
+  "/shoichi_cards/shoichi_card08_revenge_boss.png",
+  "/shoichi_cards/shoichi_card09_youth_love.png",
+  "/shoichi_cards/shoichi_card10_happy_family.png",
+  "/shoichi_cards/shoichi_card11_pilot.png",
+  "/shoichi_cards/shoichi_card12_investor.png",
+  "/tatumi_cards/tatumi_card01.png",
+  "/tatumi_cards/tatumi_card02.png",
+  "/tatumi_cards/tatumi_card03.png",
+  "/tatumi_cards/tatumi_card04.png",
+  "/tatumi_cards/tatumi_card05.png",
+  "/tatumi_cards/tatumi_card06.png",
+  "/tatumi_cards/tatumi_card07.png",
+  "/tatumi_cards/tatumi_card08.png",
+  "/tatumi_cards/tatumi_card09.png",
+  "/tatumi_cards/tatumi_card10.png",
+  "/tatumi_cards/tatumi_card11.png",
+  "/tatumi_cards/tatumi_card12.png",
 ];
 
 function LoadingOverlay({ message }: { message?: string }) {
@@ -535,12 +535,12 @@ function LoadingOverlay({ message }: { message?: string }) {
         </div>
         
         {/* オーバーレイ：スピナー＋テキスト */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/60">
-          <div className="flex flex-col items-center gap-6 text-white">
-            <div className="h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-neon-yellow" />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/30 via-black/20 to-black/40">
+          <div className="flex flex-col items-center gap-6 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+            <div className="h-16 w-16 animate-spin rounded-full border-4 border-white/30 border-t-neon-yellow shadow-[0_0_20px_rgba(255,246,92,0.6)]" />
             <div className="space-y-2 text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white/90">10連ガチャ準備中</p>
-              <p className="text-xs text-white/60">{displayMessage}</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">10連ガチャ準備中</p>
+              <p className="text-xs text-white/90 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">{displayMessage}</p>
             </div>
           </div>
         </div>
