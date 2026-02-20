@@ -5,12 +5,6 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils/cn";
-import {
-  KENTA_CARD_IMAGE_OVERRIDES,
-  SHOICHI_CARD_IMAGE_OVERRIDES,
-  TATUMI_CARD_IMAGE_OVERRIDES,
-  YAHEI_CARD_IMAGE_OVERRIDES,
-} from "@/lib/gacha/card-image-overrides";
 
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
@@ -83,19 +77,6 @@ export function GachaNeonPlayer({
       setSummaryOpen(false);
       setSkipAllRequested(false);
       setClaims({});
-      // sessionStorageに保存
-      if (typeof sessionStorage !== "undefined") {
-        sessionStorage.setItem(
-          "gacha_session",
-          JSON.stringify({
-            pulls,
-            session: response.session,
-            currentIndex: 0,
-            claims: {},
-            summaryOpen: false,
-          }),
-        );
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "ガチャを開始できませんでした。");
     } finally {
@@ -216,54 +197,9 @@ export function GachaNeonPlayer({
     setIsSkipping(false);
     setClaims({});
     setCurrentPhase(null);
-    // sessionStorageをクリア
-    if (typeof sessionStorage !== "undefined") {
-      sessionStorage.removeItem("gacha_session");
-    }
   }, []);
 
-  // マウント時にsessionStorageから復元
-  useEffect(() => {
-    if (typeof sessionStorage === "undefined") return;
-    const stored = sessionStorage.getItem("gacha_session");
-    if (!stored) return;
-    try {
-      const data = JSON.parse(stored);
-      if (data.pulls && Array.isArray(data.pulls) && data.pulls.length > 0) {
-        setActivePulls(data.pulls);
-        setSessionMeta(data.session ?? null);
-        setCurrentIndex(data.currentIndex ?? 0);
-        setClaims(data.claims ?? {});
-        // サマリー表示中だった場合はサマリーを開く
-        if (data.summaryOpen) {
-          setSummaryOpen(true);
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // claims、summaryOpen、currentIndex状態の変更をsessionStorageに同期（デバウンス）
-  useEffect(() => {
-    if (typeof sessionStorage === "undefined" || !activePulls) return;
-    
-    const timeoutId = setTimeout(() => {
-      const stored = sessionStorage.getItem("gacha_session");
-      if (!stored) return;
-      try {
-        const data = JSON.parse(stored);
-        data.claims = claims;
-        data.summaryOpen = summaryOpen;
-        data.currentIndex = currentIndex;
-        sessionStorage.setItem("gacha_session", JSON.stringify(data));
-      } catch {
-        // ignore
-      }
-    }, 300); // 300msデバウンス
-    
-    return () => clearTimeout(timeoutId);
-  }, [claims, summaryOpen, currentIndex, activePulls]);
+  // sessionStorage復元・同期は完全削除（パフォーマンス優先）
 
   useEffect(() => {
     if (!summaryOpen || !activePulls) return;
@@ -452,54 +388,54 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
 }
 
 const LOADING_SHUFFLE_CARDS = [
-  KENTA_CARD_IMAGE_OVERRIDES.card01_convenience,
-  KENTA_CARD_IMAGE_OVERRIDES.card02_warehouse,
-  KENTA_CARD_IMAGE_OVERRIDES.card03_youtuber,
-  KENTA_CARD_IMAGE_OVERRIDES.card04_civil_servant,
-  KENTA_CARD_IMAGE_OVERRIDES.card05_ramen,
-  KENTA_CARD_IMAGE_OVERRIDES.card06_boxer,
-  KENTA_CARD_IMAGE_OVERRIDES.card07_surgeon,
-  KENTA_CARD_IMAGE_OVERRIDES.card08_business_owner,
-  KENTA_CARD_IMAGE_OVERRIDES.card09_mercenary,
-  KENTA_CARD_IMAGE_OVERRIDES.card10_rockstar,
-  KENTA_CARD_IMAGE_OVERRIDES.card11_demon_king,
-  KENTA_CARD_IMAGE_OVERRIDES.card12_hero,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card01_fish,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card02_train,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card03_host,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card04_rehire,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card05_bear,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card06_ikemen,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card07_beach_bar,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card08_revenge_boss,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card09_youth_love,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card10_happy_family,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card11_pilot,
-  SHOICHI_CARD_IMAGE_OVERRIDES.card12_investor,
-  TATUMI_CARD_IMAGE_OVERRIDES.card01_stone,
-  TATUMI_CARD_IMAGE_OVERRIDES.card02_bug,
-  TATUMI_CARD_IMAGE_OVERRIDES.card03_flower,
-  TATUMI_CARD_IMAGE_OVERRIDES.card04_prison,
-  TATUMI_CARD_IMAGE_OVERRIDES.card05_father,
-  TATUMI_CARD_IMAGE_OVERRIDES.card06_enma,
-  TATUMI_CARD_IMAGE_OVERRIDES.card07_detective,
-  TATUMI_CARD_IMAGE_OVERRIDES.card08_buddha,
-  TATUMI_CARD_IMAGE_OVERRIDES.card09_martial,
-  TATUMI_CARD_IMAGE_OVERRIDES.card10_actor,
-  TATUMI_CARD_IMAGE_OVERRIDES.card11_dragon,
-  TATUMI_CARD_IMAGE_OVERRIDES.card12_enma_true,
-  YAHEI_CARD_IMAGE_OVERRIDES.card01_dinosaur,
-  YAHEI_CARD_IMAGE_OVERRIDES.card02_convenience,
-  YAHEI_CARD_IMAGE_OVERRIDES.card03_sns,
-  YAHEI_CARD_IMAGE_OVERRIDES.card04_rojyu,
-  YAHEI_CARD_IMAGE_OVERRIDES.card05_astronaut,
-  YAHEI_CARD_IMAGE_OVERRIDES.card06_noble,
-  YAHEI_CARD_IMAGE_OVERRIDES.card07_sushi,
-  YAHEI_CARD_IMAGE_OVERRIDES.card08_sumo,
-  YAHEI_CARD_IMAGE_OVERRIDES.card09_hollywood,
-  YAHEI_CARD_IMAGE_OVERRIDES.card10_shogun,
-  YAHEI_CARD_IMAGE_OVERRIDES.card11_president,
-  YAHEI_CARD_IMAGE_OVERRIDES.card12_timetravel,
+  '/splash_cards_kenta/card01_convenience.png',
+  '/splash_cards_kenta/card02_warehouse.png',
+  '/splash_cards_kenta/card03_youtuber.png',
+  '/splash_cards_kenta/card04_civil_servant.png',
+  '/splash_cards_kenta/card05_ramen.png',
+  '/splash_cards_kenta/card06_boxer.png',
+  '/splash_cards_kenta/card07_surgeon.png',
+  '/splash_cards_kenta/card08_business_owner.png',
+  '/splash_cards_kenta/card09_mercenary.png',
+  '/splash_cards_kenta/card10_rockstar.png',
+  '/splash_cards_kenta/card11_demon_king.png',
+  '/splash_cards_kenta/card12_hero.png',
+  '/splash_cards_shoichi/card01_fish.png',
+  '/splash_cards_shoichi/card02_train.png',
+  '/splash_cards_shoichi/card03_host.png',
+  '/splash_cards_shoichi/card04_rehire.png',
+  '/splash_cards_shoichi/card05_bear.png',
+  '/splash_cards_shoichi/card06_ikemen.png',
+  '/splash_cards_shoichi/card07_beach_bar.png',
+  '/splash_cards_shoichi/card08_revenge_boss.png',
+  '/splash_cards_shoichi/card09_youth_love.png',
+  '/splash_cards_shoichi/card10_happy_family.png',
+  '/splash_cards_shoichi/card11_pilot.png',
+  '/splash_cards_shoichi/card12_investor.png',
+  '/splash_cards_tatumi/card01_stone.png',
+  '/splash_cards_tatumi/card02_bug.png',
+  '/splash_cards_tatumi/card03_flower.png',
+  '/splash_cards_tatumi/card04_prison.png',
+  '/splash_cards_tatumi/card05_father.png',
+  '/splash_cards_tatumi/card06_enma.png',
+  '/splash_cards_tatumi/card07_detective.png',
+  '/splash_cards_tatumi/card08_buddha.png',
+  '/splash_cards_tatumi/card09_martial.png',
+  '/splash_cards_tatumi/card10_actor.png',
+  '/splash_cards_tatumi/card11_dragon.png',
+  '/splash_cards_tatumi/card12_enma_true.png',
+  '/splash_cards_yahei/card01_dinosaur.png',
+  '/splash_cards_yahei/card02_convenience.png',
+  '/splash_cards_yahei/card03_sns.png',
+  '/splash_cards_yahei/card04_rojyu.png',
+  '/splash_cards_yahei/card05_astronaut.png',
+  '/splash_cards_yahei/card06_noble.png',
+  '/splash_cards_yahei/card07_sushi.png',
+  '/splash_cards_yahei/card08_sumo.png',
+  '/splash_cards_yahei/card09_hollywood.png',
+  '/splash_cards_yahei/card10_shogun.png',
+  '/splash_cards_yahei/card11_president.png',
+  '/splash_cards_yahei/card12_timetravel.png',
 ];
 
 function LoadingOverlay({ message }: { message?: string }) {
@@ -508,7 +444,7 @@ function LoadingOverlay({ message }: { message?: string }) {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentCardIndex((prev) => (prev + 1) % LOADING_SHUFFLE_CARDS.length);
-    }, 80); // 60ms → 80msに変更（負荷軽減）
+    }, 150); // 150msに変更（負荷50%削減）
     return () => clearInterval(interval);
   }, []);
 
