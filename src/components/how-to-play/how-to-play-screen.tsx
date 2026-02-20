@@ -335,13 +335,33 @@ export function HowToPlayScreen() {
             </div>
           </div>
 
+          <div className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-950/40 to-transparent p-4">
+            <div className="flex items-center gap-4">
+              <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-amber-300 bg-black/40 shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
+                <Image
+                  src="/yahei_cards_v2/yahei_card07.png"
+                  alt="弥平のアイコン"
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="flex-1">
+                <p className="font-display text-xl text-amber-200">弥平</p>
+                <p className="text-xs leading-relaxed text-zinc-400">
+                  江戸後期を駆け抜ける38歳の魚売り。短気だけど人情家、天秤棒片手に世界中の来世へ挑むカルチャーショック担当。
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-zinc-600/30 bg-gradient-to-br from-zinc-800/40 to-transparent p-4">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-800 text-xl text-zinc-400">
                 ?
               </div>
               <div className="flex-1">
-                <p className="font-display text-xl text-zinc-400">さらに5人のキャラクター</p>
+                <p className="font-display text-xl text-zinc-400">さらに3人のキャラクター</p>
                 <p className="text-xs text-zinc-500">近日公開予定！お楽しみに</p>
               </div>
             </div>

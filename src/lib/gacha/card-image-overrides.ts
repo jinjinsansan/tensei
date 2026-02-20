@@ -45,10 +45,26 @@ const TATUMI_CARD_IMAGE_OVERRIDES: Record<string, string> = {
   card12_enma_true: '/tatumi_cards_v2/tatumi_card12.png',
 };
 
+const YAHEI_CARD_IMAGE_OVERRIDES: Record<string, string> = {
+  card01_dinosaur: '/yahei_cards_v2/yahei_card01.png',
+  card02_convenience: '/yahei_cards_v2/yahei_card02.png',
+  card03_sns: '/yahei_cards_v2/yahei_card03.png',
+  card04_rojyu: '/yahei_cards_v2/yahei_card04.png',
+  card05_astronaut: '/yahei_cards_v2/yahei_card05.png',
+  card06_noble: '/yahei_cards_v2/yahei_card06.png',
+  card07_sushi: '/yahei_cards_v2/yahei_card07.png',
+  card08_sumo: '/yahei_cards_v2/yahei_card08.png',
+  card09_hollywood: '/yahei_cards_v2/yahei_card09.png',
+  card10_shogun: '/yahei_cards_v2/yahei_card10.png',
+  card11_president: '/yahei_cards_v2/yahei_card11.png',
+  card12_timetravel: '/yahei_cards_v2/yahei_card12.png',
+};
+
 const CARD_IMAGE_OVERRIDES: Record<string, string> = {
   ...KENTA_CARD_IMAGE_OVERRIDES,
   ...SHOICHI_CARD_IMAGE_OVERRIDES,
   ...TATUMI_CARD_IMAGE_OVERRIDES,
+  ...YAHEI_CARD_IMAGE_OVERRIDES,
 };
 
 const SERIAL_INSET_CARD_IDS = new Set(Object.keys(CARD_IMAGE_OVERRIDES));
@@ -75,5 +91,6 @@ export {
   KENTA_CARD_IMAGE_OVERRIDES,
   SHOICHI_CARD_IMAGE_OVERRIDES,
   TATUMI_CARD_IMAGE_OVERRIDES,
+  YAHEI_CARD_IMAGE_OVERRIDES,
   CARD_IMAGE_OVERRIDES,
 };

@@ -594,6 +594,7 @@ function ActiveGachaPlayer({
       cardName: gachaResult.cardName,
       imageUrl: gachaResult.cardImagePath,
       starRating: gachaResult.starRating,
+      moduleCardId: gachaResult.cardId,
       serialNumber,
       description: gachaResult.cardTitle,
     };

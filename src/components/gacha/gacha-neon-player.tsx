@@ -9,6 +9,7 @@ import {
   KENTA_CARD_IMAGE_OVERRIDES,
   SHOICHI_CARD_IMAGE_OVERRIDES,
   TATUMI_CARD_IMAGE_OVERRIDES,
+  YAHEI_CARD_IMAGE_OVERRIDES,
 } from "@/lib/gacha/card-image-overrides";
 
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
@@ -281,6 +282,7 @@ export function GachaNeonPlayer({
       cardName: pull.gachaResult.cardName,
       imageUrl: pull.gachaResult.cardImagePath,
       starRating: pull.gachaResult.starRating,
+       moduleCardId: pull.gachaResult.cardId,
       serialNumber: pull.resultId ? claims[pull.resultId]?.serialNumber ?? null : null,
       description: pull.gachaResult.cardTitle,
     }));
@@ -486,6 +488,18 @@ const LOADING_SHUFFLE_CARDS = [
   TATUMI_CARD_IMAGE_OVERRIDES.card10_actor,
   TATUMI_CARD_IMAGE_OVERRIDES.card11_dragon,
   TATUMI_CARD_IMAGE_OVERRIDES.card12_enma_true,
+  YAHEI_CARD_IMAGE_OVERRIDES.card01_dinosaur,
+  YAHEI_CARD_IMAGE_OVERRIDES.card02_convenience,
+  YAHEI_CARD_IMAGE_OVERRIDES.card03_sns,
+  YAHEI_CARD_IMAGE_OVERRIDES.card04_rojyu,
+  YAHEI_CARD_IMAGE_OVERRIDES.card05_astronaut,
+  YAHEI_CARD_IMAGE_OVERRIDES.card06_noble,
+  YAHEI_CARD_IMAGE_OVERRIDES.card07_sushi,
+  YAHEI_CARD_IMAGE_OVERRIDES.card08_sumo,
+  YAHEI_CARD_IMAGE_OVERRIDES.card09_hollywood,
+  YAHEI_CARD_IMAGE_OVERRIDES.card10_shogun,
+  YAHEI_CARD_IMAGE_OVERRIDES.card11_president,
+  YAHEI_CARD_IMAGE_OVERRIDES.card12_timetravel,
 ];
 
 function LoadingOverlay({ message }: { message?: string }) {

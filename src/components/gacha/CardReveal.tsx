@@ -10,6 +10,7 @@ type CardData = {
   cardName: string;
   imageUrl: string;
   starRating: number;
+  moduleCardId?: string | null;
   serialNumber?: number | null;
   description?: string | null;
 };
@@ -67,7 +68,8 @@ export function CardReveal({
           const starCount = Math.max(1, Math.min(displayStar, 12));
           const starIcons = '★'.repeat(starCount);
           const isLossCard = card.id === 'loss';
-          const shouldInsetSerial = shouldInsetSerialOverlay(card.id);
+          const overlayCardId = card.moduleCardId ?? card.id;
+          const shouldInsetSerial = shouldInsetSerialOverlay(overlayCardId);
           return (
             <div
               key={card.id}
