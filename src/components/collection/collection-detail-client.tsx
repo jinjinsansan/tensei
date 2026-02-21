@@ -428,7 +428,10 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
             )
           : Math.max(Math.floor(canvas.height * 0.05), 26);
         const pillX = canvas.width - offsetX - pillWidth;
-        const pillY = offsetY;
+        // shouldInsetSerial=false のとき下から配置
+        const pillY = shouldInsetSerial
+          ? offsetY
+          : canvas.height - offsetY - pillHeight;
 
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.35)";
@@ -651,7 +654,10 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
           )
         : Math.max(padding * 0.9, 26);
       const serialX = img.width - borderWidth - overlayMarginX - serialWidth;
-      const serialY = borderWidth + headerHeight + overlayMarginY;
+      // shouldInsetSerial=false のとき下から配置（タイトル帯との被りを避ける）
+      const serialY = shouldInsetSerial
+        ? borderWidth + headerHeight + overlayMarginY
+        : canvas.height - borderWidth - footerHeight - overlayMarginY - serialHeight;
 
       ctx.save();
       ctx.shadowColor = "rgba(0,0,0,0.35)";
@@ -707,7 +713,7 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
             <div className="relative aspect-[3/4] w-full">
               {serialDigits ? (
                 <div
-                  className={`pointer-events-none absolute right-4 z-10 ${shouldInsetSerial ? "" : "top-4"}`}
+                  className={`pointer-events-none absolute right-4 z-10 ${shouldInsetSerial ? "" : "bottom-4"}`}
                   style={shouldInsetSerial ? { top: SERIAL_OVERLAY_TOP_CSS } : undefined}
                 >
                   <span className="inline-flex items-center rounded-full border border-white/20 bg-[rgba(8,12,34,0.55)] px-4 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.35em] text-white/90 shadow-[0_8px_30px_rgba(0,0,0,0.35)] backdrop-blur-[3px]">

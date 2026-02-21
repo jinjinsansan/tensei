@@ -85,7 +85,7 @@ export function CardReveal({
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[22px] border border-white/15 bg-black/40">
                 {card.serialNumber ? (
                   <div
-                    className={`pointer-events-none absolute right-3 z-10 ${shouldInsetSerial ? '' : 'top-3'}`}
+                    className={`pointer-events-none absolute right-3 z-10 ${shouldInsetSerial ? '' : 'bottom-3'}`}
                     style={shouldInsetSerial ? { top: SERIAL_OVERLAY_TOP_CSS } : undefined}
                   >
                     <span className="inline-flex items-center rounded-full border border-white/20 bg-[rgba(8,12,34,0.55)] px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.35em] text-white/90 backdrop-blur-[3px] shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
