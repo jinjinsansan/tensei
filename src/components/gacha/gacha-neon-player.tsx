@@ -442,10 +442,9 @@ const LOADING_SHUFFLE_CARDS = [
 ];
 
 function LoadingOverlay({ message }: { message?: string }) {
-  // ランダムに12枚を選択（負荷削減）
+  // ランダムに12枚を選択（マウント時1回のみ）
   const [shuffleCards] = useState(() => {
     const shuffled = [...LOADING_SHUFFLE_CARDS];
-    // Fisher-Yates shuffle
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -453,53 +452,33 @@ function LoadingOverlay({ message }: { message?: string }) {
     return shuffled.slice(0, 12);
   });
 
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    // CSS Animationで高速シャッフル、Reactは制御用のみ
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % shuffleCards.length);
-    }, 60); // 60ms = 16fps（滑らか）
-    return () => clearInterval(interval);
-  }, [shuffleCards.length]);
-
   if (typeof document === "undefined") return null;
-  
+
   const displayMessage = message ?? "シナリオを抽選しています...";
-  
+  // アニメーション1サイクル = 12枚 × 80ms = 960ms ≒ 1s
+  const totalDuration = shuffleCards.length * 80;
+
   return createPortal(
     <div className="fixed inset-0 z-[140] bg-black">
-      {/* カード高速シャッフル表示 */}
       <div className="relative h-full w-full">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative h-[70vh] w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 bg-black/50 shadow-[0_0_45px_rgba(0,0,0,0.5)]">
-            {/* メインカード（フェード切り替え） */}
-            <div className="absolute inset-0 transition-opacity duration-75">
-              <Image
-                src={shuffleCards[currentIndex]}
-                alt="シャッフル中"
-                fill
-                className="object-cover"
-                style={{ 
-                  filter: 'blur(0.3px)', // モーションブラー
+            {shuffleCards.map((src, idx) => (
+              <div
+                key={src}
+                className="absolute inset-0"
+                style={{
+                  animation: `shuffleCard ${totalDuration}ms steps(1) infinite`,
+                  animationDelay: `${idx * 80}ms`,
+                  opacity: 0,
                 }}
-                priority
-              />
-            </div>
-            {/* 次のカード（プリロード＋ぼかし効果） */}
-            <div className="absolute inset-0 opacity-30">
-              <Image
-                src={shuffleCards[(currentIndex + 1) % shuffleCards.length]}
-                alt="次のカード"
-                fill
-                className="object-cover"
-                style={{ filter: 'blur(2px)' }}
-                priority
-              />
-            </div>
+              >
+                <Image src={src} alt="" fill className="object-cover" priority={idx === 0} />
+              </div>
+            ))}
           </div>
         </div>
-        
+
         {/* オーバーレイ：スピナー＋テキスト */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-gradient-to-b from-black/30 via-black/20 to-black/40">
           <div className="flex flex-col items-center gap-6 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
@@ -523,6 +502,15 @@ function LoadingOverlay({ message }: { message?: string }) {
           </div>
         </div>
       </div>
+
+      {/* CSS keyframe定義 */}
+      <style>{`
+        @keyframes shuffleCard {
+          0% { opacity: 1; }
+          ${Math.round(100 / shuffleCards.length)}% { opacity: 0; }
+          100% { opacity: 0; }
+        }
+      `}</style>
     </div>,
     document.body,
   );
