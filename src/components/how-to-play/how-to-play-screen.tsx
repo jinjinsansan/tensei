@@ -65,114 +65,98 @@ export function HowToPlayScreen() {
           </div>
           <h2 className="font-display text-2xl text-white">ガチャを回そう</h2>
         </div>
-        
-        <p className="text-sm leading-relaxed text-zinc-300">
-          「ガチャを始める」をクリックすると自動でガチャが始まるよ。
-          １つ１つのシーンの度にNEXTボタンをクリックすると次のシーンが出ます。
-          SKIPを押すと全てのシーンが飛ばされ結果が表示されるよ。
-        </p>
 
-        {/* 健太編の画像 */}
-        <div className="mt-6 space-y-3">
+        {/* 10連ガチャの説明 */}
+        <div className="rounded-2xl border border-neon-blue/20 bg-neon-blue/5 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-neon-blue">10連ガチャ</p>
+          <p className="mt-1 text-sm leading-relaxed text-zinc-300">
+            このサイトのガチャは<span className="font-bold text-white">必ず10連</span>です。チケット1枚を消費して、10人分の転生シナリオを一気に楽しめます。
+            １つ１つのシーンの度にNEXTボタンをクリックすると次のシーンへ進みます。SKIPを押すと全シーンがスキップされ結果一覧が表示されます。
+          </p>
+        </div>
+
+        {/* 途中離脱の注意事項 */}
+        <div className="rounded-2xl border border-amber-400/25 bg-amber-500/8 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-amber-300">途中でページを離れた場合</p>
+          <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-zinc-300">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-amber-300">✓</span>
+              <span><span className="font-bold text-white">カードの権利は確定</span>しています。ページを閉じてもカードが消えることはありません。</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-amber-300">✓</span>
+              <span>再びガチャページを開くと「<span className="font-bold text-white">未受取の演出があります</span>」と表示されます。「演出を見て受け取る」で続きから再開できます。</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-amber-300">✓</span>
+              <span>24時間以内に演出を見なかった場合は<span className="font-bold text-white">自動的にカードが付与</span>されます。</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* キャラクター別カード */}
+        <div className="mt-2 space-y-3">
+          {/* 健太編 */}
           <div className="rounded-2xl border border-orange-400/30 bg-gradient-to-br from-orange-950/40 to-transparent p-4">
             <p className="mb-3 font-display text-lg text-orange-300">健太編</p>
             <div className="grid grid-cols-3 gap-2">
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/kenta_cards_v2/kenta_card01_convenience.png"
-                  alt="健太カード1"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/kenta_cards_v2/kenta_card06_boxer.png"
-                  alt="健太カード2"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/kenta_cards_v2/kenta_card12_hero.png"
-                  alt="健太カード3"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+              {[
+                { src: '/splash_cards_kenta/card01_convenience.png', alt: '健太カード1' },
+                { src: '/splash_cards_kenta/card06_boxer.png', alt: '健太カード2' },
+                { src: '/splash_cards_kenta/card12_hero.png', alt: '健太カード3' },
+              ].map((card) => (
+                <div key={card.src} className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                  <Image src={card.src} alt={card.alt} width={120} height={160} className="h-full w-full object-cover" />
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* 正一編の画像 */}
+          {/* 正一編 */}
           <div className="rounded-2xl border border-purple-400/30 bg-gradient-to-br from-purple-950/40 to-transparent p-4">
             <p className="mb-3 font-display text-lg text-purple-300">正一編</p>
             <div className="grid grid-cols-3 gap-2">
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/shoichi_cards_v2/shoichi_card02_train.png"
-                  alt="正一カード 満員電車"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover object-center"
-                  style={{ objectPosition: 'center' }}
-                />
-              </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/shoichi_cards_v2/shoichi_card06_ikemen.png"
-                  alt="正一カード2"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/shoichi_cards_v2/shoichi_card12_investor.png"
-                  alt="正一カード3"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+              {[
+                { src: '/splash_cards_shoichi/shoichi_card01_fish.png', alt: '正一カード1' },
+                { src: '/splash_cards_shoichi/shoichi_card06_ikemen.png', alt: '正一カード2' },
+                { src: '/splash_cards_shoichi/shoichi_card10_happy_family.png', alt: '正一カード3' },
+              ].map((card) => (
+                <div key={card.src} className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                  <Image src={card.src} alt={card.alt} width={120} height={160} className="h-full w-full object-cover" />
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* 辰巳編の画像 */}
+          {/* 辰巳編 */}
           <div className="rounded-2xl border border-red-400/30 bg-gradient-to-br from-red-950/40 to-transparent p-4">
             <p className="mb-3 font-display text-lg text-red-300">辰巳編</p>
             <div className="grid grid-cols-3 gap-2">
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/tatumi_cards_v2/tatumi_card02.png"
-                  alt="辰巳カード 虫転生"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/tatumi_cards_v2/tatumi_card07.png"
-                  alt="辰巳カード 探偵所長転生"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <div className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
-                <Image
-                  src="/tatumi_cards_v2/tatumi_card11.png"
-                  alt="辰巳カード 神龍転生"
-                  width={120}
-                  height={160}
-                  className="h-full w-full object-cover"
-                />
-              </div>
+              {[
+                { src: '/splash_cards_tatumi/tatumi_card01.png', alt: '辰巳カード1' },
+                { src: '/splash_cards_tatumi/tatumi_card06.png', alt: '辰巳カード2' },
+                { src: '/splash_cards_tatumi/tatumi_card11.png', alt: '辰巳カード3' },
+              ].map((card) => (
+                <div key={card.src} className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                  <Image src={card.src} alt={card.alt} width={120} height={160} className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 弥平編 */}
+          <div className="rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-950/40 to-transparent p-4">
+            <p className="mb-3 font-display text-lg text-amber-300">弥平編</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { src: '/splash_cards_yahei/yahei_card01.png', alt: '弥平カード1' },
+                { src: '/splash_cards_yahei/yahei_card02.png', alt: '弥平カード2' },
+                { src: '/splash_cards_yahei/yahei_card03.png', alt: '弥平カード3' },
+              ].map((card) => (
+                <div key={card.src} className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                  <Image src={card.src} alt={card.alt} width={120} height={160} className="h-full w-full object-cover" />
+                </div>
+              ))}
             </div>
           </div>
         </div>
