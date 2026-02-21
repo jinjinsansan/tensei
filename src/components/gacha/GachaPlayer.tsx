@@ -614,8 +614,14 @@ function ActiveGachaPlayer({
     const hlsUrl = buildHlsMasterUrl(signedPhaseVideoSrc ?? phaseVideo.src);
     const mp4Url = signedPhaseVideoSrc ?? phaseVideo.src;
 
-    // 初期表示を標準にしてバッジを確実に見せる
+    // 初期表示を標準にしてバッジを確実に見せる + 直ちにmp4をセット（HLS失敗時の黒画面防止）
     setQualityWithFlash('standard');
+    if (mp4Url) {
+      setVideoSourceUrl(mp4Url);
+      videoEl.src = mp4Url;
+      videoEl.load();
+      videoEl.loop = phaseVideoLoop;
+    }
 
     const fallbackToMp4 = () => {
       if (!videoEl || !mp4Url) return;
@@ -821,8 +827,8 @@ function ActiveGachaPlayer({
       data-phase-details={details ?? undefined}
     >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
-        <div className="pointer-events-none absolute left-0 right-0 top-3 z-40 flex justify-end px-4">
-          <div className="flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 border border-white/15 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+        <div className="pointer-events-none absolute right-3 top-16 z-40 flex justify-end px-4 sm:top-6">
+          <div className="flex items-center gap-2 rounded-full bg-black/65 px-3 py-1.5 border border-white/15 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
             <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/85">QUALITY</span>
             <QualityBadge quality={currentQuality} highlighted={qualityHighlighted} />
           </div>
