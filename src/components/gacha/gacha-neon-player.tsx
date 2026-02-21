@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 
 import { cn } from "@/lib/utils/cn";
+import { buildCommonAssetPath } from "@/lib/gacha/assets";
 
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
@@ -275,6 +276,8 @@ export function GachaNeonPlayer({
 
   return (
     <div className={cn("space-y-3 text-center", containerClassName)}>
+      {/* 共通動画のバックグラウンドプリロード（ページ表示時に即開始） */}
+      <CommonVideoPreloader />
       <div className={cn("flex justify-center", buttonWrapperClassName)}>{button}</div>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       {(isLoading && !activePulls) || isSkipping ? <LoadingOverlay message={isSkipping ? "結果を集計中..." : undefined} /> : null}
@@ -522,5 +525,50 @@ function LoadingOverlay({ message }: { message?: string }) {
       </div>
     </div>,
     document.body,
+  );
+}
+
+// ガチャページ表示時に共通動画を全てバックグラウンドプリロードする
+const COMMON_PRELOAD_VIDEOS: string[] = [
+  buildCommonAssetPath('standby', 'blackstandby.mp4'),
+  buildCommonAssetPath('standby', 'bluestandby.mp4'),
+  buildCommonAssetPath('standby', 'yellowstandby.mp4'),
+  buildCommonAssetPath('standby', 'redstandby.mp4'),
+  buildCommonAssetPath('standby', 'whitestandby.mp4'),
+  buildCommonAssetPath('standby', 'rainbowstandby.mp4'),
+  buildCommonAssetPath('puchun', 'puchun.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_1.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_2.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_3.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_4.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_5.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_6.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_7.mp4'),
+  buildCommonAssetPath('countdown', 'cd_green_8.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_1.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_2.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_3.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_4.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_5.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_6.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_7.mp4'),
+  buildCommonAssetPath('countdown', 'cd_blue_8.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_1.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_2.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_3.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_4.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_5.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_6.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_7.mp4'),
+  buildCommonAssetPath('countdown', 'cd_red_8.mp4'),
+];
+
+function CommonVideoPreloader() {
+  return (
+    <div className="hidden" aria-hidden="true">
+      {COMMON_PRELOAD_VIDEOS.map((src) => (
+        <video key={src} src={src} preload="auto" playsInline muted />
+      ))}
+    </div>
   );
 }
