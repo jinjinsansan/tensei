@@ -86,6 +86,25 @@ const CACHE_VERSION = 'v3';
 cd cloudflare/r2-video-worker && npx wrangler deploy
 ```
 
+**再デプロイ後は必ずキャッシュをウォームアップする。** キャッシュパージ直後はR2直接配信になりモバイル回線では動画が止まる。
+
+```bash
+# standby + puchun ウォームアップ
+for f in blackstandby bluestandby yellowstandby redstandby whitestandby rainbowstandby; do
+  curl -s "https://r2-video-worker.goldbenchan.workers.dev/videos/common/standby/${f}.mp4" -o /dev/null &
+done
+curl -s "https://r2-video-worker.goldbenchan.workers.dev/videos/common/puchun/puchun.mp4" -o /dev/null &
+
+# countdown ウォームアップ
+for color in green blue red; do
+  for i in 1 2 3 4 5 6 7 8; do
+    curl -s "https://r2-video-worker.goldbenchan.workers.dev/videos/common/countdown/cd_${color}_${i}.mp4" -o /dev/null &
+  done
+done
+wait
+echo "warmup done"
+```
+
 ### Step 4: R2 上のファイル検証
 
 ```python
