@@ -650,7 +650,7 @@ function ActiveGachaPlayer({
         break;
     }
 
-    return videos.slice(0, 5); // 最大5本まで
+    return videos.slice(0, 12); // 最大12本まで（countdown8本+puchun+title+pre等）
   }, [
     phase,
     countdownVideos,
@@ -738,8 +738,20 @@ function ActiveGachaPlayer({
 
 
 
-        {/* 非表示の動画プリロード */}
-        <div className="hidden">
+        {/* 非表示の動画プリロード（display:none は preload を無効化するため fixed+opacity:0 を使用） */}
+        <div
+          style={{
+            position: 'fixed',
+            width: 1,
+            height: 1,
+            top: 0,
+            left: 0,
+            opacity: 0,
+            pointerEvents: 'none',
+            overflow: 'hidden',
+            zIndex: -1,
+          }}
+        >
           {upcomingVideos.map((videoSrc) => (
             <video
               key={videoSrc}
