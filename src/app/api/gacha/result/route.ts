@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     const { session, user } = context;
 
     let resultRow = await fetchGachaResultById(supabase, body.resultId);
-    if (resultRow.user_session_id !== session.id || resultRow.app_user_id !== user.id) {
+    // app_user_id で本人確認（セッションは再ログイン等で変わるため user_session_id だけで弾かない）
+    if (resultRow.app_user_id !== user.id) {
       return NextResponse.json({ success: false, error: '対象データへのアクセス権がありません。' }, { status: 403 });
     }
 
