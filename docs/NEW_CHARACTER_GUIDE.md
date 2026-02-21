@@ -239,6 +239,14 @@ Worker のソース: `cloudflare/r2-video-worker/src/index.ts`
 1. faststart を確認する（moovが先頭にあるか）
 2. R2上のファイルが正しく更新されているか確認（CDN経由ではなくR2 APIで直接確認）
 3. エッジキャッシュに古いファイルが残っていないか確認（`CACHE_VERSION` をインクリメント）
+4. CACHE_VERSION を変えた直後は必ずウォームアップする（モバイル回線だとMISS状態で静止する）
+
+### iOSで「静止画だがNEXTは押せる／音が出ない」
+
+- iOS Safari は音声付きautoplayをブロックする。
+- 解決策: **最初は muted で再生開始し、ユーザー操作（NEXT/スキップ）後にアンミュートして再生をリトライする**（現在の実装）。
+- この挙動を壊さないこと：`videoRef` を保持し、`allowUnmuteRef` をユーザー操作時に立て、`syncVideoPlayback` でソース切替時に必ず再生を試みる。
+- CACHE_VERSION 変更直後はエッジキャッシュが空で、モバイル回線では読み込みが間に合わず静止する。ウォームアップ必須。
 
 ### NEXT ボタンが押せない・黒画面
 
