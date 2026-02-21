@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const PAGE_SIZE = 20;
 
@@ -85,6 +85,8 @@ export function UserGachaLogPanel({ userId }: Props) {
     error: null,
     data: null,
   });
+  const [forceAwardStates, setForceAwardStates] = useState<Record<string, 'idle' | 'loading' | 'done' | 'error'>>({});
+  const fetchDataRef = useRef<() => void>(() => undefined);
 
   const totalPages = useMemo(() => {
     if (!state.data) return 1;
@@ -131,6 +133,10 @@ export function UserGachaLogPanel({ userId }: Props) {
   }, [appliedFilters, page, userId]);
 
   useEffect(() => {
+    fetchDataRef.current = fetchData;
+  });
+
+  useEffect(() => {
     fetchData();
   }, [fetchData]);
 
@@ -148,6 +154,26 @@ export function UserGachaLogPanel({ userId }: Props) {
     setFilters(next);
     setPage(1);
     setAppliedFilters(next);
+  }, []);
+
+  const handleForceAward = useCallback(async (resultId: string) => {
+    setForceAwardStates((prev) => ({ ...prev, [resultId]: 'loading' }));
+    try {
+      const res = await fetch('/api/admin/force-award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ resultId }),
+      });
+      const json = (await res.json()) as { success: boolean; message?: string };
+      if (json.success) {
+        setForceAwardStates((prev) => ({ ...prev, [resultId]: 'done' }));
+        fetchDataRef.current();
+      } else {
+        setForceAwardStates((prev) => ({ ...prev, [resultId]: 'error' }));
+      }
+    } catch {
+      setForceAwardStates((prev) => ({ ...prev, [resultId]: 'error' }));
+    }
   }, []);
 
   const entries = state.data?.data ?? [];
@@ -239,7 +265,8 @@ export function UserGachaLogPanel({ userId }: Props) {
                   <th className="pb-2 pr-4">ルート</th>
                   <th className="pb-2 pr-4">ステータス</th>
                   <th className="pb-2 pr-4">シリアル</th>
-                  <th className="pb-2">詳細</th>
+                  <th className="pb-2 pr-4">詳細</th>
+                  <th className="pb-2">操作</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-sm">
@@ -249,6 +276,8 @@ export function UserGachaLogPanel({ userId }: Props) {
                   const rarityLabel = entry.cards?.rarity ?? "-";
                   const routeLabel = entry.obtained_via ? entry.obtained_via.toUpperCase() : "UNKNOWN";
                   const serialLabel = entry.inventory && entry.inventory.length > 0 ? entry.inventory[0]?.serial_number ?? "—" : "—";
+                  const isPending = !entry.card_awarded;
+                  const forceState = forceAwardStates[entry.id] ?? 'idle';
                   return (
                     <tr key={entry.id} className="align-top">
                       <td className="py-2 pr-4 font-mono text-xs text-white/70">{formatTimestamp(entry.created_at)}</td>
@@ -265,11 +294,25 @@ export function UserGachaLogPanel({ userId }: Props) {
                         </span>
                       </td>
                       <td className="py-2 pr-4 text-white/70">{serialLabel}</td>
-                      <td className="py-2 text-white/70">
+                      <td className="py-2 pr-4 text-white/70">
                         {entry.history?.result_detail ? (
                           <p className="text-xs text-white/70 line-clamp-2">{entry.history.result_detail}</p>
                         ) : (
                           <p className="text-xs text-white/40">—</p>
+                        )}
+                      </td>
+                      <td className="py-2">
+                        {isPending && entry.card_id ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleForceAward(entry.id)}
+                            disabled={forceState === 'loading' || forceState === 'done'}
+                            className="whitespace-nowrap rounded-full border border-neon-blue/40 bg-neon-blue/10 px-3 py-1 text-[0.65rem] font-semibold text-neon-blue transition hover:bg-neon-blue/20 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {forceState === 'loading' ? '処理中' : forceState === 'done' ? '完了' : forceState === 'error' ? 'エラー' : '強制付与'}
+                          </button>
+                        ) : (
+                          <p className="text-xs text-white/30">—</p>
                         )}
                       </td>
                     </tr>

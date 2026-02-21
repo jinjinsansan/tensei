@@ -33,6 +33,7 @@ export type GachaPlayEntry = {
   cardRarity: string | null;
   cardImageUrl: string | null;
   characterName: string | null;
+  cardAwarded: boolean;
 };
 
 export type CardTransferEntry = {
@@ -149,7 +150,7 @@ async function fetchGachaPlays(client: DbClient, userId: string, limit: number):
   const { data, error } = await client
     .from('gacha_results')
     .select(
-      `id, history_id, star_level, had_reversal, obtained_via, created_at,
+      `id, history_id, star_level, had_reversal, obtained_via, created_at, card_awarded,
        cards:card_id (id, card_name, rarity, star_level, card_image_url),
        characters:character_id (id, name)`,
     )
@@ -173,6 +174,7 @@ async function fetchGachaPlays(client: DbClient, userId: string, limit: number):
     cardRarity: row.cards?.rarity ?? null,
     cardImageUrl: row.cards?.card_image_url ?? null,
     characterName: row.characters?.name ?? null,
+    cardAwarded: row.card_awarded ?? false,
   }));
 }
 

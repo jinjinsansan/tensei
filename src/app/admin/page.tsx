@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AdminCard, AdminPageHero } from "@/components/admin/admin-ui";
+import { PendingAwardsSummary } from "@/components/admin/pending-awards-summary";
 
 const cards = [
   {
@@ -53,6 +54,8 @@ export default function AdminHome() {
         title="管理ダッシュボード"
         description="カード、演出、RTPすべての設定エリアへアクセスできます。"
       />
+
+      <PendingAwardsSummary />
 
       <AdminCard>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

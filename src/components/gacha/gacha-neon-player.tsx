@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 
@@ -10,6 +10,8 @@ import { buildCommonAssetPath } from "@/lib/gacha/assets";
 import { GachaPlayer } from "@/components/gacha/GachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { CardReveal } from "@/components/gacha/CardReveal";
+import { PendingSessionBanner } from "@/components/gacha/PendingSessionBanner";
+import type { PendingPull } from "@/components/gacha/PendingSessionBanner";
 import { playGacha, claimGachaResult } from "@/lib/api/gacha";
 import type { PlayResponse } from "@/lib/api/gacha";
 import type { GachaResult, GachaPhase } from "@/lib/gacha/common/types";
@@ -49,6 +51,9 @@ export function GachaNeonPlayer({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [skipAllRequested, setSkipAllRequested] = useState(false);
+  const [showPendingBanner, setShowPendingBanner] = useState(true);
+  // ガチャ中のページ離脱を検知するためのフラグ
+  const activePullsRef = useRef<PlayerPull[] | null>(null);
   const [claims, setClaims] = useState<Record<string, ClaimState>>({});
   const [error, setError] = useState<string | null>(null);
   const [currentPhase, setCurrentPhase] = useState<GachaPhase | null>(null);
@@ -61,18 +66,32 @@ export function GachaNeonPlayer({
   const normalizedLabel = typeof playLabel === "string" ? playLabel.replace(/\\n/g, "\n") : playLabel;
   const isDisabled = isLoading || Boolean(activePulls);
 
+  // beforeunload: ガチャ演出中の離脱時に警告
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!activePullsRef.current) return;
+      const unclaimed = activePullsRef.current.filter((p) => p.resultId && !claims[p.resultId]?.serialNumber);
+      if (unclaimed.length === 0) return;
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [claims]);
+
   const startPlay = useCallback(async () => {
     if (isDisabled) return;
     setError(null);
     setIsLoading(true);
-    
+    setShowPendingBanner(false);
+
     // ローディング開始を即座に反映するため、少し待つ
     await new Promise((resolve) => setTimeout(resolve, 50));
-    
+
     try {
       const response = await playGacha();
       const pulls = mapResponseToPulls(response);
       setActivePulls(pulls);
+      activePullsRef.current = pulls;
       setSessionMeta(response.session);
       setCurrentIndex(0);
       setSummaryOpen(false);
@@ -84,6 +103,27 @@ export function GachaNeonPlayer({
       setIsLoading(false);
     }
   }, [isDisabled]);
+
+  // 未完了セッションからの再開
+  const handleResumeSession = useCallback((pendingPulls: PendingPull[]) => {
+    const pulls: PlayerPull[] = pendingPulls.map((p) => ({
+      order: p.order,
+      resultId: p.resultId,
+      gachaResult: p.gachaResult as GachaResult,
+    }));
+    setActivePulls(pulls);
+    activePullsRef.current = pulls;
+    setSessionMeta({ multiSessionId: null, totalPulls: pulls.length });
+    setCurrentIndex(0);
+    setSummaryOpen(false);
+    setSkipAllRequested(false);
+    setClaims({});
+    setShowPendingBanner(false);
+  }, []);
+
+  const handlePendingDismiss = useCallback(() => {
+    setShowPendingBanner(false);
+  }, []);
 
   const ensureClaimForResult = useCallback((resultId: string) => {
     if (!resultId) return;
@@ -191,6 +231,7 @@ export function GachaNeonPlayer({
 
   const resetSession = useCallback(() => {
     setActivePulls(null);
+    activePullsRef.current = null;
     setSessionMeta(null);
     setCurrentIndex(0);
     setSummaryOpen(false);
@@ -198,6 +239,7 @@ export function GachaNeonPlayer({
     setIsSkipping(false);
     setClaims({});
     setCurrentPhase(null);
+    setShowPendingBanner(true);
   }, []);
 
   // sessionStorage復元・同期は完全削除（パフォーマンス優先）
@@ -278,6 +320,13 @@ export function GachaNeonPlayer({
     <div className={cn("space-y-3 text-center", containerClassName)}>
       {/* 共通動画のバックグラウンドプリロード（ページ表示時に即開始） */}
       <CommonVideoPreloader />
+      {/* 未完了セッション再開バナー（ガチャ未開始時のみ表示） */}
+      {showPendingBanner && !activePulls && !isLoading && (
+        <PendingSessionBanner
+          onResume={handleResumeSession}
+          onDismiss={handlePendingDismiss}
+        />
+      )}
       <div className={cn("flex justify-center", buttonWrapperClassName)}>{button}</div>
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
       {(isLoading && !activePulls) || isSkipping ? <LoadingOverlay message={isSkipping ? "結果を集計中..." : undefined} /> : null}
