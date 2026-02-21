@@ -3,11 +3,13 @@
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import type Hls from 'hls.js';
 
 import { RoundMetalButton } from '@/components/gacha/controls/round-metal-button';
 import { StarOverlay } from '@/components/gacha/overlays/StarOverlay';
 import { CardReveal } from '@/components/gacha/CardReveal';
 import { claimGachaResult } from '@/lib/api/gacha';
+import { QualityBadge, type QualityLevel } from '@/components/gacha/QualityBadge';
 
 import {
   chooseCountdownPatternWithProbabilities,
@@ -154,8 +156,23 @@ function ActiveGachaPlayer({
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastReadyVideoKeyRef = useRef<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
+  const qualityFlashTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [currentQuality, setCurrentQuality] = useState<QualityLevel>('standard');
+  const [qualityHighlighted, setQualityHighlighted] = useState(false);
+  const [videoSourceUrl, setVideoSourceUrl] = useState<string | null>(null);
 
   const presentation = usePresentationConfig();
+
+  const setQualityWithFlash = useCallback((quality: QualityLevel) => {
+    setCurrentQuality(quality);
+    setQualityHighlighted(true);
+    if (qualityFlashTimeoutRef.current) {
+      clearTimeout(qualityFlashTimeoutRef.current);
+    }
+    qualityFlashTimeoutRef.current = setTimeout(() => setQualityHighlighted(false), 1200);
+  }, []);
 
   const character = useMemo(() => getCharacter(gachaResult.characterId) ?? null, [gachaResult.characterId]);
 
@@ -577,7 +594,7 @@ function ActiveGachaPlayer({
     ? `${phase}-${phaseVideo.key}${mainSceneKeySuffix}`
     : `${phase}-video${mainSceneKeySuffix}`;
   const phaseVideoLoop = phaseVideo?.loop ?? false;
-  const hasPhaseVideo = Boolean(signedPhaseVideoSrc);
+  const hasPhaseVideo = Boolean(phaseVideo?.src);
   const controlsLocked = hasPhaseVideo && isControlsLocked(phase, videoReady);
   const skipDisabled = phase === 'CARD_REVEAL';
   const disableNext = phase === 'CARD_REVEAL' || controlsLocked;
@@ -588,6 +605,100 @@ function ActiveGachaPlayer({
     lastReadyVideoKeyRef.current = phaseVideoKey;
     setVideoReady(true);
   }, [phaseVideoKey]);
+
+  // HLS 初期化 + 品質バッジ制御
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl || !phaseVideo?.src) return;
+
+    const hlsUrl = buildHlsMasterUrl(signedPhaseVideoSrc ?? phaseVideo.src);
+    const mp4Url = signedPhaseVideoSrc ?? phaseVideo.src;
+
+    const fallbackToMp4 = () => {
+      if (!videoEl || !mp4Url) return;
+      setVideoSourceUrl(mp4Url);
+      videoEl.src = mp4Url;
+      videoEl.load();
+      videoEl.loop = phaseVideoLoop;
+      setQualityWithFlash('high');
+    };
+
+    if (hlsRef.current) {
+      hlsRef.current.destroy();
+      hlsRef.current = null;
+    }
+
+    const setup = async () => {
+      // ネイティブHLS（iOS Safari等）
+      if (hlsUrl && typeof videoEl.canPlayType === 'function' && videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+        setVideoSourceUrl(hlsUrl);
+        videoEl.src = hlsUrl;
+        videoEl.load();
+        videoEl.loop = phaseVideoLoop;
+        setQualityWithFlash('high');
+        return;
+      }
+
+      if (hlsUrl) {
+        try {
+          const HlsLib = (await import('hls.js')).default;
+          if (!HlsLib.isSupported()) {
+            fallbackToMp4();
+            return;
+          }
+          const hls = new HlsLib({
+            startLevel: 1, // 初期は720pを目指す
+            maxBufferLength: 10,
+            maxMaxBufferLength: 30,
+          });
+          hlsRef.current = hls;
+          hls.loadSource(hlsUrl);
+          hls.attachMedia(videoEl);
+          setVideoSourceUrl(hlsUrl);
+
+          hls.on(HlsLib.Events.MANIFEST_PARSED, () => {
+            const current = hls.levels?.[hls.currentLevel] ?? hls.levels?.[0];
+            const quality = heightToQuality(current?.height ?? 1080);
+            setQualityWithFlash(quality);
+          });
+
+          hls.on(HlsLib.Events.LEVEL_SWITCHED, (_evt, data) => {
+            const level = hls.levels?.[data.level];
+            const quality = heightToQuality(level?.height ?? 1080);
+            setQualityWithFlash(quality);
+          });
+
+          hls.on(HlsLib.Events.ERROR, (_evt, data) => {
+            if (data.fatal) {
+              hls.destroy();
+              hlsRef.current = null;
+              fallbackToMp4();
+            }
+          });
+
+          return;
+        } catch (error) {
+          console.warn('failed to init hls.js', error);
+          fallbackToMp4();
+          return;
+        }
+      }
+
+      fallbackToMp4();
+    };
+
+    setVideoReady(false);
+    lastReadyVideoKeyRef.current = null;
+    void setup();
+    videoEl.loop = phaseVideoLoop;
+
+    return () => {
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
+    };
+  }, [phaseVideo, signedPhaseVideoSrc, phaseVideoLoop, setQualityWithFlash, phaseVideoKey]);
 
   // 次の3フェーズ分の動画をプリロード
   const upcomingVideos = useMemo(() => {
@@ -662,6 +773,12 @@ function ActiveGachaPlayer({
     revealMainSceneVideos,
   ]);
 
+  useEffect(() => () => {
+    if (qualityFlashTimeoutRef.current) {
+      clearTimeout(qualityFlashTimeoutRef.current);
+    }
+  }, []);
+
   // CARD_REVEAL フェーズになったら CardReveal を表示
   if (phase === 'CARD_REVEAL') {
     const cardData = {
@@ -700,10 +817,15 @@ function ActiveGachaPlayer({
       data-phase-details={details ?? undefined}
     >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
-        {signedPhaseVideoSrc ? (
+        <div className="pointer-events-none absolute left-0 right-0 top-3 z-20 flex justify-end px-4">
+          <QualityBadge quality={currentQuality} highlighted={qualityHighlighted} />
+        </div>
+
+        {hasPhaseVideo ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
-              src={signedPhaseVideoSrc}
+              ref={videoRef}
+              src={videoSourceUrl ?? undefined}
               className="h-full w-full object-cover"
               autoPlay
               preload="auto"
@@ -939,4 +1061,22 @@ function emojiForColor(color: CountdownSelection['pattern']['steps'][number]['co
     default:
       return '🌈';
   }
+}
+
+function buildHlsMasterUrl(src: string | null): string | null {
+  if (!src) return null;
+  try {
+    const url = new URL(src, typeof window !== 'undefined' ? window.location.href : 'http://localhost');
+    url.pathname = url.pathname.replace('/videos/', '/videos/hls/').replace(/\.mp4$/, '/master.m3u8');
+    return url.toString();
+  } catch (error) {
+    console.warn('failed to build HLS url', error);
+    return null;
+  }
+}
+
+function heightToQuality(height: number): QualityLevel {
+  if (height <= 360) return 'low';
+  if (height <= 720) return 'standard';
+  return 'high';
 }
