@@ -101,10 +101,11 @@ export function CollectionGallery() {
         ) : (
           filtered.map((card) => {
             const rarityClass = getRarityClass(card.rarity);
+            const cardBgClass = getStarBackgroundClass(card.starLevel);
             return (
               <div
                 key={card.id}
-                className={`flex items-center gap-4 rounded-2xl border border-accent/15 bg-card/60 px-4 py-3 transition ${card.owned ? 'opacity-100' : 'opacity-60'}`}
+                className={`flex items-center gap-4 rounded-2xl border border-accent/15 px-4 py-3 transition ${cardBgClass} ${card.owned ? 'opacity-100' : 'opacity-60'}`}
               >
                 <div className={`flex h-20 w-14 flex-col items-center justify-center rounded-xl bg-gradient-to-b ${rarityClass} text-center text-white`}>
                   <span className="text-lg font-semibold">{card.starLevel}</span>
@@ -143,4 +144,13 @@ function getRarityClass(rarity: string) {
     default:
       return 'from-[#3f2a1b] to-[#2c1810]';
   }
+}
+
+function getStarBackgroundClass(starLevel: number) {
+  if (starLevel >= 11) return 'bg-gradient-to-r from-[#312043] to-[#552f80]'; // high-end
+  if (starLevel >= 9) return 'bg-gradient-to-r from-[#3a2a0f] to-[#7a5a12]'; // gold
+  if (starLevel >= 7) return 'bg-gradient-to-r from-[#1f1f3d] to-[#3a2f6f]'; // purple
+  if (starLevel >= 5) return 'bg-gradient-to-r from-[#0f2435] to-[#1f4b6b]'; // blue
+  if (starLevel >= 3) return 'bg-gradient-to-r from-[#112418] to-[#1f3b26]'; // green
+  return 'bg-gradient-to-r from-[#1a1a1a] to-[#242424]'; // low
 }
