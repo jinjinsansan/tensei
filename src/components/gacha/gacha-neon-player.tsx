@@ -439,14 +439,26 @@ const LOADING_SHUFFLE_CARDS = [
 ];
 
 function LoadingOverlay({ message }: { message?: string }) {
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  // ランダムに12枚を選択（負荷削減）
+  const [shuffleCards] = useState(() => {
+    const shuffled = [...LOADING_SHUFFLE_CARDS];
+    // Fisher-Yates shuffle
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 12);
+  });
+
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    // CSS Animationで高速シャッフル、Reactは制御用のみ
     const interval = setInterval(() => {
-      setCurrentCardIndex((prev) => (prev + 1) % LOADING_SHUFFLE_CARDS.length);
-    }, 150); // 150msに変更（負荷50%削減）
+      setCurrentIndex((prev) => (prev + 1) % shuffleCards.length);
+    }, 60); // 60ms = 16fps（滑らか）
     return () => clearInterval(interval);
-  }, []);
+  }, [shuffleCards.length]);
 
   if (typeof document === "undefined") return null;
   
@@ -458,13 +470,30 @@ function LoadingOverlay({ message }: { message?: string }) {
       <div className="relative h-full w-full">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative h-[70vh] w-full max-w-md overflow-hidden rounded-[32px] border border-white/10 bg-black/50 shadow-[0_0_45px_rgba(0,0,0,0.5)]">
-            <Image
-              src={LOADING_SHUFFLE_CARDS[currentCardIndex]}
-              alt="シャッフル中"
-              fill
-              className="object-cover"
-              priority
-            />
+            {/* メインカード（フェード切り替え） */}
+            <div className="absolute inset-0 transition-opacity duration-75">
+              <Image
+                src={shuffleCards[currentIndex]}
+                alt="シャッフル中"
+                fill
+                className="object-cover"
+                style={{ 
+                  filter: 'blur(0.3px)', // モーションブラー
+                }}
+                priority
+              />
+            </div>
+            {/* 次のカード（プリロード＋ぼかし効果） */}
+            <div className="absolute inset-0 opacity-30">
+              <Image
+                src={shuffleCards[(currentIndex + 1) % shuffleCards.length]}
+                alt="次のカード"
+                fill
+                className="object-cover"
+                style={{ filter: 'blur(2px)' }}
+                priority
+              />
+            </div>
           </div>
         </div>
         
