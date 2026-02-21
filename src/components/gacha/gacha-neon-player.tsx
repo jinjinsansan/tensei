@@ -573,7 +573,8 @@ function LoadingOverlay({ message }: { message?: string }) {
   );
 }
 
-// ガチャページ表示時に共通動画を全てバックグラウンドプリロードする
+// ガチャページ表示時に最優先でプリロードする動画
+// countdown(97MB)は含めない→GachaPlayer の upcomingVideos が STANDBY 中に処理する
 const COMMON_PRELOAD_VIDEOS: string[] = [
   buildCommonAssetPath('standby', 'blackstandby.mp4'),
   buildCommonAssetPath('standby', 'bluestandby.mp4'),
@@ -582,30 +583,6 @@ const COMMON_PRELOAD_VIDEOS: string[] = [
   buildCommonAssetPath('standby', 'whitestandby.mp4'),
   buildCommonAssetPath('standby', 'rainbowstandby.mp4'),
   buildCommonAssetPath('puchun', 'puchun.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_1.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_2.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_3.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_4.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_5.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_6.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_7.mp4'),
-  buildCommonAssetPath('countdown', 'cd_green_8.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_1.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_2.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_3.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_4.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_5.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_6.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_7.mp4'),
-  buildCommonAssetPath('countdown', 'cd_blue_8.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_1.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_2.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_3.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_4.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_5.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_6.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_7.mp4'),
-  buildCommonAssetPath('countdown', 'cd_red_8.mp4'),
 ];
 
 function CommonVideoPreloader() {
