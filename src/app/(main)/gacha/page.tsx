@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { GachaNeonPlayer } from "@/components/gacha/gacha-neon-player";
+import { GachaStateProvider, GachaPendingBanner, GachaButton } from "@/components/gacha/GachaSection";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { getSessionWithSnapshot } from "@/lib/app/session";
@@ -51,7 +51,11 @@ export default async function GachaPage() {
         <TicketBalanceCarousel tickets={tickets} />
       </section>
 
+      <GachaStateProvider>
       <section className="space-y-6">
+        {/* 未受取バナー（フル幅） */}
+        <GachaPendingBanner />
+
         {/* 来世ガチャカード */}
         <article className="relative overflow-hidden rounded-[36px] border border-white/8 bg-gradient-to-br from-[#06090f] via-[#0c1221] to-[#05070e] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
           <div className="relative rounded-[34px] bg-gradient-to-br from-[#0a0f1a] via-[#11192a] to-[#05070e] px-6 py-8 sm:px-8">
@@ -91,11 +95,7 @@ export default async function GachaPage() {
                 </div>
               </div>
               <div className="flex flex-1 items-center justify-center lg:justify-end">
-                <GachaNeonPlayer
-                  playVariant="round"
-                  containerClassName="space-y-1 text-center w-full max-w-[150px]"
-                  buttonWrapperClassName="justify-center"
-                />
+                <GachaButton />
               </div>
             </div>
           </div>
@@ -154,6 +154,7 @@ export default async function GachaPage() {
           </div>
         </article>
       </section>
+      </GachaStateProvider>
 
       <div className="relative mt-4 flex justify-center">
         <div className="absolute inset-0 h-24 w-64 animate-pulse rounded-full bg-gradient-to-r from-[#ffe29f]/20 via-[#ffa99f]/20 to-[#fbc2eb]/20 blur-3xl" />
