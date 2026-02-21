@@ -83,6 +83,7 @@ export function PendingSessionBanner({ onResume, onDismiss }: Props) {
 
   const formattedTime = sessionTime
     ? new Date(sessionTime).toLocaleString('ja-JP', {
+        timeZone: 'Asia/Tokyo',
         month: 'numeric',
         day: 'numeric',
         hour: '2-digit',
