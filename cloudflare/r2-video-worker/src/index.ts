@@ -1,51 +1,76 @@
-/**
- * R2 Video CDN Worker
- * 
- * R2バケットから動画を配信し、CDNキャッシュを有効化する軽量Worker
- */
-
 interface Env {
   R2_BUCKET: R2Bucket;
 }
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+const CACHE_MAX_AGE = 2592000; // 30日
+
+const worker = {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+
     const url = new URL(request.url);
-    
-    // パスからR2オブジェクトキーを取得（先頭のスラッシュを除去）
+    const cache = caches.default;
+
+    // キャッシュキーは Range ヘッダーを除いた URL で統一
+    const cacheKey = new Request(url.toString(), { method: 'GET' });
+
+    // エッジキャッシュヒット確認
+    const cached = await cache.match(cacheKey);
+    if (cached) {
+      const res = new Response(cached.body, cached);
+      res.headers.set('CF-Cache-Status', 'HIT');
+      return res;
+    }
+
     const objectKey = url.pathname.slice(1);
-    
-    // R2からオブジェクトを取得
-    const object = await env.R2_BUCKET.get(objectKey);
-    
+    const rangeHeader = request.headers.get('Range');
+
+    // Range リクエストは R2 に直接委譲（部分取得）
+    const object = rangeHeader
+      ? await env.R2_BUCKET.get(objectKey, { range: request.headers })
+      : await env.R2_BUCKET.get(objectKey);
+
     if (!object) {
       return new Response('Not Found', { status: 404 });
     }
-    
-    // レスポンスヘッダーを構築
+
     const headers = new Headers();
-    headers.set('Content-Type', object.httpMetadata?.contentType || 'application/octet-stream');
+    headers.set('Content-Type', object.httpMetadata?.contentType ?? 'application/octet-stream');
     headers.set('ETag', object.httpEtag);
-    
-    // Range リクエスト対応
-    if (object.range) {
-      headers.set('Content-Range', `bytes ${object.range.offset}-${object.range.offset + object.range.length - 1}/${object.size}`);
-    }
-    
-    // キャッシュ設定（重要）
-    headers.set('Cache-Control', 'public, max-age=2592000'); // 30日間キャッシュ
-    headers.set('CDN-Cache-Control', 'public, max-age=2592000'); // Cloudflare CDN用
-    
-    // CORS設定（必要に応じて）
+    headers.set('Cache-Control', `public, max-age=${CACHE_MAX_AGE}`);
+    headers.set('CDN-Cache-Control', `public, max-age=${CACHE_MAX_AGE}`);
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    
-    // Rangeリクエストの場合は206、通常は200
-    const status = object.range ? 206 : 200;
-    
-    return new Response(object.body, {
-      status,
-      headers,
-    });
+    headers.set('Accept-Ranges', 'bytes');
+
+    let status = 200;
+    if (object.range && 'offset' in object.range) {
+      const { offset, length } = object.range as { offset: number; length: number };
+      headers.set('Content-Range', `bytes ${offset}-${offset + length - 1}/${object.size}`);
+      headers.set('Content-Length', String(length));
+      status = 206;
+    } else {
+      headers.set('Content-Length', String(object.size));
+    }
+
+    const response = new Response(object.body, { status, headers });
+
+    // Range リクエスト以外はエッジにキャッシュ保存
+    if (!rangeHeader) {
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    }
+
+    return response;
   },
 };
+
+export default worker;
