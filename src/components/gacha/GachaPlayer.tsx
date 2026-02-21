@@ -171,7 +171,7 @@ function ActiveGachaPlayer({
     if (qualityFlashTimeoutRef.current) {
       clearTimeout(qualityFlashTimeoutRef.current);
     }
-    qualityFlashTimeoutRef.current = setTimeout(() => setQualityHighlighted(false), 1200);
+    qualityFlashTimeoutRef.current = setTimeout(() => setQualityHighlighted(false), 1400);
   }, []);
 
   const character = useMemo(() => getCharacter(gachaResult.characterId) ?? null, [gachaResult.characterId]);
@@ -614,6 +614,9 @@ function ActiveGachaPlayer({
     const hlsUrl = buildHlsMasterUrl(signedPhaseVideoSrc ?? phaseVideo.src);
     const mp4Url = signedPhaseVideoSrc ?? phaseVideo.src;
 
+    // 初期表示を標準にしてバッジを確実に見せる
+    setQualityWithFlash('standard');
+
     const fallbackToMp4 = () => {
       if (!videoEl || !mp4Url) return;
       setVideoSourceUrl(mp4Url);
@@ -635,6 +638,7 @@ function ActiveGachaPlayer({
         videoEl.src = hlsUrl;
         videoEl.load();
         videoEl.loop = phaseVideoLoop;
+        // ネイティブHLSは最高品質から降格するため初期は高品質表示
         setQualityWithFlash('high');
         return;
       }
@@ -817,8 +821,11 @@ function ActiveGachaPlayer({
       data-phase-details={details ?? undefined}
     >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
-        <div className="pointer-events-none absolute left-0 right-0 top-3 z-20 flex justify-end px-4">
-          <QualityBadge quality={currentQuality} highlighted={qualityHighlighted} />
+        <div className="pointer-events-none absolute left-0 right-0 top-3 z-40 flex justify-end px-4">
+          <div className="flex items-center gap-2 rounded-full bg-black/55 px-3 py-1.5 border border-white/15 backdrop-blur-md shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/85">QUALITY</span>
+            <QualityBadge quality={currentQuality} highlighted={qualityHighlighted} />
+          </div>
         </div>
 
         {hasPhaseVideo ? (
