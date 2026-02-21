@@ -21,12 +21,15 @@ type SummaryData = {
   suspicious: SuspiciousUser[];
 };
 
-type ForceAwardState = Record<string, 'idle' | 'loading' | 'done' | 'error'>;
+type ActionState = 'idle' | 'loading' | 'done' | 'error';
+type ForceAwardState = Record<string, ActionState>;
+type BulkActionState = Record<string, { award: ActionState; cancel: ActionState; cancelResult?: string }>;
 
 export function PendingAwardsSummary() {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [forceStates, setForceStates] = useState<ForceAwardState>({});
+  const [bulkStates, setBulkStates] = useState<BulkActionState>({});
 
   const fetchSummary = useCallback(async () => {
     setLoading(true);
@@ -42,6 +45,52 @@ export function PendingAwardsSummary() {
 
   useEffect(() => {
     void fetchSummary();
+  }, [fetchSummary]);
+
+  const handleBulkAward = useCallback(async (userId: string) => {
+    setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { cancel: 'idle' }), award: 'loading' } }));
+    try {
+      const res = await fetch('/api/admin/bulk-award', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const json = (await res.json()) as { success: boolean; awarded?: number; errors?: string[] };
+      if (json.success) {
+        setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { cancel: 'idle' }), award: 'done' } }));
+        void fetchSummary();
+      } else {
+        setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { cancel: 'idle' }), award: 'error' } }));
+      }
+    } catch {
+      setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { cancel: 'idle' }), award: 'error' } }));
+    }
+  }, [fetchSummary]);
+
+  const handleCancelPending = useCallback(async (userId: string, pendingCount: number) => {
+    const ticketsToRefund = Math.ceil(pendingCount / 10);
+    const confirmed = window.confirm(
+      `${pendingCount}件の未付与をキャンセルし、basicチケットを${ticketsToRefund}枚返還しますか？\nこの操作は取り消せません。`
+    );
+    if (!confirmed) return;
+    setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { award: 'idle' }), cancel: 'loading' } }));
+    try {
+      const res = await fetch('/api/admin/cancel-pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+      const json = (await res.json()) as { success: boolean; cancelled?: number; ticketsRefunded?: number; ticketCode?: string };
+      if (json.success) {
+        const result = `${json.cancelled ?? 0}件キャンセル / ${json.ticketCode ?? 'basic'}×${json.ticketsRefunded ?? 0}枚返還`;
+        setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { award: 'idle' }), cancel: 'done', cancelResult: result } }));
+        void fetchSummary();
+      } else {
+        setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { award: 'idle' }), cancel: 'error' } }));
+      }
+    } catch {
+      setBulkStates((prev) => ({ ...prev, [userId]: { ...(prev[userId] ?? { award: 'idle' }), cancel: 'error' } }));
+    }
   }, [fetchSummary]);
 
   const handleForceAward = useCallback(async (resultId: string) => {
@@ -153,17 +202,47 @@ export function PendingAwardsSummary() {
             要注意ユーザー（7日以内に演出待ち10件超）
           </p>
           <div className="space-y-2">
-            {suspicious.map((s) => (
-              <div
-                key={s.userId}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-orange-400/20 bg-orange-500/8 px-4 py-3"
-              >
-                <p className="font-mono text-xs text-white/70">{s.userId}</p>
-                <span className="rounded-full border border-orange-400/30 bg-orange-500/15 px-3 py-1 text-xs font-semibold text-orange-200">
-                  {s.pendingCount}件待ち
-                </span>
-              </div>
-            ))}
+            {suspicious.map((s) => {
+              const bs = bulkStates[s.userId];
+              return (
+                <div
+                  key={s.userId}
+                  className="rounded-2xl border border-orange-400/20 bg-orange-500/[0.06] px-4 py-3 space-y-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="font-mono text-xs text-white/70 break-all">{s.userId}</p>
+                      <span className="mt-1 inline-flex rounded-full border border-orange-400/30 bg-orange-500/15 px-3 py-0.5 text-xs font-semibold text-orange-200">
+                        {s.pendingCount}件待ち / 返還見込み {Math.ceil(s.pendingCount / 10)}チケット
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {/* 一括付与 */}
+                    <button
+                      type="button"
+                      onClick={() => void handleBulkAward(s.userId)}
+                      disabled={bs?.award === 'loading' || bs?.award === 'done'}
+                      className="rounded-full border border-neon-blue/40 bg-neon-blue/10 px-4 py-1.5 text-xs font-semibold text-neon-blue transition hover:bg-neon-blue/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {bs?.award === 'loading' ? '付与中...' : bs?.award === 'done' ? '付与完了' : bs?.award === 'error' ? 'エラー' : '全件を即時付与'}
+                    </button>
+                    {/* キャンセル+返還 */}
+                    <button
+                      type="button"
+                      onClick={() => void handleCancelPending(s.userId, s.pendingCount)}
+                      disabled={bs?.cancel === 'loading' || bs?.cancel === 'done'}
+                      className="rounded-full border border-red-400/40 bg-red-500/10 px-4 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {bs?.cancel === 'loading' ? '処理中...' : bs?.cancel === 'done' ? 'キャンセル完了' : bs?.cancel === 'error' ? 'エラー' : 'キャンセル＋チケット返還'}
+                    </button>
+                  </div>
+                  {bs?.cancelResult && (
+                    <p className="text-xs text-emerald-300">{bs.cancelResult}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
