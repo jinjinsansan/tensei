@@ -57,17 +57,24 @@ export default async function GachaPage() {
         <GachaPendingBanner />
 
         {/* 来世ガチャカード */}
-        <article className="relative overflow-hidden rounded-[36px] border border-white/8 bg-gradient-to-br from-[#06090f] via-[#0c1221] to-[#05070e] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.55)]">
-          <div className="relative rounded-[34px] bg-gradient-to-br from-[#0a0f1a] via-[#11192a] to-[#05070e] px-6 py-8 sm:px-8">
+        <article className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_60px_rgba(63,200,255,0.25),0_30px_80px_rgba(0,0,0,0.6)]"
+          style={{ background: 'linear-gradient(135deg, rgba(63,200,255,0.6) 0%, rgba(150,100,255,0.4) 40%, rgba(255,100,200,0.3) 100%)' }}>
+          <div className="relative overflow-hidden rounded-[35px] bg-gradient-to-br from-[#0d1528] via-[#111e35] to-[#0a0f1e] px-6 py-8 sm:px-8">
+            {/* 背景グロー群 */}
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(63,200,255,0.35),transparent_55%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.1),transparent_60%)]" />
-              <div className="absolute inset-0 border border-white/10 rounded-[34px]" />
+              <div className="absolute -left-10 -top-10 h-56 w-56 rounded-full bg-[#3fc8ff]/20 blur-3xl" />
+              <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#9664ff]/15 blur-3xl" />
+              <div className="absolute bottom-0 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full bg-[#3fc8ff]/10 blur-2xl" />
+              {/* 光沢ライン */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#3fc8ff]/60 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             </div>
+
             <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
-              <div className="flex flex-1 flex-col gap-6">
+              <div className="flex flex-1 flex-col gap-5">
+                {/* ヘッダー */}
                 <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white/20 bg-black/40 shadow-[0_0_35px_rgba(63,200,255,0.45)]">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[#3fc8ff]/50 bg-black/40 shadow-[0_0_24px_rgba(63,200,255,0.6),0_0_8px_rgba(63,200,255,0.4)]">
                     <Image
                       src="/kenta_cards/card01_convenience.png"
                       alt="健太 アイコン"
@@ -77,24 +84,31 @@ export default async function GachaPage() {
                     />
                   </div>
                   <div>
-                    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.4em] text-[#a8f1ff]">
+                    <span className="inline-flex items-center rounded-full border border-[#3fc8ff]/30 bg-[#3fc8ff]/10 px-3 py-1 text-[10px] uppercase tracking-[0.4em] text-[#7ddeff]">
                       GACHA
                     </span>
-                    <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_8px_25px_rgba(12,15,31,0.9)]">
+                    <h3 className="mt-1.5 font-display text-3xl text-white drop-shadow-[0_0_20px_rgba(63,200,255,0.5)]">
                       来世ガチャ
                     </h3>
                   </div>
                 </div>
-                <p className="text-sm leading-relaxed text-white/85">
+                {/* 説明文 */}
+                <p className="text-sm leading-relaxed text-white/80">
                   コンビニエンスストアの深夜バイトで働く22歳健太。チビハゲデブ独身の4重苦の58歳　冴えないサラリーマン正一。たくさんの主人公達に転生チャンスが訪れる！果たして望む来世を手に入れることが出来るのか？
                 </p>
-                <div className="flex flex-wrap gap-3 text-xs text-white/75">
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
+                {/* バッジ */}
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <span className="inline-flex items-center rounded-full border border-[#3fc8ff]/25 bg-[#3fc8ff]/8 px-4 py-1.5 text-[#a8f1ff]">
                     1チケットで必ず10連プレイ
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-[#9664ff]/25 bg-[#9664ff]/8 px-4 py-1.5 text-[#c4a8ff]">
+                    動画演出フル収録
                   </span>
                 </div>
               </div>
-              <div className="flex flex-1 items-center justify-center lg:justify-end">
+
+              {/* ガチャボタン */}
+              <div className="flex items-center justify-center lg:shrink-0">
                 <GachaButton />
               </div>
             </div>
