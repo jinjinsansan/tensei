@@ -153,10 +153,6 @@ function ActiveGachaPlayer({
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastReadyVideoKeyRef = useRef<string | null>(null);
-  const videoElRef = useRef<HTMLVideoElement | null>(null);
-  const hlsInstanceRef = useRef<import('hls.js').default | null>(null);
-  const [qualityLabel, setQualityLabel] = useState<'SD' | 'HD' | 'FHD'>('HD');
-
   const presentation = usePresentationConfig();
 
   const character = useMemo(() => getCharacter(gachaResult.characterId) ?? null, [gachaResult.characterId]);
@@ -591,72 +587,7 @@ function ActiveGachaPlayer({
     setVideoReady(true);
   }, [phaseVideoKey]);
 
-  // HLS 初期化：video の canPlayThrough/loadeddata に任せ、videoReady は触らない
-  useEffect(() => {
-    const videoEl = videoElRef.current;
-    if (!videoEl || !signedPhaseVideoSrc) return;
 
-    // フェーズ遷移時だけ videoReady をリセット（ここでは触らない）
-    // HLS または mp4 を video にセットするだけ
-
-    const tryHls = async () => {
-      const hlsUrl = buildHlsMasterUrl(signedPhaseVideoSrc);
-      if (!hlsUrl) {
-        // mp4 直接（変化なし）
-        return;
-      }
-
-      // ネイティブ HLS（Safari / iOS）
-      if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-        videoEl.src = hlsUrl;
-        videoEl.load();
-        return;
-      }
-
-      // hls.js
-      try {
-        const HlsLib = (await import('hls.js')).default;
-        if (!HlsLib.isSupported()) return; // mp4 のまま
-
-        if (hlsInstanceRef.current) {
-          hlsInstanceRef.current.destroy();
-          hlsInstanceRef.current = null;
-        }
-
-        const hls = new HlsLib({ startLevel: 1, maxBufferLength: 12 });
-        hlsInstanceRef.current = hls;
-        hls.loadSource(hlsUrl);
-        hls.attachMedia(videoEl);
-
-        hls.on(HlsLib.Events.LEVEL_SWITCHED, (_e, data) => {
-          const h = hls.levels?.[data.level]?.height ?? 1080;
-          setQualityLabel(h <= 360 ? 'SD' : h <= 720 ? 'HD' : 'FHD');
-        });
-
-        hls.on(HlsLib.Events.ERROR, (_e, data) => {
-          if (data.fatal) {
-            hls.destroy();
-            hlsInstanceRef.current = null;
-            // mp4 に戻す（onCanPlayThrough が再発火して videoReady になる）
-            videoEl.src = signedPhaseVideoSrc;
-            videoEl.load();
-          }
-        });
-      } catch {
-        // hls.js 読み込み失敗 → mp4 のまま継続
-      }
-    };
-
-    void tryHls();
-
-    return () => {
-      if (hlsInstanceRef.current) {
-        hlsInstanceRef.current.destroy();
-        hlsInstanceRef.current = null;
-      }
-    };
-  // signedPhaseVideoSrc が変わった（フェーズ遷移）ときだけ再実行
-  }, [signedPhaseVideoSrc]);
 
 
 
@@ -774,7 +705,6 @@ function ActiveGachaPlayer({
         {hasPhaseVideo ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
-              ref={videoElRef}
               src={signedPhaseVideoSrc ?? undefined}
               className="h-full w-full object-cover"
               autoPlay
@@ -806,12 +736,7 @@ function ActiveGachaPlayer({
           <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={skipDisabled} />
         </div>
 
-        {/* 品質バッジ：右下隅・10連オーバーレイと被らない位置 */}
-        <div className="pointer-events-none absolute bottom-2 right-3 z-30">
-          <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[9px] font-semibold tracking-wide text-white/55 backdrop-blur-sm border border-white/10">
-            {qualityLabel}
-          </span>
-        </div>
+
 
         {/* 非表示の動画プリロード */}
         <div className="hidden">
@@ -1020,24 +945,6 @@ function emojiForColor(color: CountdownSelection['pattern']['steps'][number]['co
   }
 }
 
-function buildHlsMasterUrl(mp4Url: string): string | null {
-  try {
-    const url = new URL(mp4Url);
 
-    // パス変換
-    const newPathname = url.pathname
-      .replace(/^\/videos\//, '/videos/hls/')
-      .replace(/\.mp4$/, '/master.m3u8');
-
-    // パスが変換されていない（HLSパス構造に変換できない）場合はスキップ
-    if (newPathname === url.pathname) return null;
-
-    // HLSファイルはパブリック配信のため Presigned クエリパラメータを除去
-    const hlsUrl = new URL(url.origin + newPathname);
-    return hlsUrl.toString();
-  } catch {
-    return null;
-  }
-}
 
 
