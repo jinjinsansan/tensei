@@ -154,6 +154,7 @@ function ActiveGachaPlayer({
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastReadyVideoKeyRef = useRef<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const allowUnmuteRef = useRef(false);
   const presentation = usePresentationConfig();
 
   const character = useMemo(() => getCharacter(gachaResult.characterId) ?? null, [gachaResult.characterId]);
@@ -532,12 +533,24 @@ function ActiveGachaPlayer({
   const handleAdvance = useCallback(() => {
     if (isControlsLocked(phase, videoReady)) return;
     setVideoReady(false);
+    allowUnmuteRef.current = true;
+    const v = videoRef.current;
+    if (v) {
+      v.muted = false;
+      void v.play().catch(() => undefined);
+    }
     progressPhase();
   }, [phase, videoReady, progressPhase]);
 
   const handleSkip = useCallback(() => {
     if (phase === 'CARD_REVEAL') return;
     setVideoReady(false);
+    allowUnmuteRef.current = true;
+    const v = videoRef.current;
+    if (v) {
+      v.muted = false;
+      void v.play().catch(() => undefined);
+    }
     startPhase('CARD_REVEAL');
   }, [phase, startPhase]);
 
@@ -587,6 +600,21 @@ function ActiveGachaPlayer({
     lastReadyVideoKeyRef.current = phaseVideoKey;
     setVideoReady(true);
   }, [phaseVideoKey]);
+
+  const syncVideoPlayback = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    void v.play().catch(() => undefined);
+    if (allowUnmuteRef.current) {
+      v.muted = false;
+      void v.play().catch(() => undefined);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncVideoPlayback();
+  }, [syncVideoPlayback, signedPhaseVideoSrc, phaseVideoKey]);
 
 
 
@@ -716,9 +744,6 @@ function ActiveGachaPlayer({
               playsInline
               onCanPlayThrough={handlePhaseVideoReady}
               onLoadedData={handlePhaseVideoReady}
-              onPlay={() => {
-                if (videoRef.current) videoRef.current.muted = false;
-              }}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
