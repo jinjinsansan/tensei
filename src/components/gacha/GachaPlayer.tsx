@@ -738,20 +738,8 @@ function ActiveGachaPlayer({
 
 
 
-        {/* 非表示の動画プリロード（display:none は preload を無効化するため fixed+opacity:0 を使用） */}
-        <div
-          style={{
-            position: 'fixed',
-            width: 1,
-            height: 1,
-            top: 0,
-            left: 0,
-            opacity: 0,
-            pointerEvents: 'none',
-            overflow: 'hidden',
-            zIndex: -1,
-          }}
-        >
+        {/* 次フェーズ動画のプリロード */}
+        <div className="hidden">
           {upcomingVideos.map((videoSrc) => (
             <video
               key={videoSrc}

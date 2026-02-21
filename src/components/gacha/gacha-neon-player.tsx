@@ -587,22 +587,9 @@ const COMMON_PRELOAD_VIDEOS: string[] = [
 
 function CommonVideoPreloader() {
   return (
-    <div
-      aria-hidden="true"
-      style={{
-        position: 'fixed',
-        width: 1,
-        height: 1,
-        top: 0,
-        left: 0,
-        opacity: 0,
-        pointerEvents: 'none',
-        overflow: 'hidden',
-        zIndex: -1,
-      }}
-    >
+    <div className="hidden" aria-hidden="true">
       {COMMON_PRELOAD_VIDEOS.map((src) => (
-        <video key={src} src={src} preload="auto" playsInline muted />
+        <video key={src} src={src} preload="metadata" playsInline muted />
       ))}
     </div>
   );
