@@ -191,22 +191,16 @@ const CARD_DOWNLOAD_IMAGES: Record<string, string> = {
   ...CARD_IMAGE_OVERRIDES,
 };
 
-const MOBILE_UA_REGEX = /Android|iPhone|iPad|iPod|iOS|Mobile/i;
-
-type NavigatorWithUAData = Navigator & {
-  userAgentData?: {
-    mobile?: boolean;
-  };
-};
-
 function isMobileDevice() {
   if (typeof navigator === "undefined") return false;
-  const nav = navigator as NavigatorWithUAData;
-  if (typeof nav.userAgentData?.mobile === "boolean") {
-    return Boolean(nav.userAgentData.mobile);
-  }
+  
+  // PC判定: Windows/Mac/Linux のいずれかが含まれていればPC
   const ua = navigator.userAgent || "";
-  return MOBILE_UA_REGEX.test(ua);
+  const isDesktop = /Windows|Macintosh|Linux/i.test(ua) && !/Android|Mobile/i.test(ua);
+  if (isDesktop) return false;
+  
+  // モバイル判定
+  return /Android|iPhone|iPad|iPod|iOS|Mobile/i.test(ua);
 }
 
 export function CollectionDetailClient({ entry, shareUrl, referralShareActive = false }: Props) {
@@ -372,8 +366,10 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
       });
 
     const shareOrDownloadBlob = async (blob: Blob) => {
-      const useShareSheet = isMobileDevice();
-      if (useShareSheet && navigator.share && typeof navigator.canShare === "function") {
+      const isMobile = isMobileDevice();
+      
+      // モバイルデバイスかつWeb Share API対応の場合のみシェアを試行
+      if (isMobile && navigator.share && typeof navigator.canShare === "function") {
         const file = new File([blob], `${entry.cardName || "card"}.png`, { type: "image/png" });
         if (navigator.canShare({ files: [file] })) {
           try {
@@ -383,11 +379,14 @@ export function CollectionDetailClient({ entry, shareUrl, referralShareActive = 
               files: [file],
             });
             return;
-          } catch {
-            console.log("Share cancelled or failed, falling back to download");
+          } catch (err) {
+            // ユーザーがキャンセルした場合やエラーの場合はダウンロードにフォールバック
+            console.log("Share cancelled or failed, falling back to download", err);
           }
         }
       }
+      
+      // PC、またはシェアが失敗した場合は通常のダウンロード
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
