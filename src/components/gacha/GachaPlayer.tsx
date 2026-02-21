@@ -354,11 +354,13 @@ function ActiveGachaPlayer({
 
   const startPhase = useCallback(
     (nextPhase: GachaPhase) => {
+      // フェーズ遷移時にvideoReady状態をリセット
+      setVideoReady(false);
+      lastReadyVideoKeyRef.current = null;
+
       switch (nextPhase) {
         case 'COUNTDOWN':
           setCountdownIndex(0);
-          // 静止画なので即座にvideoReadyをtrueに
-          setVideoReady(true);
           break;
         case 'PRE_SCENE':
           setPreSceneIndex(0);
@@ -587,6 +589,79 @@ function ActiveGachaPlayer({
     setVideoReady(true);
   }, [phaseVideoKey]);
 
+  // 次の3フェーズ分の動画をプリロード
+  const upcomingVideos = useMemo(() => {
+    const videos: string[] = [];
+    const addIfExists = (src: string | null) => {
+      if (src) videos.push(src);
+    };
+
+    switch (phase) {
+      case 'STANDBY':
+        // COUNTDOWN → PUCHUN → TITLE_VIDEO
+        countdownVideos.forEach((v) => addIfExists(v));
+        addIfExists(puchunVideo);
+        addIfExists(titleVideoSrc);
+        break;
+      case 'COUNTDOWN':
+        // PUCHUN → TITLE_VIDEO → PRE/CHANCE/MAIN
+        addIfExists(puchunVideo);
+        addIfExists(titleVideoSrc);
+        preSceneMeta?.videos.forEach((v) => addIfExists(v));
+        addIfExists(chanceSceneVideo);
+        break;
+      case 'PUCHUN':
+        // TITLE_VIDEO → PRE/CHANCE → MAIN
+        addIfExists(titleVideoSrc);
+        preSceneMeta?.videos.forEach((v) => addIfExists(v));
+        addIfExists(chanceSceneVideo);
+        primaryMainSceneVideos.slice(0, 3).forEach((v) => addIfExists(v));
+        break;
+      case 'TITLE_VIDEO':
+        // PRE → CHANCE → MAIN
+        preSceneMeta?.videos.forEach((v) => addIfExists(v));
+        addIfExists(chanceSceneVideo);
+        primaryMainSceneVideos.slice(0, 3).forEach((v) => addIfExists(v));
+        break;
+      case 'PRE_SCENE':
+        // CHANCE → MAIN → DONDEN
+        addIfExists(chanceSceneVideo);
+        primaryMainSceneVideos.slice(0, 3).forEach((v) => addIfExists(v));
+        dondenVideos.slice(0, 2).forEach((v) => addIfExists(v));
+        break;
+      case 'CHANCE_SCENE':
+        // MAIN → DONDEN → REVEAL_MAIN
+        primaryMainSceneVideos.forEach((v) => addIfExists(v));
+        dondenVideos.slice(0, 2).forEach((v) => addIfExists(v));
+        revealMainSceneVideos.slice(0, 2).forEach((v) => addIfExists(v));
+        break;
+      case 'MAIN_SCENE':
+        if (mainSceneMode === 'primary') {
+          dondenVideos.forEach((v) => addIfExists(v));
+          revealMainSceneVideos.forEach((v) => addIfExists(v));
+        }
+        break;
+      case 'DONDEN_SCENE':
+        revealMainSceneVideos.forEach((v) => addIfExists(v));
+        break;
+      default:
+        break;
+    }
+
+    return videos.slice(0, 5); // 最大5本まで
+  }, [
+    phase,
+    countdownVideos,
+    puchunVideo,
+    titleVideoSrc,
+    preSceneMeta,
+    chanceSceneVideo,
+    primaryMainSceneVideos,
+    mainSceneMode,
+    dondenVideos,
+    revealMainSceneVideos,
+  ]);
+
   // CARD_REVEAL フェーズになったら CardReveal を表示
   if (phase === 'CARD_REVEAL') {
     const cardData = {
@@ -628,7 +703,6 @@ function ActiveGachaPlayer({
         {signedPhaseVideoSrc ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
-              key={phaseVideoKey}
               src={signedPhaseVideoSrc}
               className="h-full w-full object-cover"
               autoPlay
@@ -658,6 +732,18 @@ function ActiveGachaPlayer({
         <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-8">
           <RoundMetalButton label="NEXT" subLabel="次へ" onClick={handleAdvance} disabled={disableNext} />
           <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={skipDisabled} />
+        </div>
+
+        {/* 非表示の動画プリロード */}
+        <div className="hidden">
+          {upcomingVideos.map((videoSrc) => (
+            <video
+              key={videoSrc}
+              src={resolveAssetSrc(videoSrc) ?? undefined}
+              preload="auto"
+              playsInline
+            />
+          ))}
         </div>
       </div>
     </div>
