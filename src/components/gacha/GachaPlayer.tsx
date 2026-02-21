@@ -708,6 +708,7 @@ function ActiveGachaPlayer({
               src={signedPhaseVideoSrc ?? undefined}
               className="h-full w-full object-cover"
               autoPlay
+              muted
               preload="auto"
               loop={phaseVideoLoop}
               playsInline
