@@ -4,26 +4,6 @@ interface Env {
 
 const CACHE_MAX_AGE = 2592000; // 30日
 
-// Range ヘッダーをキャッシュ済みの全体レスポンスに適用して 206 を返す
-function applyRangeToFullResponse(fullResponse: Response, rangeHeader: string): Response {
-  const contentLength = Number(fullResponse.headers.get('Content-Length') ?? '0');
-  const match = /bytes=(\d*)-(\d*)/.exec(rangeHeader);
-  if (!match || !contentLength) return fullResponse;
-
-  const start = match[1] ? parseInt(match[1], 10) : 0;
-  const end = match[2] ? parseInt(match[2], 10) : contentLength - 1;
-  const safeEnd = Math.min(end, contentLength - 1);
-  const safeStart = Math.max(0, start);
-  const chunkSize = safeEnd - safeStart + 1;
-
-  const headers = new Headers(fullResponse.headers);
-  headers.set('Content-Range', `bytes ${safeStart}-${safeEnd}/${contentLength}`);
-  headers.set('Content-Length', String(chunkSize));
-  headers.set('CF-Cache-Status', 'HIT');
-
-  return new Response(fullResponse.body, { status: 206, headers });
-}
-
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     if (request.method === 'OPTIONS') {
@@ -41,23 +21,22 @@ const worker = {
     const cache = caches.default;
     const rangeHeader = request.headers.get('Range');
 
-    // キャッシュキーは Range を除いた URL（全体キャッシュ）
+    // キャッシュキーは Range を除いた URL（全体レスポンスをキャッシュする）
     const cacheKey = new Request(url.toString(), { method: 'GET' });
 
-    // キャッシュ HIT: Range があれば切り出して返す
+    // キャッシュ HIT の場合: Cloudflare の cache.match は Range を自動処理する
     const cached = await cache.match(cacheKey);
     if (cached) {
-      if (rangeHeader) {
-        return applyRangeToFullResponse(cached, rangeHeader);
-      }
-      const res = new Response(cached.body, cached);
-      res.headers.set('CF-Cache-Status', 'HIT');
-      return res;
+      const headers = new Headers(cached.headers);
+      headers.set('CF-Cache-Status', 'HIT');
+      return new Response(cached.body, { status: cached.status, headers });
     }
 
-    // キャッシュ MISS: R2 から全体取得してキャッシュに保存
+    // キャッシュ MISS: R2 から Range に応じて取得
     const objectKey = url.pathname.slice(1);
-    const object = await env.R2_BUCKET.get(objectKey);
+    const object = rangeHeader
+      ? await env.R2_BUCKET.get(objectKey, { range: request.headers })
+      : await env.R2_BUCKET.get(objectKey);
 
     if (!object) {
       return new Response('Not Found', { status: 404 });
@@ -71,20 +50,26 @@ const worker = {
     headers.set('Access-Control-Allow-Origin', '*');
     headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     headers.set('Accept-Ranges', 'bytes');
-    headers.set('Content-Length', String(object.size));
     headers.set('CF-Cache-Status', 'MISS');
 
-    const fullResponse = new Response(object.body, { status: 200, headers });
-
-    // エッジキャッシュに保存（次回以降は R2 不要）
-    ctx.waitUntil(cache.put(cacheKey, fullResponse.clone()));
-
-    // Range リクエストなら切り出して返す
-    if (rangeHeader) {
-      return applyRangeToFullResponse(fullResponse.clone(), rangeHeader);
+    let status = 200;
+    if (rangeHeader && object.range && 'offset' in object.range) {
+      const { offset, length } = object.range as { offset: number; length: number };
+      headers.set('Content-Range', `bytes ${offset}-${offset + length - 1}/${object.size}`);
+      headers.set('Content-Length', String(length));
+      status = 206;
+    } else {
+      headers.set('Content-Length', String(object.size));
     }
 
-    return fullResponse;
+    const response = new Response(object.body, { status, headers });
+
+    // 全体取得（非 Range）のときだけキャッシュに保存
+    if (!rangeHeader) {
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+    }
+
+    return response;
   },
 };
 
