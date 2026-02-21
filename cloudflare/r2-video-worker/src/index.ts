@@ -3,6 +3,7 @@ interface Env {
 }
 
 const CACHE_MAX_AGE = 2592000; // 30日
+const CACHE_VERSION = 'v2'; // ファイル更新時にここを変えてエッジキャッシュをパージ
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -21,8 +22,9 @@ const worker = {
     const cache = caches.default;
     const rangeHeader = request.headers.get('Range');
 
-    // キャッシュキーは Range を除いた URL（全体レスポンスをキャッシュする）
-    const cacheKey = new Request(url.toString(), { method: 'GET' });
+    // キャッシュキーはバージョン付き URL（CACHE_VERSION を変えると全キャッシュ無効化）
+    const versionedUrl = `${url.toString()}?_cv=${CACHE_VERSION}`;
+    const cacheKey = new Request(versionedUrl, { method: 'GET' });
 
     // キャッシュ HIT の場合: Cloudflare の cache.match は Range を自動処理する
     const cached = await cache.match(cacheKey);
