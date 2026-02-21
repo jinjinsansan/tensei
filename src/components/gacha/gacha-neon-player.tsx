@@ -52,8 +52,8 @@ export function GachaNeonPlayer({
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [skipAllRequested, setSkipAllRequested] = useState(false);
   const [showPendingBanner, setShowPendingBanner] = useState(true);
-  // ガチャ中のページ離脱を検知するためのフラグ
   const activePullsRef = useRef<PlayerPull[] | null>(null);
+  const claimsRef = useRef<Record<string, ClaimState>>({});
   const [claims, setClaims] = useState<Record<string, ClaimState>>({});
   const [error, setError] = useState<string | null>(null);
   const [currentPhase, setCurrentPhase] = useState<GachaPhase | null>(null);
@@ -66,17 +66,24 @@ export function GachaNeonPlayer({
   const normalizedLabel = typeof playLabel === "string" ? playLabel.replace(/\\n/g, "\n") : playLabel;
   const isDisabled = isLoading || Boolean(activePulls);
 
-  // beforeunload: ガチャ演出中の離脱時に警告
+  // claimsRef を常に最新に保つ（beforeunload から参照するため）
+  useEffect(() => {
+    claimsRef.current = claims;
+  });
+
+  // beforeunload: ガチャ演出中の離脱時に警告（依存配列なし＝マウント時に1度だけ登録）
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (!activePullsRef.current) return;
-      const unclaimed = activePullsRef.current.filter((p) => p.resultId && !claims[p.resultId]?.serialNumber);
+      const unclaimed = activePullsRef.current.filter(
+        (p) => p.resultId && !claimsRef.current[p.resultId]?.serialNumber,
+      );
       if (unclaimed.length === 0) return;
       e.preventDefault();
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [claims]);
+  }, []);
 
   const startPlay = useCallback(async () => {
     if (isDisabled) return;
