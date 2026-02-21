@@ -37,6 +37,7 @@ type Props = {
   buttonWrapperClassName?: string;
   onSessionActive?: (active: boolean) => void;
   pendingPullsToResume?: PendingPull[] | null;
+  disabledByPending?: boolean;
 };
 
 export type { PendingPull };
@@ -49,6 +50,7 @@ export function GachaNeonPlayer({
   buttonWrapperClassName,
   onSessionActive,
   pendingPullsToResume,
+  disabledByPending = false,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [activePulls, setActivePulls] = useState<PlayerPull[] | null>(null);
@@ -68,7 +70,7 @@ export function GachaNeonPlayer({
   const showPlayer = Boolean(currentPull) && !summaryOpen && !skipAllRequested;
   const activeResult = showPlayer ? currentPull?.gachaResult ?? null : null;
   const normalizedLabel = typeof playLabel === "string" ? playLabel.replace(/\\n/g, "\n") : playLabel;
-  const isDisabled = isLoading || Boolean(activePulls);
+  const isDisabled = isLoading || Boolean(activePulls) || disabledByPending;
 
   // claimsRef を常に最新に保つ（beforeunload から参照するため）
   useEffect(() => {

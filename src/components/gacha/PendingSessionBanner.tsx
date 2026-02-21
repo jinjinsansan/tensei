@@ -28,9 +28,10 @@ type PendingResponse = {
 type Props = {
   onResume: (pulls: PendingPull[]) => void;
   onDismiss: () => void;
+  onPendingDetected?: (hasPending: boolean) => void;
 };
 
-export function PendingSessionBanner({ onResume, onDismiss }: Props) {
+export function PendingSessionBanner({ onResume, onDismiss, onPendingDetected }: Props) {
   const [state, setState] = useState<'loading' | 'none' | 'pending'>('loading');
   const [pulls, setPulls] = useState<PendingPull[]>([]);
   const [sessionTime, setSessionTime] = useState<string | null>(null);
@@ -46,16 +47,23 @@ export function PendingSessionBanner({ onResume, onDismiss }: Props) {
           setPulls(data.pulls);
           setSessionTime(data.sessionCreatedAt);
           setState('pending');
+          onPendingDetected?.(true);
         } else {
           setState('none');
+          onPendingDetected?.(false);
         }
       })
       .catch(() => {
-        if (!cancelled) setState('none');
+        if (!cancelled) {
+          setState('none');
+          onPendingDetected?.(false);
+        }
       });
     return () => {
       cancelled = true;
     };
+  // onPendingDetected は初回マウント時のみ実行
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleResume = useCallback(() => {
