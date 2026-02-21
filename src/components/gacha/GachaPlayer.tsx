@@ -153,6 +153,7 @@ function ActiveGachaPlayer({
   const countdownColorRef = useRef<CdColor | null>(null);
   const prevPhaseRef = useRef<GachaPhase>('STANDBY');
   const lastReadyVideoKeyRef = useRef<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const presentation = usePresentationConfig();
 
   const character = useMemo(() => getCharacter(gachaResult.characterId) ?? null, [gachaResult.characterId]);
@@ -705,14 +706,19 @@ function ActiveGachaPlayer({
         {hasPhaseVideo ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
+              ref={videoRef}
               src={signedPhaseVideoSrc ?? undefined}
               className="h-full w-full object-cover"
               autoPlay
+              muted
               preload="auto"
               loop={phaseVideoLoop}
               playsInline
               onCanPlayThrough={handlePhaseVideoReady}
               onLoadedData={handlePhaseVideoReady}
+              onPlay={() => {
+                if (videoRef.current) videoRef.current.muted = false;
+              }}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
