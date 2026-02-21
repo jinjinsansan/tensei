@@ -1023,12 +1023,18 @@ function emojiForColor(color: CountdownSelection['pattern']['steps'][number]['co
 function buildHlsMasterUrl(mp4Url: string): string | null {
   try {
     const url = new URL(mp4Url);
-    url.pathname = url.pathname
+
+    // パス変換
+    const newPathname = url.pathname
       .replace(/^\/videos\//, '/videos/hls/')
       .replace(/\.mp4$/, '/master.m3u8');
-    // パス変換が実際に起きた場合のみ HLS URL を返す
-    if (url.pathname === new URL(mp4Url).pathname) return null;
-    return url.toString();
+
+    // パスが変換されていない（HLSパス構造に変換できない）場合はスキップ
+    if (newPathname === url.pathname) return null;
+
+    // HLSファイルはパブリック配信のため Presigned クエリパラメータを除去
+    const hlsUrl = new URL(url.origin + newPathname);
+    return hlsUrl.toString();
   } catch {
     return null;
   }
