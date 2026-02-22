@@ -147,6 +147,7 @@ function ActiveGachaPlayer({
   const [dondenIndex, setDondenIndex] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
+  const bufferingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [serialNumber, setSerialNumber] = useState<number | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
@@ -748,8 +749,16 @@ function ActiveGachaPlayer({
               playsInline
               onCanPlayThrough={handlePhaseVideoReady}
               onLoadedData={handlePhaseVideoReady}
-              onWaiting={() => setIsBuffering(true)}
-              onPlaying={() => setIsBuffering(false)}
+              onWaiting={() => {
+                bufferingTimerRef.current = setTimeout(() => setIsBuffering(true), 800);
+              }}
+              onPlaying={() => {
+                if (bufferingTimerRef.current) {
+                  clearTimeout(bufferingTimerRef.current);
+                  bufferingTimerRef.current = null;
+                }
+                setIsBuffering(false);
+              }}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
