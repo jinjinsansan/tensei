@@ -3,7 +3,7 @@ interface Env {
 }
 
 const CACHE_MAX_AGE = 2592000; // 30日
-const CACHE_VERSION = 'v3'; // ファイル更新時にここを変えてエッジキャッシュをパージ
+const CACHE_VERSION = 'v4'; // ファイル更新時にここを変えてエッジキャッシュをパージ
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
