@@ -2,9 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { GachaStateProvider, GachaPendingBanner, GachaButton } from "@/components/gacha/GachaSection";
+import { BattleGachaButton } from "@/components/gacha/BattleGachaSection";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { getSessionWithSnapshot } from "@/lib/app/session";
+import { getServiceSupabase } from "@/lib/supabase/service";
+import { fetchBattleGachaSettings } from "@/lib/data/battle-gacha";
 import type { TicketBalanceItem } from "@/lib/utils/tickets";
 
 const FALLBACK_TICKETS: TicketBalanceItem[] = [
@@ -28,8 +31,21 @@ async function getTicketBalancesSafe() {
   }
 }
 
+async function getBattleEnabled(): Promise<boolean> {
+  try {
+    const supabase = getServiceSupabase();
+    const settings = await fetchBattleGachaSettings(supabase);
+    return settings.isEnabled;
+  } catch {
+    return false;
+  }
+}
+
 export default async function GachaPage() {
-  const tickets = await getTicketBalancesSafe();
+  const [tickets, battleEnabled] = await Promise.all([
+    getTicketBalancesSafe(),
+    getBattleEnabled(),
+  ]);
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-10 pb-10">
@@ -115,7 +131,7 @@ export default async function GachaPage() {
           </div>
         </article>
 
-        {/* バトルガチャカード（準備中） */}
+        {/* バトルガチャカード */}
         <article className="relative overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-br from-[#12030b] via-[#1c090f] to-[#050103] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.55)] opacity-95">
           <div className="relative rounded-[34px] bg-gradient-to-br from-[#1b050b] via-[#120107] to-[#050001] px-6 py-8 sm:px-8">
             <div className="pointer-events-none absolute inset-0">
@@ -123,9 +139,11 @@ export default async function GachaPage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.08),transparent_60%)]" />
               <div className="absolute inset-0 border border-white/10 rounded-[34px]" />
             </div>
-            <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#ff6fb0] to-[#ff4378] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(255,67,120,0.35)]">
-              準備中
-            </div>
+            {!battleEnabled && (
+              <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#ff6fb0] to-[#ff4378] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(255,67,120,0.35)]">
+                準備中
+              </div>
+            )}
             <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
               <div className="flex flex-1 flex-col gap-6">
                 <div className="flex items-center gap-4">
@@ -150,18 +168,25 @@ export default async function GachaPage() {
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs text-white/70">
                   <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
-                    1チケットで10連予定
+                    1チケットで10連
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
+                    バトル演出フル収録
                   </span>
                 </div>
               </div>
               <div className="flex flex-1 items-center justify-center lg:justify-end">
                 <div className="w-full max-w-[150px]">
-                  <RoundMetalButton
-                    label={"ガチャを\n始める"}
-                    subLabel="START"
-                    disabled
-                    className="mx-auto"
-                  />
+                  {battleEnabled ? (
+                    <BattleGachaButton />
+                  ) : (
+                    <RoundMetalButton
+                      label={"ガチャを\n始める"}
+                      subLabel="START"
+                      disabled
+                      className="mx-auto"
+                    />
+                  )}
                 </div>
               </div>
             </div>

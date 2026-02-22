@@ -13,6 +13,7 @@ const links = [
   { href: '/admin/cards', label: 'カード管理' },
   { href: '/admin/scenarios', label: 'シナリオ管理' },
   { href: '/admin/settings', label: 'RTP設定' },
+  { href: '/admin/battle-gacha', label: 'バトルガチャ設定' },
   { href: '/admin/presentation', label: '演出確率設定' },
   { href: '/admin/countdown-patterns', label: 'カウントダウンパターン' },
   { href: '/admin/newsletters', label: 'メルマガ配信' },
