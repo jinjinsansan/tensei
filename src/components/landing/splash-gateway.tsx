@@ -8,15 +8,25 @@ import Image from "next/image";
 type AnimationPhase = "first" | "shuffle" | "last" | "logo" | "complete";
 
 const SHUFFLE_CARDS = [
-  "/splash_cards_reiko/reiko_card02.png",
+  "/splash_cards_kenta/card02_warehouse.png",
+  "/splash_cards_kenta/card05_ramen.png",
+  "/splash_cards_kenta/card08_business_owner.png",
+  "/splash_cards_kenta/card11_demon_king.png",
+  "/splash_cards_shoichi/shoichi_card03_host.png",
+  "/splash_cards_shoichi/shoichi_card06_ikemen.png",
+  "/splash_cards_shoichi/shoichi_card09_youth_love.png",
+  "/splash_cards_shoichi/shoichi_card12_investor.png",
+  "/splash_cards_tatumi/tatumi_card03.png",
+  "/splash_cards_tatumi/tatumi_card06.png",
+  "/splash_cards_tatumi/tatumi_card09.png",
+  "/splash_cards_tatumi/tatumi_card12.png",
+  "/splash_cards_yahei/yahei_card03.png",
+  "/splash_cards_yahei/yahei_card06.png",
+  "/splash_cards_yahei/yahei_card09.png",
+  "/splash_cards_yahei/yahei_card12.png",
   "/splash_cards_reiko/reiko_card03.png",
-  "/splash_cards_reiko/reiko_card04.png",
-  "/splash_cards_reiko/reiko_card05.png",
   "/splash_cards_reiko/reiko_card06.png",
-  "/splash_cards_reiko/reiko_card07.png",
-  "/splash_cards_reiko/reiko_card08.png",
   "/splash_cards_reiko/reiko_card09.png",
-  "/splash_cards_reiko/reiko_card10.png",
   "/splash_cards_reiko/reiko_card11.png",
 ];
 const SHUFFLE_SPEED_MS = 70;
@@ -60,6 +70,7 @@ export function SplashGateway() {
         {SHUFFLE_CARDS.map((card) => (
           <Image key={card} src={card} alt="preload" width={1} height={1} priority />
         ))}
+        <Image src="/splash_cards_kenta/card01_convenience.png" alt="preload" width={1} height={1} priority />
         <Image src="/splash_cards_reiko/reiko_card12.png" alt="preload" width={1} height={1} priority />
       </div>
       
@@ -79,7 +90,7 @@ export function SplashGateway() {
               transition={{ duration: 0.3 }}
             >
               <Image
-                src="/splash_cards_reiko/reiko_card01.png"
+                src="/splash_cards_kenta/card01_convenience.png"
                 alt="来世ガチャ"
                 fill
                 priority
@@ -117,6 +128,7 @@ export function SplashGateway() {
                 priority
                 className="object-cover"
               />
+
             </motion.div>
 
             {/* Logo Overlay */}
