@@ -45,13 +45,27 @@ export type ResultResponse = {
   inventoryId: string | null;
 };
 
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 export async function playGacha(configSlug?: string): Promise<PlayResponse> {
   const payload = configSlug ? { configSlug } : {};
-  const res = await fetch('/api/gacha/play', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(
+      '/api/gacha/play',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) },
+      30000,
+    );
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new Error('通信がタイムアウトしました。回線状況を確認してから再度お試しください。');
+    }
+    throw e;
+  }
   const data = await res.json();
   if (!res.ok || !data.success) {
     throw new Error(data.error ?? 'ガチャを開始できませんでした。');
@@ -60,11 +74,19 @@ export async function playGacha(configSlug?: string): Promise<PlayResponse> {
 }
 
 export async function claimGachaResult(resultId: string): Promise<ResultResponse> {
-  const res = await fetch('/api/gacha/result', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ resultId }),
-  });
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(
+      '/api/gacha/result',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ resultId }) },
+      30000,
+    );
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new Error('通信がタイムアウトしました。時間をおいて再度お試しください。');
+    }
+    throw e;
+  }
   const data = await res.json();
   if (!res.ok || !data.success) {
     throw new Error(data.error ?? 'ガチャ結果を取得できませんでした。');
