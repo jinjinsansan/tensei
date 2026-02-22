@@ -38,10 +38,10 @@ export function SplashGateway() {
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setPhase("shuffle"), 500),
-      setTimeout(() => setPhase("last"), 2500),
-      setTimeout(() => setPhase("logo"), 3000),
-      setTimeout(() => setPhase("complete"), 4500),
+      setTimeout(() => setPhase("shuffle"), 800),
+      setTimeout(() => setPhase("last"), 4000),
+      setTimeout(() => setPhase("logo"), 4600),
+      setTimeout(() => setPhase("complete"), 6500),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -71,7 +71,7 @@ export function SplashGateway() {
           <Image key={card} src={card} alt="preload" width={1} height={1} priority />
         ))}
         <Image src="/splash_cards_kenta/card01_convenience.png" alt="preload" width={1} height={1} priority />
-        <Image src="/splash_cards_reiko/reiko_card12.png" alt="preload" width={1} height={1} priority />
+        <Image src="/splash_cards_kenta/card12_hero.png" alt="preload" width={1} height={1} priority />
       </div>
       
       <div className="pointer-events-none absolute inset-0 opacity-50">
@@ -122,13 +122,12 @@ export function SplashGateway() {
               transition={{ duration: 0.3 }}
             >
               <Image
-                src="/splash_cards_reiko/reiko_card12.png"
+                src="/splash_cards_kenta/card12_hero.png"
                 alt="来世ガチャ"
                 fill
                 priority
                 className="object-cover"
               />
-
             </motion.div>
 
             {/* Logo Overlay */}
