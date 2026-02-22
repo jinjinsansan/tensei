@@ -12,7 +12,7 @@ export function getCharacter(characterId: CharacterId): CharacterModule | undefi
 
 // 文字列からCharacterIdへの安全な変換（型ガード）
 export function isValidCharacterId(value: string): value is CharacterId {
-  return value === 'kenta' || value === 'shoichi' || value === 'tatumi' || value === 'yahei';
+  return value === 'kenta' || value === 'shoichi' || value === 'tatumi' || value === 'yahei' || value === 'reiko';
 }
 
 export function listCharacters(): CharacterModule[] {

@@ -8,16 +8,16 @@ import Image from "next/image";
 type AnimationPhase = "first" | "shuffle" | "last" | "logo" | "complete";
 
 const SHUFFLE_CARDS = [
-  "/splash_cards_kenta/card02_warehouse.png",
-  "/splash_cards_kenta/card03_youtuber.png",
-  "/splash_cards_kenta/card04_civil_servant.png",
-  "/splash_cards_kenta/card05_ramen.png",
-  "/splash_cards_kenta/card06_boxer.png",
-  "/splash_cards_kenta/card07_surgeon.png",
-  "/splash_cards_kenta/card08_business_owner.png",
-  "/splash_cards_kenta/card09_mercenary.png",
-  "/splash_cards_kenta/card10_rockstar.png",
-  "/splash_cards_kenta/card11_demon_king.png",
+  "/splash_cards_reiko/reiko_card02.png",
+  "/splash_cards_reiko/reiko_card03.png",
+  "/splash_cards_reiko/reiko_card04.png",
+  "/splash_cards_reiko/reiko_card05.png",
+  "/splash_cards_reiko/reiko_card06.png",
+  "/splash_cards_reiko/reiko_card07.png",
+  "/splash_cards_reiko/reiko_card08.png",
+  "/splash_cards_reiko/reiko_card09.png",
+  "/splash_cards_reiko/reiko_card10.png",
+  "/splash_cards_reiko/reiko_card11.png",
 ];
 const SHUFFLE_SPEED_MS = 70;
 
@@ -60,7 +60,7 @@ export function SplashGateway() {
         {SHUFFLE_CARDS.map((card) => (
           <Image key={card} src={card} alt="preload" width={1} height={1} priority />
         ))}
-        <Image src="/splash_cards_kenta/card12_hero.png" alt="preload" width={1} height={1} priority />
+        <Image src="/splash_cards_reiko/reiko_card12.png" alt="preload" width={1} height={1} priority />
       </div>
       
       <div className="pointer-events-none absolute inset-0 opacity-50">
@@ -79,7 +79,7 @@ export function SplashGateway() {
               transition={{ duration: 0.3 }}
             >
               <Image
-                src="/splash_cards_kenta/card01_convenience.png"
+                src="/splash_cards_reiko/reiko_card01.png"
                 alt="来世ガチャ"
                 fill
                 priority
@@ -111,7 +111,7 @@ export function SplashGateway() {
               transition={{ duration: 0.3 }}
             >
               <Image
-                src="/splash_cards_kenta/card12_hero.png"
+                src="/splash_cards_reiko/reiko_card12.png"
                 alt="来世ガチャ"
                 fill
                 priority

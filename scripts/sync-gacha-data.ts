@@ -15,6 +15,9 @@ import { TATUMI_MODULE } from '@/lib/gacha/characters/tatumi/tatumi-module';
 import { YAHEI_CARDS, YAHEI_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/yahei/yahei-cards';
 import { YAHEI_DONDEN_ROUTES } from '@/lib/gacha/characters/yahei/yahei-donden';
 import { YAHEI_MODULE } from '@/lib/gacha/characters/yahei/yahei-module';
+import { REIKO_CARDS, REIKO_CARD_DESCRIPTIONS } from '@/lib/gacha/characters/reiko/reiko-cards';
+import { REIKO_DONDEN_ROUTES } from '@/lib/gacha/characters/reiko/reiko-donden';
+import { REIKO_MODULE } from '@/lib/gacha/characters/reiko/reiko-module';
 import {
   mapCardModuleIdToDbId,
   mapCharacterModuleIdToDbId,
@@ -76,6 +79,15 @@ const CHARACTER_CONFIGS: Record<CharacterId, CharacterSyncConfig> = {
     profile: '弥平モジュール（来世ガチャ）',
     expectationLevel: 4,
     sortOrder: 4,
+  },
+  reiko: {
+    module: REIKO_MODULE,
+    cards: REIKO_CARDS,
+    descriptions: REIKO_CARD_DESCRIPTIONS,
+    dondenRoutes: REIKO_DONDEN_ROUTES,
+    profile: '霊能者・麗子モジュール（来世ガチャ）',
+    expectationLevel: 4,
+    sortOrder: 5,
   },
 };
 

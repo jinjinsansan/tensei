@@ -159,6 +159,22 @@ export function HowToPlayScreen() {
               ))}
             </div>
           </div>
+
+          {/* 麗子編 */}
+          <div className="rounded-2xl border border-pink-400/30 bg-gradient-to-br from-pink-950/40 to-transparent p-4">
+            <p className="mb-3 font-display text-lg text-pink-300">麗子編</p>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { src: '/splash_cards_reiko/reiko_card01.png', alt: '麗子カード1' },
+                { src: '/splash_cards_reiko/reiko_card06.png', alt: '麗子カード6' },
+                { src: '/splash_cards_reiko/reiko_card12.png', alt: '麗子カード12' },
+              ].map((card) => (
+                <div key={card.src} className="aspect-[3/4] overflow-hidden rounded-xl border border-white/10 bg-black/40">
+                  <Image src={card.src} alt={card.alt} width={120} height={160} className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <Link

@@ -60,11 +60,27 @@ const YAHEI_CARD_IMAGE_OVERRIDES: Record<string, string> = {
   card12_timetravel: '/yahei_cards_v2/yahei_card12.png',
 };
 
+const REIKO_CARD_IMAGE_OVERRIDES: Record<string, string> = {
+  reiko_card01: '/reiko_cards_v2/reiko_card01.png',
+  reiko_card02: '/reiko_cards_v2/reiko_card02.png',
+  reiko_card03: '/reiko_cards_v2/reiko_card03.png',
+  reiko_card04: '/reiko_cards_v2/reiko_card04.png',
+  reiko_card05: '/reiko_cards_v2/reiko_card05.png',
+  reiko_card06: '/reiko_cards_v2/reiko_card06.png',
+  reiko_card07: '/reiko_cards_v2/reiko_card07.png',
+  reiko_card08: '/reiko_cards_v2/reiko_card08.png',
+  reiko_card09: '/reiko_cards_v2/reiko_card09.png',
+  reiko_card10: '/reiko_cards_v2/reiko_card10.png',
+  reiko_card11: '/reiko_cards_v2/reiko_card11.png',
+  reiko_card12: '/reiko_cards_v2/reiko_card12.png',
+};
+
 const CARD_IMAGE_OVERRIDES: Record<string, string> = {
   ...KENTA_CARD_IMAGE_OVERRIDES,
   ...SHOICHI_CARD_IMAGE_OVERRIDES,
   ...TATUMI_CARD_IMAGE_OVERRIDES,
   ...YAHEI_CARD_IMAGE_OVERRIDES,
+  ...REIKO_CARD_IMAGE_OVERRIDES,
 };
 
 const SERIAL_INSET_CARD_IDS = new Set(Object.keys(CARD_IMAGE_OVERRIDES));
@@ -95,5 +111,6 @@ export {
   SHOICHI_CARD_IMAGE_OVERRIDES,
   TATUMI_CARD_IMAGE_OVERRIDES,
   YAHEI_CARD_IMAGE_OVERRIDES,
+  REIKO_CARD_IMAGE_OVERRIDES,
   CARD_IMAGE_OVERRIDES,
 };
