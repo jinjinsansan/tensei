@@ -146,6 +146,7 @@ function ActiveGachaPlayer({
   const [mainSceneMode, setMainSceneMode] = useState<'primary' | 'reveal'>('primary');
   const [dondenIndex, setDondenIndex] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [serialNumber, setSerialNumber] = useState<number | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
@@ -747,9 +748,17 @@ function ActiveGachaPlayer({
               playsInline
               onCanPlayThrough={handlePhaseVideoReady}
               onLoadedData={handlePhaseVideoReady}
+              onWaiting={() => setIsBuffering(true)}
+              onPlaying={() => setIsBuffering(false)}
             />
             {phase === 'TITLE_VIDEO' && titleSelection && (
               <StarOverlay starCount={titleSelection.starDisplay} />
+            )}
+            {isBuffering && (
+              <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-yellow-400" />
+                <span className="text-[0.6rem] font-medium tracking-widest text-yellow-300">ネットワーク低</span>
+              </div>
             )}
           </div>
         ) : phase === 'LOSS_REVEAL' && signedLossCardImage ? (
