@@ -605,11 +605,14 @@ function ActiveGachaPlayer({
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
-    void v.play().catch(() => undefined);
-    if (allowUnmuteRef.current) {
-      v.muted = false;
-      void v.play().catch(() => undefined);
-    }
+    const shouldUnmute = allowUnmuteRef.current;
+    void v.play()
+      .then(() => {
+        if (shouldUnmute && videoRef.current) {
+          videoRef.current.muted = false;
+        }
+      })
+      .catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -769,14 +772,18 @@ function ActiveGachaPlayer({
 
 
 
-        {/* 次フェーズ動画のプリロード */}
-        <div className="hidden">
+        {/* 次フェーズ動画のプリロード（iOS Safari は display:none だと preload が無視されるため 1x1px 固定配置） */}
+        <div
+          aria-hidden="true"
+          style={{ position: 'fixed', top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: 'none', overflow: 'hidden' }}
+        >
           {upcomingVideos.map((videoSrc) => (
             <video
               key={videoSrc}
               src={resolveAssetSrc(videoSrc) ?? undefined}
               preload="auto"
               playsInline
+              muted
             />
           ))}
         </div>
