@@ -16,6 +16,8 @@ type PlayerPull = {
   order: number;
   resultId: string | null;
   gachaResult: GachaResult;
+  opponentCharacterId: string;
+  opponentStarLevel: number;
 };
 
 type ClaimState = {
@@ -76,6 +78,8 @@ export function BattleGachaNeonPlayer({ containerClassName, buttonWrapperClassNa
         order: p.order,
         resultId: p.resultId,
         gachaResult: p.gachaResult,
+        opponentCharacterId: p.opponentCharacterId,
+        opponentStarLevel: p.opponentStarLevel,
       }));
       setActivePulls(pulls);
       activePullsRef.current = pulls;
@@ -222,6 +226,8 @@ export function BattleGachaNeonPlayer({ containerClassName, buttonWrapperClassNa
       {showPlayer && currentPull && !isSkipping ? (
         <BattleGachaPlayer
           gachaResult={currentPull.gachaResult}
+          opponentCharacterId={currentPull.opponentCharacterId}
+          opponentStarLevel={currentPull.opponentStarLevel}
           onClose={handlePlayerClose}
           resultId={currentPull.resultId}
           onResultResolved={handleResultResolved}
@@ -308,10 +314,16 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
 
 const BATTLE_LOADING_CARDS = [
   '/splash_cards_kenta/card01_convenience.png',
-  '/splash_cards_kenta/card06_boxer.png',
-  '/splash_cards_kenta/card12_hero.png',
   '/splash_cards_shoichi/shoichi_card01_fish.png',
+  '/splash_cards_kenta/card03_youtuber.png',
+  '/splash_cards_shoichi/shoichi_card03_host.png',
+  '/splash_cards_kenta/card06_boxer.png',
   '/splash_cards_shoichi/shoichi_card06_ikemen.png',
+  '/splash_cards_kenta/card09_mercenary.png',
+  '/splash_cards_shoichi/shoichi_card09_youth_love.png',
+  '/splash_cards_kenta/card11_demon_king.png',
+  '/splash_cards_shoichi/shoichi_card11_pilot.png',
+  '/splash_cards_kenta/card12_hero.png',
   '/splash_cards_shoichi/shoichi_card12_investor.png',
 ];
 
@@ -325,7 +337,7 @@ function BattleLoadingOverlay({ message }: { message?: string }) {
     return arr;
   });
   if (typeof document === "undefined") return null;
-  const totalDuration = shuffleCards.length * 120;
+  const totalDuration = shuffleCards.length * 80;
 
   return createPortal(
     <div className="fixed inset-0 z-[140] bg-black">
@@ -333,7 +345,7 @@ function BattleLoadingOverlay({ message }: { message?: string }) {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative h-[70vh] w-full max-w-md overflow-hidden rounded-[32px] border border-[#ff6fb0]/20 bg-black/50">
             {shuffleCards.map((src, idx) => (
-              <div key={src} className="absolute inset-0" style={{ animation: `shuffleCard ${totalDuration}ms steps(1) infinite`, animationDelay: `${idx * 120}ms`, opacity: 0 }}>
+              <div key={src} className="absolute inset-0" style={{ animation: `shuffleCard ${totalDuration}ms steps(1) infinite`, animationDelay: `${idx * 80}ms`, opacity: 0 }}>
                 <Image src={src} alt="" fill className="object-cover" priority={idx === 0} />
               </div>
             ))}

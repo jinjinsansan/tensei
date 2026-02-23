@@ -32,6 +32,10 @@ export function getBattleReincarnationVideo(charId: string): string {
   return battlePath(charId, `${charId}_battle_reincarnation.mp4`);
 }
 
+export function getBattleHitVideo(charId: string, starLevel: number): string {
+  return battlePath(charId, `${charId}_battle_c${pad2(starLevel)}_hit.mp4`);
+}
+
 export function getBattleAttackVideo(charId: string, starLevel: number): string {
   return battlePath(charId, `${charId}_battle_c${pad2(starLevel)}_attack.mp4`);
 }

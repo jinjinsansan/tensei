@@ -29,6 +29,7 @@ import {
   getBattlePreHitVideo,
   getBattleReincarnationVideo,
   getBattleAttackVideo,
+  getBattleHitVideo,
   getBattleWinVideo,
   getBattleLoseVideo,
 } from '@/lib/gacha/battle/video-paths';
@@ -53,6 +54,8 @@ type ResultResolutionPayload = {
 
 type Props = {
   gachaResult: GachaResult | null;
+  opponentCharacterId?: string;
+  opponentStarLevel?: number;
   onClose?: () => void;
   resultId?: string | null;
   onResultResolved?: (payload: ResultResolutionPayload) => void;
@@ -60,7 +63,7 @@ type Props = {
   onCurrentPhaseChange?: (phase: string) => void;
 };
 
-export function BattleGachaPlayer({ gachaResult, onClose, resultId, onResultResolved, cardRevealCtaLabel, onCurrentPhaseChange }: Props) {
+export function BattleGachaPlayer({ gachaResult, opponentCharacterId, opponentStarLevel, onClose, resultId, onResultResolved, cardRevealCtaLabel, onCurrentPhaseChange }: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
 
@@ -84,6 +87,8 @@ export function BattleGachaPlayer({ gachaResult, onClose, resultId, onResultReso
     <ActiveBattlePlayer
       key={key}
       gachaResult={gachaResult}
+      opponentCharacterId={opponentCharacterId}
+      opponentStarLevel={opponentStarLevel}
       onClose={onClose}
       resultId={resultId}
       onResultResolved={onResultResolved}
@@ -96,6 +101,8 @@ export function BattleGachaPlayer({ gachaResult, onClose, resultId, onResultReso
 
 function ActiveBattlePlayer({
   gachaResult,
+  opponentCharacterId: opponentCharId = 'shoichi',
+  opponentStarLevel: opponentStar = 1,
   onClose,
   resultId,
   onResultResolved,
@@ -151,18 +158,32 @@ function ActiveBattlePlayer({
 
   // Pre-compute all battle video paths
   const battleVideos = useMemo(() => ({
+    // Player intro / pre
     face: getBattlePreFaceVideo(charId),
     shout: getBattlePreShoutVideo(charId),
     preAttack: getBattlePreAttackVideo(charId),
     preHit: getBattlePreHitVideo(charId),
     reincarnation: getBattleReincarnationVideo(charId),
-    mainAttack: getBattleAttackVideo(charId, gachaResult.isDonden ? lowStar : finalStar),
-    mainResult: gachaResult.isDonden
-      ? getBattleLoseVideo(charId, lowStar)
-      : getBattleWinVideo(charId, finalStar),
+    // BATTLE_MAIN - normal win (4 videos: player attack → opponent hit → player win → opponent lose)
+    playerAttack: getBattleAttackVideo(charId, finalStar),
+    opponentHit: getBattleHitVideo(opponentCharId, opponentStar),
+    playerWin: getBattleWinVideo(charId, finalStar),
+    opponentLose: getBattleLoseVideo(opponentCharId, opponentStar),
+    // BATTLE_MAIN - reversal first part (2 videos: player attack(low) → player lose(low))
+    playerAttackLow: getBattleAttackVideo(charId, lowStar),
+    playerLoseLow: getBattleLoseVideo(charId, lowStar),
+    // BATTLE_REVERSAL - reversal second part (3 videos: player attack(high) → player win(high) → opponent lose)
     revAttack: getBattleAttackVideo(charId, finalStar),
     revWin: getBattleWinVideo(charId, finalStar),
-  }), [charId, finalStar, lowStar, gachaResult.isDonden]);
+    // opponentLose is reused at end of reversal
+  }), [charId, opponentCharId, finalStar, lowStar, opponentStar]);
+
+  // BATTLE_MAIN total videos depends on reversal
+  // Normal: [playerAttack, opponentHit, playerWin, opponentLose] = 4
+  // Reversal first: [playerAttackLow, playerLoseLow] = 2
+  const battleMainTotal = gachaResult.isDonden ? 2 : 4;
+  // BATTLE_REVERSAL: [revAttack, revWin, opponentLose] = 3
+  const battleReversalTotal = 3;
 
   // All video sources for signed URL resolver
   const allSources = useMemo(() => [
@@ -174,8 +195,12 @@ function ActiveBattlePlayer({
     battleVideos.preAttack,
     battleVideos.preHit,
     battleVideos.reincarnation,
-    battleVideos.mainAttack,
-    battleVideos.mainResult,
+    battleVideos.playerAttack,
+    battleVideos.opponentHit,
+    battleVideos.playerWin,
+    battleVideos.opponentLose,
+    battleVideos.playerAttackLow,
+    battleVideos.playerLoseLow,
     battleVideos.revAttack,
     battleVideos.revWin,
     lossCardImage,
@@ -287,11 +312,11 @@ function ActiveBattlePlayer({
         startPhase('BATTLE_MAIN');
         return;
       case 'BATTLE_MAIN':
-        if (videoIndex < 1) { setVideoIndex(1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
+        if (videoIndex < battleMainTotal - 1) { setVideoIndex((i) => i + 1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
         startPhase(gachaResult.isDonden ? 'BATTLE_REVERSAL' : 'CARD_REVEAL');
         return;
       case 'BATTLE_REVERSAL':
-        if (videoIndex < 1) { setVideoIndex(1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
+        if (videoIndex < battleReversalTotal - 1) { setVideoIndex((i) => i + 1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
         startPhase('CARD_REVEAL');
         return;
       case 'LOSS_REVEAL':
@@ -301,7 +326,7 @@ function ActiveBattlePlayer({
         onClose?.();
         return;
     }
-  }, [phase, countdownVideos.length, countdownIndex, videoIndex, gachaResult, startPhase, onClose]);
+  }, [phase, countdownVideos.length, countdownIndex, videoIndex, gachaResult, startPhase, onClose, battleMainTotal, battleReversalTotal]);
 
   const handleAdvance = useCallback(() => {
     if (phase !== 'CARD_REVEAL' && !videoReady) return;
@@ -328,11 +353,30 @@ function ActiveBattlePlayer({
       case 'BATTLE_INTRO': return videoIndex === 0 ? battleVideos.face : battleVideos.shout;
       case 'BATTLE_PRE': return videoIndex === 0 ? battleVideos.preAttack : battleVideos.preHit;
       case 'BATTLE_REINCARNATION': return battleVideos.reincarnation;
-      case 'BATTLE_MAIN': return videoIndex === 0 ? battleVideos.mainAttack : battleVideos.mainResult;
-      case 'BATTLE_REVERSAL': return videoIndex === 0 ? battleVideos.revAttack : battleVideos.revWin;
+      case 'BATTLE_MAIN':
+        if (gachaResult.isDonden) {
+          // reversal first part: [playerAttackLow, playerLoseLow]
+          return videoIndex === 0 ? battleVideos.playerAttackLow : battleVideos.playerLoseLow;
+        }
+        // normal win: [playerAttack, opponentHit, playerWin, opponentLose]
+        switch (videoIndex) {
+          case 0: return battleVideos.playerAttack;
+          case 1: return battleVideos.opponentHit;
+          case 2: return battleVideos.playerWin;
+          case 3: return battleVideos.opponentLose;
+          default: return null;
+        }
+      case 'BATTLE_REVERSAL':
+        // [revAttack, revWin, opponentLose]
+        switch (videoIndex) {
+          case 0: return battleVideos.revAttack;
+          case 1: return battleVideos.revWin;
+          case 2: return battleVideos.opponentLose;
+          default: return null;
+        }
       default: return null;
     }
-  }, [phase, countdownVideos, countdownIndex, videoIndex, standbyVideo, puchunVideo, battleVideos]);
+  }, [phase, countdownVideos, countdownIndex, videoIndex, standbyVideo, puchunVideo, battleVideos, gachaResult.isDonden]);
 
   const videoKey = `${phase}-${videoIndex}-${countdownIndex}`;
   const isLoopPhase = phase === 'STANDBY';
@@ -387,16 +431,21 @@ function ActiveBattlePlayer({
         break;
       case 'BATTLE_PRE':
         add(battleVideos.reincarnation);
-        add(battleVideos.mainAttack);
-        add(battleVideos.mainResult);
+        add(gachaResult.isDonden ? battleVideos.playerAttackLow : battleVideos.playerAttack);
+        add(gachaResult.isDonden ? battleVideos.playerLoseLow : battleVideos.opponentHit);
         break;
       case 'BATTLE_REINCARNATION':
-        add(battleVideos.mainAttack);
-        add(battleVideos.mainResult);
-        if (gachaResult.isDonden) { add(battleVideos.revAttack); add(battleVideos.revWin); }
+        if (gachaResult.isDonden) {
+          add(battleVideos.playerAttackLow); add(battleVideos.playerLoseLow);
+        } else {
+          add(battleVideos.playerAttack); add(battleVideos.opponentHit);
+          add(battleVideos.playerWin); add(battleVideos.opponentLose);
+        }
         break;
       case 'BATTLE_MAIN':
-        if (gachaResult.isDonden) { add(battleVideos.revAttack); add(battleVideos.revWin); }
+        if (gachaResult.isDonden) {
+          add(battleVideos.revAttack); add(battleVideos.revWin); add(battleVideos.opponentLose);
+        }
         break;
     }
     return list.slice(0, 8);
@@ -491,10 +540,11 @@ function ActiveBattlePlayer({
           </div>
         ) : null}
 
-        {/* Controls: Left (Next) / Right (Skip) */}
-        <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-8">
+        {/* Controls: LEFT (Next) | SKIP | RIGHT (Next) */}
+        <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-4">
           <RoundMetalButton label="LEFT" subLabel="◀ 次へ" onClick={handleAdvance} disabled={nextDisabled} />
-          <RoundMetalButton label="RIGHT" subLabel="スキップ ▶" onClick={handleSkip} disabled={skipDisabled} />
+          <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={skipDisabled} />
+          <RoundMetalButton label="RIGHT" subLabel="次へ ▶" onClick={handleAdvance} disabled={nextDisabled} />
         </div>
 
         {/* Upcoming video preloads */}

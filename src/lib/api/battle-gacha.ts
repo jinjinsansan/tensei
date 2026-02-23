@@ -5,6 +5,7 @@ export type BattlePullPayload = {
   resultId: string | null;
   gachaResult: GachaResult;
   opponentCharacterId: string;
+  opponentStarLevel: number;
 };
 
 export type BattlePlayResponse = {

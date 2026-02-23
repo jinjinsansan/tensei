@@ -30,6 +30,7 @@ export type BattleGachaEngineResult = {
   card: Tables<'cards'>;
   character: Tables<'characters'>;
   opponentCharacterId: CharacterId;
+  opponentStarLevel: number;
 };
 
 export type BattleBatchResult = {
@@ -84,6 +85,7 @@ export async function generateBattleGachaBatchPlay({
       star: number;
       hadReversal: boolean;
       opponentCharacterId: CharacterId;
+      opponentStarLevel: number;
     }> = [];
 
     for (let i = 0; i < safeCount; i++) {
@@ -144,6 +146,7 @@ export async function generateBattleGachaBatchPlay({
         card: scenario.card,
         character: scenario.character,
         opponentCharacterId: scenario.opponentCharacterId,
+        opponentStarLevel: scenario.opponentStarLevel,
       } as BattleGachaEngineResult;
     });
 
@@ -190,6 +193,7 @@ async function resolveBattleScenario(
 
     const characterRow = await getCachedCharacter(supabase, kentaDbId, characterRowCache);
     const opponentCharacterId = pickOpponent('kenta');
+    const opponentStarLevel = pickOpponentStarLevel(1);
 
     return {
       gachaResult: buildLossResult(),
@@ -198,6 +202,7 @@ async function resolveBattleScenario(
       star: 0,
       hadReversal: false,
       opponentCharacterId,
+      opponentStarLevel,
     };
   }
 
@@ -230,6 +235,7 @@ async function resolveBattleScenario(
 
   // 6. 対戦相手
   const opponentCharacterId = pickOpponent(playerCharId);
+  const opponentStarLevel = pickOpponentStarLevel(star);
 
   // 7. GachaResult 構築
   const moduleCard = moduleCardId && characterModule
@@ -265,7 +271,13 @@ async function resolveBattleScenario(
     isSequel: false,
   };
 
-  return { gachaResult, card: selectedCard, character: characterRow, star, hadReversal, opponentCharacterId };
+  return { gachaResult, card: selectedCard, character: characterRow, star, hadReversal, opponentCharacterId, opponentStarLevel };
+}
+
+function pickOpponentStarLevel(playerStar: number): number {
+  const min = Math.max(1, playerStar - 2);
+  const max = Math.min(12, playerStar + 2);
+  return min + Math.floor(randomFloat() * (max - min + 1));
 }
 
 function pickOpponent(playerCharId: CharacterId): CharacterId {
