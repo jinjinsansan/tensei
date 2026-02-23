@@ -332,6 +332,10 @@ function ActiveBattlePlayer({
     : gachaResult.cardImagePath;
   const overlayStarRating = isEnemyOverlay ? enemyStar : gachaResult.starRating;
   const overlayCardName = isEnemyOverlay ? enemyCardName : gachaResult.cardName;
+  const overlayBadgeLabel = isEnemyOverlay ? 'ENEMY' : 'PLAYER';
+  const overlayBadgeClass = isEnemyOverlay
+    ? 'border-cyan-300/60 bg-cyan-500/20 text-cyan-50 shadow-[0_0_18px_rgba(124,243,255,0.55)]'
+    : 'border-pink-300/60 bg-pink-500/20 text-pink-50 shadow-[0_0_18px_rgba(255,110,176,0.55)]';
 
   const videoKey = `${phase}-${queueIndex}-${countdownIndex}`;
   const isLoopPhase = phase === 'STANDBY';
@@ -442,11 +446,13 @@ function ActiveBattlePlayer({
                 style={{ animation: 'battleCardFloat 2.5s ease-out forwards', background: 'rgba(0,0,0,0.45)' }}
               >
                 <div className="relative" style={{ width: '78%', aspectRatio: '3/4' }}>
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[#ff9ad6]/35 via-transparent to-[#7cf3ff]/28 blur-[6px]" />
+                  <div className="absolute inset-[3px] rounded-[18px] border border-[#ff9ad6]/45 shadow-[0_0_35px_rgba(255,110,176,0.35),0_0_22px_rgba(124,243,255,0.25)]" />
                   <Image
                     src={overlayCardImage}
                     alt={gachaResult.cardName}
                     fill
-                    className="rounded-2xl object-cover shadow-[0_0_80px_rgba(255,220,100,0.9)]"
+                    className="relative rounded-2xl object-cover shadow-[0_0_70px_rgba(255,220,100,0.65)]"
                     unoptimized
                   />
                 </div>
@@ -461,9 +467,14 @@ function ActiveBattlePlayer({
                   ))}
                 </div>
                 {/* カード名 */}
-                <p className="text-center text-sm font-bold tracking-widest text-white drop-shadow-[0_0_8px_rgba(255,220,100,0.9)]">
-                  {overlayCardName}
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full border px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.22em] ${overlayBadgeClass}`}>
+                    {overlayBadgeLabel}
+                  </span>
+                  <p className="text-center text-sm font-bold tracking-widest text-white drop-shadow-[0_0_12px_rgba(255,220,100,0.9)]">
+                    {overlayCardName}
+                  </p>
+                </div>
               </div>
             )}
             {isBuffering && (
