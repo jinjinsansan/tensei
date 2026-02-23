@@ -73,8 +73,9 @@ export function CardReveal({
           return (
             <div
               key={card.id}
-              className="group relative flex flex-col gap-4 rounded-[28px] border border-white/12 bg-gradient-to-b from-white/10 via-white/5 to-black/60 p-4 shadow-[0_25px_55px_rgba(0,0,0,0.65)]"
+              className="group relative flex flex-col gap-4 rounded-[28px] border border-[#ff9ad6]/40 bg-gradient-to-b from-[#1a1024]/85 via-[#0c0a18]/92 to-[#090712]/95 p-4 shadow-[0_25px_70px_rgba(255,110,176,0.25),0_18px_45px_rgba(0,0,0,0.65)] backdrop-blur-[1px]"
             >
+              <div className="pointer-events-none absolute inset-px rounded-[26px] bg-gradient-to-br from-white/8 via-transparent to-white/4 opacity-70" />
               <div>
                 <p className="text-[0.8rem] text-amber-200">{starIcons}</p>
                 <p className="font-display text-xl text-white drop-shadow-[0_6px_25px_rgba(0,0,0,0.8)]">{displayName}</p>
@@ -82,7 +83,7 @@ export function CardReveal({
                   <p className="mt-1 text-[0.75rem] text-white/70">{card.description}</p>
                 ) : null}
               </div>
-              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[22px] border border-white/15 bg-black/40">
+              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[22px] border border-[#ff9ad6]/35 bg-gradient-to-b from-[#1c1a2a]/70 to-[#0b0a14]/90 shadow-[0_18px_35px_rgba(255,110,176,0.16)]">
                 {card.serialNumber ? (
                   <div
                     className={`pointer-events-none absolute right-3 z-10 ${shouldInsetSerial ? '' : 'bottom-3'}`}

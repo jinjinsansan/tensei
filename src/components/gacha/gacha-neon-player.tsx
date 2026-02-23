@@ -43,7 +43,7 @@ type Props = {
 export type { PendingPull };
 
 export function GachaNeonPlayer({
-  playLabel = "10連ガチャ\nスタート",
+  playLabel = "来世ガチャ\nSTART",
   playVariant = "round",
   className,
   containerClassName,
