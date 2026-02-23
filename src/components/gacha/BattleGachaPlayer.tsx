@@ -39,6 +39,7 @@ type Props = {
   enemyCharacterId?: string;
   enemyStar?: number;
   enemyCardImagePath?: string;
+  enemyCardName?: string;
   isReversal?: boolean;
   onClose?: () => void;
   resultId?: string | null;
@@ -54,6 +55,7 @@ export function BattleGachaPlayer({
   enemyCharacterId,
   enemyStar,
   enemyCardImagePath = '',
+  enemyCardName = '',
   isReversal,
   onClose,
   resultId,
@@ -89,6 +91,7 @@ export function BattleGachaPlayer({
       enemyCharacterId={enemyCharacterId ?? 'shoichi'}
       enemyStar={enemyStar ?? 1}
       enemyCardImagePath={enemyCardImagePath ?? ''}
+      enemyCardName={enemyCardName ?? ''}
       isReversal={isReversal ?? false}
       onClose={onClose}
       resultId={resultId}
@@ -107,6 +110,7 @@ type ActiveProps = {
   enemyCharacterId: string;
   enemyStar: number;
   enemyCardImagePath: string;
+  enemyCardName: string;
   isReversal: boolean;
   onClose?: () => void;
   resultId?: string | null;
@@ -122,6 +126,7 @@ function ActiveBattlePlayer({
   enemyCharacterId,
   enemyStar,
   enemyCardImagePath,
+  enemyCardName,
   isReversal,
   onClose,
   resultId,
@@ -319,13 +324,13 @@ function ActiveBattlePlayer({
   // 転生映像のどちらのカードを表示するか
   // queueIndex=8 → 自キャラ転生 → 当選カード（自キャラのカード）
   // queueIndex=9 → 敵キャラ転生 → 敵キャラの★に対応したカード
-  const overlayCardImage = useMemo(() => {
-    const ENEMY_REINCARNATION_INDEX = 9;
-    if (queueIndex === ENEMY_REINCARNATION_INDEX && enemyCardImagePath) {
-      return enemyCardImagePath;
-    }
-    return gachaResult.cardImagePath;
-  }, [queueIndex, gachaResult.cardImagePath, enemyCardImagePath]);
+  const ENEMY_REINCARNATION_INDEX = 9;
+  const isEnemyReincarnation = queueIndex === ENEMY_REINCARNATION_INDEX;
+  const overlayCardImage = isEnemyReincarnation && enemyCardImagePath
+    ? enemyCardImagePath
+    : gachaResult.cardImagePath;
+  const overlayStarRating = isEnemyReincarnation ? enemyStar : gachaResult.starRating;
+  const overlayCardName = isEnemyReincarnation ? enemyCardName : gachaResult.cardName;
 
   const videoKey = `${phase}-${queueIndex}-${countdownIndex}`;
   const isLoopPhase = phase === 'STANDBY';
@@ -445,21 +450,18 @@ function ActiveBattlePlayer({
                   />
                 </div>
                 {/* ★表示 */}
-                <div className="flex items-center gap-0.5" style={{ animation: 'starPop 0.4s ease-out 0.6s both' }}>
-                  {Array.from({ length: gachaResult.starRating }).map((_, i) => (
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: overlayStarRating }).map((_, i) => (
                     <span
                       key={i}
                       className="text-yellow-300 drop-shadow-[0_0_6px_rgba(255,220,0,1)]"
-                      style={{ fontSize: '1.4rem', animation: `starPop 0.3s ease-out ${0.6 + i * 0.07}s both` }}
+                      style={{ fontSize: '1.4rem', animation: `starPop 0.3s ease-out ${i * 0.07}s both` }}
                     >★</span>
                   ))}
                 </div>
                 {/* カード名 */}
-                <p
-                  className="text-center text-sm font-bold tracking-widest text-white drop-shadow-[0_0_8px_rgba(255,220,100,0.9)]"
-                  style={{ animation: 'starPop 0.4s ease-out 0.8s both' }}
-                >
-                  {gachaResult.cardName}
+                <p className="text-center text-sm font-bold tracking-widest text-white drop-shadow-[0_0_8px_rgba(255,220,100,0.9)]">
+                  {overlayCardName}
                 </p>
               </div>
             )}

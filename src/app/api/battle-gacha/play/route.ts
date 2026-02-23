@@ -55,6 +55,7 @@ export async function POST(request: Request) {
         enemyCharacterId: pull.enemyCharacterId,
         enemyStar: pull.enemyStar,
         enemyCardImagePath: pull.enemyCardImagePath,
+        enemyCardName: pull.enemyCardName,
         isReversal: pull.isReversal,
       })),
     });

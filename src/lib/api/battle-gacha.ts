@@ -9,6 +9,7 @@ export type BattlePullPayload = {
   enemyCharacterId: string;
   enemyStar: number;
   enemyCardImagePath: string;
+  enemyCardName: string;
   isReversal: boolean;
 };
 
