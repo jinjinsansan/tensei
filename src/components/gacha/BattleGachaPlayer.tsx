@@ -362,30 +362,32 @@ function ActiveBattlePlayer({
       .catch(() => undefined);
   }, [signedVideoSrc, videoKey]);
 
-  // 先読みリスト（最大8本）
+  // 先読みリスト（最大12本 — 来世ガチャと同方式）
   const upcomingVideos = useMemo(() => {
     const list: string[] = [];
     const add = (s: string | null | undefined) => { if (s) list.push(s); };
     switch (phase) {
       case 'STANDBY':
+        // COUNTDOWN全本 + PUCHUN + バトルキュー先頭6本
         countdownVideos.forEach(add);
         add(puchunVideo);
+        battleQueue.slice(0, 6).forEach((q) => add(q.src));
         break;
       case 'COUNTDOWN':
+        // PUCHUN + バトルキュー先頭8本
         add(puchunVideo);
-        if (!gachaResult.isLoss) {
-          add(battleQueue[0]?.src);
-          add(battleQueue[1]?.src);
-        }
+        battleQueue.slice(0, 8).forEach((q) => add(q.src));
         break;
       case 'PUCHUN':
-        battleQueue.slice(0, 4).forEach((q) => add(q.src));
+        // バトルキュー全体（17本）を先読み開始
+        battleQueue.forEach((q) => add(q.src));
         break;
       case 'BATTLE_QUEUE':
-        battleQueue.slice(queueIndex + 1, queueIndex + 5).forEach((q) => add(q.src));
+        // 現在位置から残り全本を先読み（最大12本に絞る）
+        battleQueue.slice(queueIndex + 1).forEach((q) => add(q.src));
         break;
     }
-    return list.slice(0, 8);
+    return list.slice(0, 12);
   }, [phase, countdownVideos, puchunVideo, battleQueue, queueIndex, gachaResult.isLoss]);
 
   if (phase === 'CARD_REVEAL') {
