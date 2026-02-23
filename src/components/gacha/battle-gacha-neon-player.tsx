@@ -307,9 +307,9 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
 }
 
 const BATTLE_LOADING_CARDS = [
-  '/kenta_cards_v2/kenta_card01.png',
-  '/kenta_cards_v2/kenta_card06.png',
-  '/kenta_cards_v2/kenta_card12.png',
+  '/splash_cards_kenta/card01_convenience.png',
+  '/splash_cards_kenta/card06_boxer.png',
+  '/splash_cards_kenta/card12_hero.png',
   '/splash_cards_shoichi/shoichi_card01_fish.png',
   '/splash_cards_shoichi/shoichi_card06_ikemen.png',
   '/splash_cards_shoichi/shoichi_card12_investor.png',

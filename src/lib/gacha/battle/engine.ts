@@ -97,7 +97,7 @@ export async function generateBattleGachaBatchPlay({
         app_user_id: appUserId,
         multi_session_id: sessionRow?.id ?? null,
         star_level: scenario.star,
-        scenario: null,
+        scenario: ({} as unknown) as Json,
         had_reversal: scenario.hadReversal,
         gacha_type: 'tenfold',
       });
