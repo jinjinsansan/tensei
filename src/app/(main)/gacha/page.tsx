@@ -174,7 +174,7 @@ export default async function GachaPage() {
                 </p>
                 <div className="flex flex-wrap gap-3 text-xs">
                   <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/12 px-4 py-1 text-[#ffd6ec] shadow-[0_0_12px_rgba(255,120,170,0.45)]">
-                    1チケットで10連
+                    1チケットで必ず10連プレイ
                   </span>
                   <span className="inline-flex items-center rounded-full border border-[#7ad0ff]/30 bg-[#7ad0ff]/10 px-4 py-1 text-[#d9f2ff] shadow-[0_0_12px_rgba(122,208,255,0.35)]">
                     バトル演出フル収録
