@@ -228,7 +228,7 @@ function ActiveBattlePlayer({
       return () => clearTimeout(t);
     }
     const showTimer = setTimeout(() => setOverlayVisible(true), 1000);
-    const hideTimer = setTimeout(() => setOverlayVisible(false), 1400);
+    const hideTimer = setTimeout(() => setOverlayVisible(false), 3500);
     overlayTimerRef.current = showTimer;
     return () => {
       clearTimeout(showTimer);
@@ -417,21 +417,38 @@ function ActiveBattlePlayer({
                 setIsBuffering(false);
               }}
             />
-            {/* カードオーバーレイ（転生映像中に奥から浮かび上がる） */}
+            {/* カードオーバーレイ（転生映像中に大きく浮かび上がる） */}
             {phase === 'BATTLE_QUEUE' && overlayVisible && (
               <div
-                className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-                style={{ animation: 'battleCardFloat 0.4s ease-out forwards' }}
+                className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3"
+                style={{ animation: 'battleCardFloat 2.5s ease-out forwards', background: 'rgba(0,0,0,0.45)' }}
               >
-                <div className="relative" style={{ width: '60%', aspectRatio: '3/4' }}>
+                <div className="relative" style={{ width: '78%', aspectRatio: '3/4' }}>
                   <Image
                     src={overlayCardImage}
                     alt={gachaResult.cardName}
                     fill
-                    className="rounded-2xl object-cover shadow-[0_0_60px_rgba(255,255,255,0.9)]"
+                    className="rounded-2xl object-cover shadow-[0_0_80px_rgba(255,220,100,0.9)]"
                     unoptimized
                   />
                 </div>
+                {/* ★表示 */}
+                <div className="flex items-center gap-0.5" style={{ animation: 'starPop 0.4s ease-out 0.6s both' }}>
+                  {Array.from({ length: gachaResult.starRating }).map((_, i) => (
+                    <span
+                      key={i}
+                      className="text-yellow-300 drop-shadow-[0_0_6px_rgba(255,220,0,1)]"
+                      style={{ fontSize: '1.4rem', animation: `starPop 0.3s ease-out ${0.6 + i * 0.07}s both` }}
+                    >★</span>
+                  ))}
+                </div>
+                {/* カード名 */}
+                <p
+                  className="text-center text-sm font-bold tracking-widest text-white drop-shadow-[0_0_8px_rgba(255,220,100,0.9)]"
+                  style={{ animation: 'starPop 0.4s ease-out 0.8s both' }}
+                >
+                  {gachaResult.cardName}
+                </p>
               </div>
             )}
             {isBuffering && (
@@ -473,10 +490,15 @@ function ActiveBattlePlayer({
 
       <style>{`
         @keyframes battleCardFloat {
-          0%   { opacity: 0; transform: scale(0.7) translateY(30px); }
-          40%  { opacity: 1; transform: scale(1.05) translateY(0); }
-          70%  { opacity: 1; transform: scale(1) translateY(0); }
-          100% { opacity: 0; transform: scale(1) translateY(-10px); }
+          0%   { opacity: 0; }
+          15%  { opacity: 1; }
+          80%  { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes starPop {
+          0%   { opacity: 0; transform: scale(0.4); }
+          70%  { transform: scale(1.2); }
+          100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
