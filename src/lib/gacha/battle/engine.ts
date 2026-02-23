@@ -29,8 +29,11 @@ export type BattleGachaEngineResult = {
   resultRow: Tables<'gacha_results'> | null;
   card: Tables<'cards'>;
   character: Tables<'characters'>;
-  opponentCharacterId: CharacterId;
-  opponentStarLevel: number;
+  playerCharacterId: CharacterId;
+  playerStar: number;
+  enemyCharacterId: CharacterId;
+  enemyStar: number;
+  isReversal: boolean; // true=敵★が高い（どんでん返し演出）
 };
 
 export type BattleBatchResult = {
@@ -82,10 +85,11 @@ export async function generateBattleGachaBatchPlay({
       gachaResult: GachaResult;
       card: Tables<'cards'>;
       character: Tables<'characters'>;
-      star: number;
-      hadReversal: boolean;
-      opponentCharacterId: CharacterId;
-      opponentStarLevel: number;
+      playerCharacterId: CharacterId;
+      playerStar: number;
+      enemyCharacterId: CharacterId;
+      enemyStar: number;
+      isReversal: boolean;
     }> = [];
 
     for (let i = 0; i < safeCount; i++) {
@@ -98,9 +102,9 @@ export async function generateBattleGachaBatchPlay({
         user_session_id: sessionId,
         app_user_id: appUserId,
         multi_session_id: sessionRow?.id ?? null,
-        star_level: scenario.star,
+        star_level: scenario.playerStar,
         scenario: ({} as unknown) as Json,
-        had_reversal: scenario.hadReversal,
+        had_reversal: scenario.isReversal,
         gacha_type: 'tenfold',
       });
 
@@ -109,13 +113,13 @@ export async function generateBattleGachaBatchPlay({
         app_user_id: appUserId,
         character_id: scenario.character.id,
         card_id: scenario.card.id,
-        star_level: scenario.star,
-        had_reversal: scenario.hadReversal,
+        star_level: scenario.playerStar,
+        had_reversal: scenario.isReversal,
         scenario_snapshot: ({} as unknown) as Json,
         card_awarded: false,
         history_id: historyRow.id,
         obtained_via: 'battle_gacha',
-        metadata: ({ gacha_type: 'battle_gacha', opponent: scenario.opponentCharacterId } as unknown) as Json,
+        metadata: ({ gacha_type: 'battle_gacha', enemy: scenario.enemyCharacterId, enemyStar: scenario.enemyStar, isReversal: scenario.isReversal } as unknown) as Json,
       });
 
       if (scenario.gachaResult.isLoss) {
@@ -145,8 +149,11 @@ export async function generateBattleGachaBatchPlay({
         resultRow,
         card: scenario.card,
         character: scenario.character,
-        opponentCharacterId: scenario.opponentCharacterId,
-        opponentStarLevel: scenario.opponentStarLevel,
+        playerCharacterId: scenario.playerCharacterId,
+        playerStar: scenario.playerStar,
+        enemyCharacterId: scenario.enemyCharacterId,
+        enemyStar: scenario.enemyStar,
+        isReversal: scenario.isReversal,
       } as BattleGachaEngineResult;
     });
 
@@ -183,30 +190,27 @@ async function resolveBattleScenario(
   const isLoss = randomFloat() * 100 < settings.lossRate;
 
   if (isLoss) {
-    // ハズレ: 健太のカードから loss_card を使用
     const kentaDbId = mapCharacterModuleIdToDbId('kenta')!;
     const cards = await getCachedCards(supabase, kentaDbId, cardCache);
     const lossCard =
       cards.find((c) => c.is_loss_card) ??
       cards.find((c) => c.card_name === '転生失敗') ??
       cards[0];
-
     const characterRow = await getCachedCharacter(supabase, kentaDbId, characterRowCache);
-    const opponentCharacterId = pickOpponent('kenta');
-    const opponentStarLevel = pickOpponentStarLevel(1);
-
+    const enemyCharacterId = pickEnemy('kenta');
     return {
       gachaResult: buildLossResult(),
       card: lossCard,
       character: characterRow,
-      star: 0,
-      hadReversal: false,
-      opponentCharacterId,
-      opponentStarLevel,
+      playerCharacterId: 'kenta' as CharacterId,
+      playerStar: 0,
+      enemyCharacterId,
+      enemyStar: 1,
+      isReversal: false,
     };
   }
 
-  // 2. キャラクター選択（バトル対応キャラのみ）
+  // 2. 自キャラ選択（バトル対応キャラのみ）
   const playerCharId = BATTLE_READY_CHARACTERS[
     Math.floor(randomFloat() * BATTLE_READY_CHARACTERS.length)
   ] as CharacterId;
@@ -223,21 +227,11 @@ async function resolveBattleScenario(
   const starMatched = playableCards.filter((c) => Number(c.star_level ?? 0) === starLevel);
   const selectableCards = starMatched.length ? starMatched : playableCards;
   const selectedCard = pickRandom(selectableCards);
-  const star = selectedCard.star_level ?? starLevel;
+  const playerStar = selectedCard.star_level ?? starLevel;
 
-  // 5. どんでん返し判定
+  // 5. GachaResult 構築（battle gacha は isDonden=false 固定）
   const characterModule = getCharacter(playerCharId);
   const moduleCardId = mapCardDbIdToModuleId(selectedCard.id);
-  const hasDondenRoute = Boolean(
-    moduleCardId && characterModule?.dondenRoutes?.some((r) => r.toCardId === moduleCardId),
-  );
-  const hadReversal = hasDondenRoute && randomFloat() * 100 < settings.reversalRate;
-
-  // 6. 対戦相手
-  const opponentCharacterId = pickOpponent(playerCharId);
-  const opponentStarLevel = pickOpponentStarLevel(star);
-
-  // 7. GachaResult 構築
   const moduleCard = moduleCardId && characterModule
     ? characterModule.cards.find((c) => c.cardId === moduleCardId)
     : null;
@@ -248,40 +242,33 @@ async function resolveBattleScenario(
     ? characterModule.getCardImagePath(moduleCardId)
     : selectedCard.card_image_url ?? '';
 
-  const dondenRoute = hadReversal && moduleCardId && characterModule
-    ? characterModule.dondenRoutes.find((r) => r.toCardId === moduleCardId)
-    : null;
-  const dondenCard = dondenRoute && characterModule
-    ? characterModule.cards.find((c) => c.cardId === dondenRoute.fromCardId)
-    : null;
-
   const gachaResult: GachaResult = {
     isLoss: false,
     characterId: playerCharId,
     cardId: moduleCardId ?? selectedCard.id,
     rarity: moduleCard?.rarity ?? coerceRarity(selectedCard.rarity),
-    starRating: moduleCard?.starRating ?? star,
+    starRating: playerStar,
     cardName: cardInfo?.name ?? selectedCard.card_name,
     cardTitle: cardInfo?.title ?? selectedCard.description ?? selectedCard.card_name,
     cardImagePath,
     lossCardImagePath: LOSS_CARD_PATH,
-    isDonden: Boolean(dondenRoute),
-    dondenFromCardId: dondenRoute?.fromCardId,
-    dondenFromRarity: dondenCard?.rarity,
+    isDonden: false,
     isSequel: false,
   };
 
-  return { gachaResult, card: selectedCard, character: characterRow, star, hadReversal, opponentCharacterId, opponentStarLevel };
+  // 6. 敵キャラ・どんでん返し判定
+  const enemyCharacterId = pickEnemy(playerCharId);
+  const isReversal = randomFloat() * 100 < settings.reversalRate;
+  // isReversal=true → 敵★ > 自★（苦戦演出）, false → 敵★ < 自★（自キャラ優勢）
+  const enemyStar = isReversal
+    ? Math.min(12, playerStar + 1 + Math.floor(randomFloat() * 3))   // +1〜+3
+    : Math.max(1, playerStar - 1 - Math.floor(randomFloat() * 2));   // -1〜-2
+
+  return { gachaResult, card: selectedCard, character: characterRow, playerCharacterId: playerCharId, playerStar, enemyCharacterId, enemyStar, isReversal };
 }
 
-function pickOpponentStarLevel(playerStar: number): number {
-  const min = Math.max(1, playerStar - 2);
-  const max = Math.min(12, playerStar + 2);
-  return min + Math.floor(randomFloat() * (max - min + 1));
-}
-
-function pickOpponent(playerCharId: CharacterId): CharacterId {
-  const others = BATTLE_READY_CHARACTERS.filter((c) => c !== playerCharId);
+function pickEnemy(playerCharId: CharacterId): CharacterId {
+  const others = BATTLE_READY_CHARACTERS.filter((c) => c !== (playerCharId as string));
   if (!others.length) return BATTLE_READY_CHARACTERS[0] as CharacterId;
   return others[Math.floor(randomFloat() * others.length)] as CharacterId;
 }

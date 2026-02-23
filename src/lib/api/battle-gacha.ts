@@ -4,8 +4,11 @@ export type BattlePullPayload = {
   order: number;
   resultId: string | null;
   gachaResult: GachaResult;
-  opponentCharacterId: string;
-  opponentStarLevel: number;
+  playerCharacterId: string;
+  playerStar: number;
+  enemyCharacterId: string;
+  enemyStar: number;
+  isReversal: boolean;
 };
 
 export type BattlePlayResponse = {

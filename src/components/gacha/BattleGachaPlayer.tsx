@@ -14,7 +14,7 @@ import {
   type CountdownSelection,
 } from '@/lib/gacha/common/countdown-selector';
 import { chooseStandbyWithProbabilities, type StandbySelection } from '@/lib/gacha/common/standby-selector';
-import type { CdColor, GachaResult, Rarity } from '@/lib/gacha/common/types';
+import type { CdColor, GachaResult } from '@/lib/gacha/common/types';
 import {
   triggerCardRevealVibration,
   triggerCountdownUpgrade,
@@ -22,29 +22,9 @@ import {
 } from '@/lib/gacha/haptics';
 import { useSignedAssetResolver } from '@/lib/gacha/client-assets';
 import { usePresentationConfig } from '@/lib/gacha/client-presentation';
-import {
-  getBattlePreFaceVideo,
-  getBattlePreShoutVideo,
-  getBattlePreAttackVideo,
-  getBattlePreHitVideo,
-  getBattleReincarnationVideo,
-  getBattleAttackVideo,
-  getBattleHitVideo,
-  getBattleWinVideo,
-  getBattleLoseVideo,
-} from '@/lib/gacha/battle/video-paths';
+import { buildBattleVideoQueue, type BattleQueueItem } from '@/lib/gacha/battle/video-paths';
 
-type BattlePhase =
-  | 'STANDBY'
-  | 'COUNTDOWN'
-  | 'PUCHUN'
-  | 'BATTLE_INTRO'
-  | 'BATTLE_PRE'
-  | 'BATTLE_REINCARNATION'
-  | 'BATTLE_MAIN'
-  | 'BATTLE_REVERSAL'
-  | 'LOSS_REVEAL'
-  | 'CARD_REVEAL';
+type BattlePhase = 'STANDBY' | 'COUNTDOWN' | 'PUCHUN' | 'BATTLE_QUEUE' | 'LOSS_REVEAL' | 'CARD_REVEAL';
 
 type ResultResolutionPayload = {
   resultId: string | null;
@@ -54,8 +34,11 @@ type ResultResolutionPayload = {
 
 type Props = {
   gachaResult: GachaResult | null;
-  opponentCharacterId?: string;
-  opponentStarLevel?: number;
+  playerCharacterId?: string;
+  playerStar?: number;
+  enemyCharacterId?: string;
+  enemyStar?: number;
+  isReversal?: boolean;
   onClose?: () => void;
   resultId?: string | null;
   onResultResolved?: (payload: ResultResolutionPayload) => void;
@@ -63,7 +46,19 @@ type Props = {
   onCurrentPhaseChange?: (phase: string) => void;
 };
 
-export function BattleGachaPlayer({ gachaResult, opponentCharacterId, opponentStarLevel, onClose, resultId, onResultResolved, cardRevealCtaLabel, onCurrentPhaseChange }: Props) {
+export function BattleGachaPlayer({
+  gachaResult,
+  playerCharacterId,
+  playerStar,
+  enemyCharacterId,
+  enemyStar,
+  isReversal,
+  onClose,
+  resultId,
+  onResultResolved,
+  cardRevealCtaLabel,
+  onCurrentPhaseChange,
+}: Props) {
   const portalTarget = typeof window === 'undefined' ? null : document.body;
   const isOpen = Boolean(gachaResult);
 
@@ -87,8 +82,11 @@ export function BattleGachaPlayer({ gachaResult, opponentCharacterId, opponentSt
     <ActiveBattlePlayer
       key={key}
       gachaResult={gachaResult}
-      opponentCharacterId={opponentCharacterId}
-      opponentStarLevel={opponentStarLevel}
+      playerCharacterId={playerCharacterId ?? gachaResult.characterId}
+      playerStar={playerStar ?? gachaResult.starRating}
+      enemyCharacterId={enemyCharacterId ?? 'shoichi'}
+      enemyStar={enemyStar ?? 1}
+      isReversal={isReversal ?? false}
       onClose={onClose}
       resultId={resultId}
       onResultResolved={onResultResolved}
@@ -99,46 +97,57 @@ export function BattleGachaPlayer({ gachaResult, opponentCharacterId, opponentSt
   );
 }
 
+type ActiveProps = {
+  gachaResult: GachaResult;
+  playerCharacterId: string;
+  playerStar: number;
+  enemyCharacterId: string;
+  enemyStar: number;
+  isReversal: boolean;
+  onClose?: () => void;
+  resultId?: string | null;
+  onResultResolved?: (payload: ResultResolutionPayload) => void;
+  cardRevealCtaLabel?: string;
+  onCurrentPhaseChange?: (phase: string) => void;
+};
+
 function ActiveBattlePlayer({
   gachaResult,
-  opponentCharacterId: opponentCharId = 'shoichi',
-  opponentStarLevel: opponentStar = 1,
+  playerCharacterId,
+  playerStar,
+  enemyCharacterId,
+  enemyStar,
+  isReversal,
   onClose,
   resultId,
   onResultResolved,
   cardRevealCtaLabel,
   onCurrentPhaseChange,
-}: Props & { gachaResult: GachaResult }) {
+}: ActiveProps) {
   const [phase, setPhase] = useState<BattlePhase>('STANDBY');
   const [countdownIndex, setCountdownIndex] = useState(0);
-  const [videoIndex, setVideoIndex] = useState(0); // sub-index for multi-video phases
+  const [queueIndex, setQueueIndex] = useState(0);
   const [videoReady, setVideoReady] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const [serialNumber, setSerialNumber] = useState<number | null>(null);
   const [isClaiming, setIsClaiming] = useState(false);
   const [claimError, setClaimError] = useState<string | null>(null);
-  const [isFlashing, setIsFlashing] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(false);
   const hasClaimedRef = useRef(false);
   const countdownColorRef = useRef<CdColor | null>(null);
   const lastReadyVideoKeyRef = useRef<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const allowUnmuteRef = useRef(false);
-  const cardFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bufferingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const presentation = usePresentationConfig();
 
-  const hintRarity: Rarity = gachaResult.isLoss
-    ? 'N'
-    : (gachaResult.isDonden && gachaResult.dondenFromRarity)
-      ? gachaResult.dondenFromRarity
-      : gachaResult.rarity;
-
   const [standbySelection] = useState<StandbySelection | null>(() =>
-    chooseStandbyWithProbabilities(hintRarity, presentation.standby),
+    chooseStandbyWithProbabilities(gachaResult.isLoss ? 'N' : gachaResult.rarity, presentation.standby),
   );
   const [countdownSelection] = useState<CountdownSelection | null>(() =>
-    chooseCountdownPatternWithProbabilities(hintRarity, presentation.countdown),
+    chooseCountdownPatternWithProbabilities(gachaResult.isLoss ? 'N' : gachaResult.rarity, presentation.countdown),
   );
 
   const standbyVideo = standbySelection?.videoPath ?? buildCommonAssetPath('standby', 'blackstandby.mp4');
@@ -150,65 +159,24 @@ function ActiveBattlePlayer({
     [countdownSelection],
   );
 
-  const charId = gachaResult.characterId;
-  const finalStar = gachaResult.starRating;
-  const lowStar = gachaResult.isDonden
-    ? starFromCardId(gachaResult.dondenFromCardId)
-    : finalStar;
+  // Battle video queue: 16本の flat list
+  const battleQueue = useMemo((): BattleQueueItem[] => {
+    if (gachaResult.isLoss) return [];
+    return buildBattleVideoQueue(playerCharacterId, playerStar, enemyCharacterId, enemyStar, isReversal);
+  }, [gachaResult.isLoss, playerCharacterId, playerStar, enemyCharacterId, enemyStar, isReversal]);
 
-  // Pre-compute all battle video paths
-  const battleVideos = useMemo(() => ({
-    // Player intro / pre
-    face: getBattlePreFaceVideo(charId),
-    shout: getBattlePreShoutVideo(charId),
-    preAttack: getBattlePreAttackVideo(charId),
-    preHit: getBattlePreHitVideo(charId),
-    reincarnation: getBattleReincarnationVideo(charId),
-    // BATTLE_MAIN - normal win (4 videos: player attack → opponent hit → player win → opponent lose)
-    playerAttack: getBattleAttackVideo(charId, finalStar),
-    opponentHit: getBattleHitVideo(opponentCharId, opponentStar),
-    playerWin: getBattleWinVideo(charId, finalStar),
-    opponentLose: getBattleLoseVideo(opponentCharId, opponentStar),
-    // BATTLE_MAIN - reversal first part (2 videos: player attack(low) → player lose(low))
-    playerAttackLow: getBattleAttackVideo(charId, lowStar),
-    playerLoseLow: getBattleLoseVideo(charId, lowStar),
-    // BATTLE_REVERSAL - reversal second part (3 videos: player attack(high) → player win(high) → opponent lose)
-    revAttack: getBattleAttackVideo(charId, finalStar),
-    revWin: getBattleWinVideo(charId, finalStar),
-    // opponentLose is reused at end of reversal
-  }), [charId, opponentCharId, finalStar, lowStar, opponentStar]);
-
-  // BATTLE_MAIN total videos depends on reversal
-  // Normal: [playerAttack, opponentHit, playerWin, opponentLose] = 4
-  // Reversal first: [playerAttackLow, playerLoseLow] = 2
-  const battleMainTotal = gachaResult.isDonden ? 2 : 4;
-  // BATTLE_REVERSAL: [revAttack, revWin, opponentLose] = 3
-  const battleReversalTotal = 3;
-
-  // All video sources for signed URL resolver
+  // All sources for signed URL preloading
   const allSources = useMemo(() => [
     standbyVideo,
     ...countdownVideos,
     puchunVideo,
-    battleVideos.face,
-    battleVideos.shout,
-    battleVideos.preAttack,
-    battleVideos.preHit,
-    battleVideos.reincarnation,
-    battleVideos.playerAttack,
-    battleVideos.opponentHit,
-    battleVideos.playerWin,
-    battleVideos.opponentLose,
-    battleVideos.playerAttackLow,
-    battleVideos.playerLoseLow,
-    battleVideos.revAttack,
-    battleVideos.revWin,
+    ...battleQueue.map((q) => q.src),
     lossCardImage,
-  ], [standbyVideo, countdownVideos, puchunVideo, battleVideos, lossCardImage]);
+  ], [standbyVideo, countdownVideos, puchunVideo, battleQueue, lossCardImage]);
 
   const { resolveAssetSrc } = useSignedAssetResolver(allSources);
 
-  // Claim on mount
+  // Claim result
   const ensureClaimed = useCallback((currentResultId?: string | null) => {
     if (!currentResultId || hasClaimedRef.current) return;
     setClaimError(null);
@@ -234,17 +202,11 @@ function ActiveBattlePlayer({
     return () => cancelAnimationFrame(raf);
   }, [resultId, ensureClaimed]);
 
-  // Phase change reporting
-  useEffect(() => {
-    onCurrentPhaseChange?.(phase);
-  }, [phase, onCurrentPhaseChange]);
+  useEffect(() => { onCurrentPhaseChange?.(phase); }, [phase, onCurrentPhaseChange]);
 
   // Countdown color upgrade
   useEffect(() => {
-    if (phase !== 'COUNTDOWN') {
-      countdownColorRef.current = null;
-      return;
-    }
+    if (phase !== 'COUNTDOWN') { countdownColorRef.current = null; return; }
     const step = countdownSelection?.pattern.steps[countdownIndex];
     if (!step) return;
     const prev = countdownColorRef.current;
@@ -258,24 +220,26 @@ function ActiveBattlePlayer({
     if (phase === 'CARD_REVEAL') triggerCardRevealVibration(gachaResult.starRating);
   }, [phase, gachaResult]);
 
-  // Card flash during BATTLE_REINCARNATION
+  // カードオーバーレイ：転生映像（showCardOverlay=true）の再生開始から1秒後に表示
   useEffect(() => {
-    if (phase !== 'BATTLE_REINCARNATION') return;
-    cardFlashTimerRef.current = setTimeout(() => {
-      setIsFlashing(true);
-      setTimeout(() => setIsFlashing(false), 350);
-    }, 1000);
+    const item = phase === 'BATTLE_QUEUE' ? battleQueue[queueIndex] : null;
+    if (!item?.showCardOverlay) {
+      const t = setTimeout(() => setOverlayVisible(false), 0);
+      return () => clearTimeout(t);
+    }
+    const showTimer = setTimeout(() => setOverlayVisible(true), 1000);
+    const hideTimer = setTimeout(() => setOverlayVisible(false), 1400);
+    overlayTimerRef.current = showTimer;
     return () => {
-      if (cardFlashTimerRef.current) {
-        clearTimeout(cardFlashTimerRef.current);
-        cardFlashTimerRef.current = null;
-      }
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+      overlayTimerRef.current = null;
     };
-  }, [phase]);
+  }, [phase, queueIndex, battleQueue]);
 
   const startPhase = useCallback((next: BattlePhase) => {
     setVideoReady(false);
-    setVideoIndex(0);
+    setQueueIndex(0);
     lastReadyVideoKeyRef.current = null;
     if (next === 'CARD_REVEAL') ensureClaimed(resultId);
     setPhase(next);
@@ -298,25 +262,15 @@ function ActiveBattlePlayer({
         return;
       }
       case 'PUCHUN':
-        startPhase(gachaResult.isLoss ? 'LOSS_REVEAL' : 'BATTLE_INTRO');
+        startPhase(gachaResult.isLoss ? 'LOSS_REVEAL' : 'BATTLE_QUEUE');
         return;
-      case 'BATTLE_INTRO':
-        if (videoIndex < 1) { setVideoIndex(1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
-        startPhase('BATTLE_PRE');
-        return;
-      case 'BATTLE_PRE':
-        if (videoIndex < 1) { setVideoIndex(1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
-        startPhase('BATTLE_REINCARNATION');
-        return;
-      case 'BATTLE_REINCARNATION':
-        startPhase('BATTLE_MAIN');
-        return;
-      case 'BATTLE_MAIN':
-        if (videoIndex < battleMainTotal - 1) { setVideoIndex((i) => i + 1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
-        startPhase(gachaResult.isDonden ? 'BATTLE_REVERSAL' : 'CARD_REVEAL');
-        return;
-      case 'BATTLE_REVERSAL':
-        if (videoIndex < battleReversalTotal - 1) { setVideoIndex((i) => i + 1); setVideoReady(false); lastReadyVideoKeyRef.current = null; return; }
+      case 'BATTLE_QUEUE':
+        if (queueIndex < battleQueue.length - 1) {
+          setQueueIndex((i) => i + 1);
+          setVideoReady(false);
+          lastReadyVideoKeyRef.current = null;
+          return;
+        }
         startPhase('CARD_REVEAL');
         return;
       case 'LOSS_REVEAL':
@@ -326,7 +280,7 @@ function ActiveBattlePlayer({
         onClose?.();
         return;
     }
-  }, [phase, countdownVideos.length, countdownIndex, videoIndex, gachaResult, startPhase, onClose, battleMainTotal, battleReversalTotal]);
+  }, [phase, countdownVideos.length, countdownIndex, queueIndex, battleQueue.length, gachaResult.isLoss, startPhase, onClose]);
 
   const handleAdvance = useCallback(() => {
     if (phase !== 'CARD_REVEAL' && !videoReady) return;
@@ -344,41 +298,25 @@ function ActiveBattlePlayer({
     startPhase('CARD_REVEAL');
   }, [phase, startPhase]);
 
-  // Compute current video src
+  // 現在の動画src
   const currentVideoSrc = useMemo((): string | null => {
     switch (phase) {
       case 'STANDBY': return standbyVideo;
       case 'COUNTDOWN': return countdownVideos[countdownIndex] ?? null;
       case 'PUCHUN': return puchunVideo;
-      case 'BATTLE_INTRO': return videoIndex === 0 ? battleVideos.face : battleVideos.shout;
-      case 'BATTLE_PRE': return videoIndex === 0 ? battleVideos.preAttack : battleVideos.preHit;
-      case 'BATTLE_REINCARNATION': return battleVideos.reincarnation;
-      case 'BATTLE_MAIN':
-        if (gachaResult.isDonden) {
-          // reversal first part: [playerAttackLow, playerLoseLow]
-          return videoIndex === 0 ? battleVideos.playerAttackLow : battleVideos.playerLoseLow;
-        }
-        // normal win: [playerAttack, opponentHit, playerWin, opponentLose]
-        switch (videoIndex) {
-          case 0: return battleVideos.playerAttack;
-          case 1: return battleVideos.opponentHit;
-          case 2: return battleVideos.playerWin;
-          case 3: return battleVideos.opponentLose;
-          default: return null;
-        }
-      case 'BATTLE_REVERSAL':
-        // [revAttack, revWin, opponentLose]
-        switch (videoIndex) {
-          case 0: return battleVideos.revAttack;
-          case 1: return battleVideos.revWin;
-          case 2: return battleVideos.opponentLose;
-          default: return null;
-        }
+      case 'BATTLE_QUEUE': return battleQueue[queueIndex]?.src ?? null;
       default: return null;
     }
-  }, [phase, countdownVideos, countdownIndex, videoIndex, standbyVideo, puchunVideo, battleVideos, gachaResult.isDonden]);
+  }, [phase, countdownVideos, countdownIndex, puchunVideo, standbyVideo, battleQueue, queueIndex]);
 
-  const videoKey = `${phase}-${videoIndex}-${countdownIndex}`;
+  // 転生映像のどちらのカードを表示するか
+  // queueIndex=8 → 自キャラ転生 → 当選カード
+  // queueIndex=9 → 敵キャラ転生 → 敵のカード（暫定: 当選カード流用）
+  const overlayCardImage = useMemo(() => {
+    return gachaResult.cardImagePath; // 両方の転生で当選カードを表示
+  }, [gachaResult.cardImagePath]);
+
+  const videoKey = `${phase}-${queueIndex}-${countdownIndex}`;
   const isLoopPhase = phase === 'STANDBY';
   const signedVideoSrc = resolveAssetSrc(currentVideoSrc);
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
@@ -398,16 +336,14 @@ function ActiveBattlePlayer({
     if (!v) return;
     v.muted = true;
     void v.play()
-      .then(() => {
-        if (allowUnmuteRef.current && videoRef.current) videoRef.current.muted = false;
-      })
+      .then(() => { if (allowUnmuteRef.current && videoRef.current) videoRef.current.muted = false; })
       .catch(() => undefined);
   }, [signedVideoSrc, videoKey]);
 
-  // Upcoming video preloads
+  // 先読みリスト（最大8本）
   const upcomingVideos = useMemo(() => {
     const list: string[] = [];
-    const add = (s: string | null) => { if (s) list.push(s); };
+    const add = (s: string | null | undefined) => { if (s) list.push(s); };
     switch (phase) {
       case 'STANDBY':
         countdownVideos.forEach(add);
@@ -415,41 +351,20 @@ function ActiveBattlePlayer({
         break;
       case 'COUNTDOWN':
         add(puchunVideo);
-        add(battleVideos.face);
-        add(battleVideos.shout);
+        if (!gachaResult.isLoss) {
+          add(battleQueue[0]?.src);
+          add(battleQueue[1]?.src);
+        }
         break;
       case 'PUCHUN':
-        add(battleVideos.face);
-        add(battleVideos.shout);
-        add(battleVideos.preAttack);
-        add(battleVideos.preHit);
+        battleQueue.slice(0, 4).forEach((q) => add(q.src));
         break;
-      case 'BATTLE_INTRO':
-        add(battleVideos.preAttack);
-        add(battleVideos.preHit);
-        add(battleVideos.reincarnation);
-        break;
-      case 'BATTLE_PRE':
-        add(battleVideos.reincarnation);
-        add(gachaResult.isDonden ? battleVideos.playerAttackLow : battleVideos.playerAttack);
-        add(gachaResult.isDonden ? battleVideos.playerLoseLow : battleVideos.opponentHit);
-        break;
-      case 'BATTLE_REINCARNATION':
-        if (gachaResult.isDonden) {
-          add(battleVideos.playerAttackLow); add(battleVideos.playerLoseLow);
-        } else {
-          add(battleVideos.playerAttack); add(battleVideos.opponentHit);
-          add(battleVideos.playerWin); add(battleVideos.opponentLose);
-        }
-        break;
-      case 'BATTLE_MAIN':
-        if (gachaResult.isDonden) {
-          add(battleVideos.revAttack); add(battleVideos.revWin); add(battleVideos.opponentLose);
-        }
+      case 'BATTLE_QUEUE':
+        battleQueue.slice(queueIndex + 1, queueIndex + 5).forEach((q) => add(q.src));
         break;
     }
     return list.slice(0, 8);
-  }, [phase, countdownVideos, puchunVideo, battleVideos, gachaResult.isDonden]);
+  }, [phase, countdownVideos, puchunVideo, battleQueue, queueIndex, gachaResult.isLoss]);
 
   if (phase === 'CARD_REVEAL') {
     return (
@@ -480,7 +395,6 @@ function ActiveBattlePlayer({
       data-phase={phase}
     >
       <div className="relative flex h-full w-full max-w-[430px] flex-col">
-        {/* Video area */}
         {hasVideo ? (
           <div className="relative h-full w-full overflow-hidden">
             <video
@@ -503,18 +417,18 @@ function ActiveBattlePlayer({
                 setIsBuffering(false);
               }}
             />
-            {/* Card flash overlay during reincarnation */}
-            {phase === 'BATTLE_REINCARNATION' && isFlashing && (
+            {/* カードオーバーレイ（転生映像中に奥から浮かび上がる） */}
+            {phase === 'BATTLE_QUEUE' && overlayVisible && (
               <div
                 className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-                style={{ animation: 'battleCardFlash 0.35s ease-out forwards' }}
+                style={{ animation: 'battleCardFloat 0.4s ease-out forwards' }}
               >
-                <div className="relative" style={{ width: '65%', aspectRatio: '3/4' }}>
+                <div className="relative" style={{ width: '60%', aspectRatio: '3/4' }}>
                   <Image
-                    src={gachaResult.cardImagePath}
+                    src={overlayCardImage}
                     alt={gachaResult.cardName}
                     fill
-                    className="rounded-2xl object-cover shadow-[0_0_40px_rgba(255,255,255,0.8)]"
+                    className="rounded-2xl object-cover shadow-[0_0_60px_rgba(255,255,255,0.9)]"
                     unoptimized
                   />
                 </div>
@@ -547,7 +461,6 @@ function ActiveBattlePlayer({
           <RoundMetalButton label="RIGHT" subLabel="次へ ▶" onClick={handleAdvance} disabled={nextDisabled} />
         </div>
 
-        {/* Upcoming video preloads */}
         <div
           aria-hidden="true"
           style={{ position: 'fixed', top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: 'none', overflow: 'hidden' }}
@@ -558,22 +471,14 @@ function ActiveBattlePlayer({
         </div>
       </div>
 
-      {/* CSS for card flash animation */}
       <style>{`
-        @keyframes battleCardFlash {
-          0%   { opacity: 0; }
-          20%  { opacity: 1; }
-          70%  { opacity: 1; }
-          100% { opacity: 0; }
+        @keyframes battleCardFloat {
+          0%   { opacity: 0; transform: scale(0.7) translateY(30px); }
+          40%  { opacity: 1; transform: scale(1.05) translateY(0); }
+          70%  { opacity: 1; transform: scale(1) translateY(0); }
+          100% { opacity: 0; transform: scale(1) translateY(-10px); }
         }
       `}</style>
     </div>
   );
-}
-
-function starFromCardId(cardId: string | undefined): number {
-  if (!cardId) return 1;
-  const m = cardId.match(/card(\d+)/);
-  if (!m) return 1;
-  return Math.max(1, parseInt(m[1], 10));
 }

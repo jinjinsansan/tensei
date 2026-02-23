@@ -50,8 +50,11 @@ export async function POST(request: Request) {
         order: index + 1,
         resultId: pull.resultRow?.id ?? null,
         gachaResult: pull.gachaResult,
-        opponentCharacterId: pull.opponentCharacterId,
-        opponentStarLevel: pull.opponentStarLevel,
+        playerCharacterId: pull.playerCharacterId,
+        playerStar: pull.playerStar,
+        enemyCharacterId: pull.enemyCharacterId,
+        enemyStar: pull.enemyStar,
+        isReversal: pull.isReversal,
       })),
     });
   } catch (error) {

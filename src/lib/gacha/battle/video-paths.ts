@@ -51,3 +51,60 @@ export function getBattleLoseVideo(charId: string, starLevel: number): string {
 export function isBattleReadyCharacter(charId: string): charId is BattleCharacterId {
   return BATTLE_READY_CHARACTERS.includes(charId as BattleCharacterId);
 }
+
+/** 汎用パスビルダー: charId と filename のみ指定 */
+export function buildBattleVideoPath(charId: string, filename: string): string {
+  return battlePath(charId, `${charId}_battle_${filename}.mp4`);
+}
+
+/** flat videoキューを組み立てる（16本） */
+export type BattleQueueItem = {
+  src: string;
+  showCardOverlay?: boolean;
+};
+
+export function buildBattleVideoQueue(
+  playerCharId: string,
+  playerStar: number,
+  enemyCharId: string,
+  enemyStar: number,
+  isReversal: boolean,
+): BattleQueueItem[] {
+  const p = (name: string) => buildBattleVideoPath(playerCharId, name);
+  const e = (name: string) => buildBattleVideoPath(enemyCharId, name);
+  const pPost = (action: string) => p(`c${pad2(playerStar)}_${action}`);
+  const ePost = (action: string) => e(`c${pad2(enemyStar)}_${action}`);
+
+  return [
+    // PHASE 1: 対峙
+    { src: p('pre_face') },
+    { src: e('pre_face') },
+    // PHASE 2: 転生前バトル
+    { src: p('pre_shout') },
+    { src: p('pre_attack') },
+    { src: e('pre_hit') },
+    { src: e('pre_shout') },
+    { src: e('pre_attack') },
+    { src: p('pre_hit') },
+    // PHASE 3: 両者転生
+    { src: p('reincarnation'), showCardOverlay: true },
+    { src: e('reincarnation'), showCardOverlay: true },
+    // PHASE 4: 転生後バトル（通常=自キャラ先手、どんでん返し=敵先手）
+    ...(isReversal
+      ? [
+          { src: ePost('attack') },
+          { src: pPost('hit') },
+          { src: pPost('attack') },
+          { src: ePost('hit') },
+        ]
+      : [
+          { src: pPost('attack') },
+          { src: ePost('hit') },
+          { src: ePost('attack') },
+          { src: pPost('hit') },
+        ]),
+    // PHASE 5: 決着（自キャラ常に勝利）
+    { src: pPost('win') },
+    { src: ePost('lose') },
+  ];
+}

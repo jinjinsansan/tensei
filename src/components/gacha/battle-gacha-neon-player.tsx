@@ -16,8 +16,11 @@ type PlayerPull = {
   order: number;
   resultId: string | null;
   gachaResult: GachaResult;
-  opponentCharacterId: string;
-  opponentStarLevel: number;
+  playerCharacterId: string;
+  playerStar: number;
+  enemyCharacterId: string;
+  enemyStar: number;
+  isReversal: boolean;
 };
 
 type ClaimState = {
@@ -78,8 +81,11 @@ export function BattleGachaNeonPlayer({ containerClassName, buttonWrapperClassNa
         order: p.order,
         resultId: p.resultId,
         gachaResult: p.gachaResult,
-        opponentCharacterId: p.opponentCharacterId,
-        opponentStarLevel: p.opponentStarLevel,
+        playerCharacterId: p.playerCharacterId,
+        playerStar: p.playerStar,
+        enemyCharacterId: p.enemyCharacterId,
+        enemyStar: p.enemyStar,
+        isReversal: p.isReversal,
       }));
       setActivePulls(pulls);
       activePullsRef.current = pulls;
@@ -226,8 +232,11 @@ export function BattleGachaNeonPlayer({ containerClassName, buttonWrapperClassNa
       {showPlayer && currentPull && !isSkipping ? (
         <BattleGachaPlayer
           gachaResult={currentPull.gachaResult}
-          opponentCharacterId={currentPull.opponentCharacterId}
-          opponentStarLevel={currentPull.opponentStarLevel}
+          playerCharacterId={currentPull.playerCharacterId}
+          playerStar={currentPull.playerStar}
+          enemyCharacterId={currentPull.enemyCharacterId}
+          enemyStar={currentPull.enemyStar}
+          isReversal={currentPull.isReversal}
           onClose={handlePlayerClose}
           resultId={currentPull.resultId}
           onResultResolved={handleResultResolved}
