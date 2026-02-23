@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { fetchAuthedContext } from '@/lib/app/session';
 import { getServiceSupabase } from '@/lib/supabase/service';
-import type { GachaResult } from '@/lib/gacha/common/types';
+import type { GachaResult, Rarity } from '@/lib/gacha/common/types';
 import type { StoryPayload } from '@/lib/gacha/types';
 
 // 未完了（card_awarded=false）の gacha_results を返す
@@ -44,21 +44,53 @@ export async function GET() {
   // フロントエンドが使える形式にシリアライズ
   const pulls = rows.map((row, index) => {
     const storedGachaResult = (row.metadata as { gachaResult?: GachaResult } | null)?.gachaResult ?? null;
+    const card = row.cards as
+      | {
+          id: string;
+          card_name: string;
+          rarity: string;
+          star_level: number | null;
+          card_image_url: string | null;
+          has_reversal: boolean;
+        }
+      | null;
+
+    const character = row.characters as { id: string } | null;
+
+    // メタデータが欠けていてもカード情報から最低限の gachaResult を復元
+    const fallbackGachaResult: GachaResult | null = card
+      ? {
+          isLoss: false,
+          characterId: (character?.id as GachaResult['characterId']) ?? 'kenta',
+          cardId: card.id,
+          rarity: card.rarity as Rarity,
+          starRating: card.star_level ?? 0,
+          cardName: card.card_name,
+          cardTitle: card.card_name,
+          cardImagePath: card.card_image_url ?? '/placeholders/card-default.svg',
+          lossCardImagePath: undefined,
+          isDonden: card.has_reversal,
+          dondenFromCardId: undefined,
+          dondenFromRarity: undefined,
+          isSequel: false,
+        }
+      : null;
+
     const story = row.scenario_snapshot as StoryPayload | null;
     return {
       order: index + 1,
       resultId: row.id,
       createdAt: row.created_at,
-      gachaResult: storedGachaResult,
+      gachaResult: storedGachaResult ?? fallbackGachaResult,
       story,
-      card: row.cards
+      card: card
         ? {
-            id: (row.cards as { id: string }).id,
-            name: (row.cards as { card_name: string }).card_name,
-            rarity: (row.cards as { rarity: string }).rarity,
-            starLevel: (row.cards as { star_level: number | null }).star_level,
-            imageUrl: (row.cards as { card_image_url: string | null }).card_image_url,
-            hasReversal: (row.cards as { has_reversal: boolean }).has_reversal,
+            id: card.id,
+            name: card.card_name,
+            rarity: card.rarity,
+            starLevel: card.star_level,
+            imageUrl: card.card_image_url,
+            hasReversal: card.has_reversal,
           }
         : null,
     };

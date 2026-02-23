@@ -80,11 +80,19 @@ export function GachaNeonPlayer({
   // 外部からの再開セッション注入
   useEffect(() => {
     if (!pendingPullsToResume || pendingPullsToResume.length === 0) return;
-    const pulls: PlayerPull[] = pendingPullsToResume.map((p) => ({
-      order: p.order,
-      resultId: p.resultId,
-      gachaResult: p.gachaResult as GachaResult,
-    }));
+    const pulls: PlayerPull[] = pendingPullsToResume
+      .map((p) => ({
+        order: p.order,
+        resultId: p.resultId,
+        gachaResult: p.gachaResult as GachaResult | null,
+      }))
+      .filter((p) => p.gachaResult && p.gachaResult.cardImagePath) as PlayerPull[];
+
+    if (pulls.length === 0) {
+      setError('未受取の演出データを読み込めませんでした。お手数ですが再度ガチャを実行してください。');
+      onSessionActive?.(false);
+      return;
+    }
     setActivePulls(pulls);
     activePullsRef.current = pulls;
     setSessionMeta({ multiSessionId: null, totalPulls: pulls.length });
