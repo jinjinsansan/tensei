@@ -260,9 +260,10 @@ async function resolveBattleScenario(
   const enemyCharacterId = pickEnemy(playerCharId);
   const isReversal = randomFloat() * 100 < settings.reversalRate;
   // isReversal=true → 敵★ > 自★（苦戦演出）, false → 敵★ < 自★（自キャラ優勢）
+  // 最低★3以上にして転生後らしい映像を確保する
   const enemyStar = isReversal
-    ? Math.min(12, playerStar + 1 + Math.floor(randomFloat() * 3))   // +1〜+3
-    : Math.max(1, playerStar - 1 - Math.floor(randomFloat() * 2));   // -1〜-2
+    ? Math.min(12, playerStar + 1 + Math.floor(randomFloat() * 3))              // +1〜+3
+    : Math.max(3, playerStar - 1 - Math.floor(randomFloat() * 2));              // -1〜-2 ただし最低3
 
   return { gachaResult, card: selectedCard, character: characterRow, playerCharacterId: playerCharId, playerStar, enemyCharacterId, enemyStar, isReversal };
 }

@@ -57,7 +57,7 @@ export function buildBattleVideoPath(charId: string, filename: string): string {
   return battlePath(charId, `${charId}_battle_${filename}.mp4`);
 }
 
-/** flat videoキューを組み立てる（16本） */
+/** flat videoキューを組み立てる（17本） */
 export type BattleQueueItem = {
   src: string;
   showCardOverlay?: boolean;
@@ -104,7 +104,8 @@ export function buildBattleVideoQueue(
           { src: pPost('hit') },
         ]),
     // PHASE 5: 決着（自キャラ常に勝利）
-    { src: pPost('win') },
-    { src: ePost('lose') },
+    { src: pPost('attack') },  // とどめ
+    { src: ePost('lose') },    // 敵敗北
+    { src: pPost('win') },     // 自キャラ勝利
   ];
 }
