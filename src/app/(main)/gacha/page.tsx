@@ -132,12 +132,18 @@ export default async function GachaPage() {
         </article>
 
         {/* バトルガチャカード */}
-        <article className="relative overflow-hidden rounded-[36px] border border-white/10 bg-gradient-to-br from-[#12030b] via-[#1c090f] to-[#050103] p-[1px] shadow-[0_30px_80px_rgba(0,0,0,0.55)] opacity-95">
-          <div className="relative rounded-[34px] bg-gradient-to-br from-[#1b050b] via-[#120107] to-[#050001] px-6 py-8 sm:px-8">
+        <article
+          className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_55px_rgba(255,120,170,0.25),0_30px_80px_rgba(0,0,0,0.55)]"
+          style={{ background: 'linear-gradient(140deg, rgba(255,120,170,0.5) 0%, rgba(130,200,255,0.4) 45%, rgba(40,15,30,0.6) 100%)' }}
+        >
+          <div className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-[#1b0b18] via-[#120712] to-[#0a0510] px-6 py-8 sm:px-8">
             <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,99,155,0.25),transparent_55%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_10%,rgba(255,255,255,0.08),transparent_60%)]" />
-              <div className="absolute inset-0 border border-white/10 rounded-[34px]" />
+              <div className="absolute -left-14 -top-10 h-60 w-60 rounded-full bg-[#ff78aa]/18 blur-3xl" />
+              <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#7ad0ff]/16 blur-3xl" />
+              <div className="absolute bottom-0 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full bg-[#ffb7e0]/10 blur-2xl" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#ff78aa]/25 to-transparent" />
+              <div className="absolute inset-0 rounded-[34px] border border-white/12" />
             </div>
             {!battleEnabled && (
               <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#ff6fb0] to-[#ff4378] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(255,67,120,0.35)]">
@@ -147,7 +153,7 @@ export default async function GachaPage() {
             <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
               <div className="flex flex-1 flex-col gap-6">
                 <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white/15 bg-black/40 shadow-[0_0_30px_rgba(255,99,155,0.4)]">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-[#ff8ec5]/40 bg-black/40 shadow-[0_0_28px_rgba(255,120,170,0.55),0_0_14px_rgba(122,208,255,0.35)]">
                     <Image
                       src="/kenta_cards/card12_hero.png"
                       alt="バトルガチャ アイコン"
@@ -157,7 +163,7 @@ export default async function GachaPage() {
                     />
                   </div>
                   <div>
-                    <span className="inline-flex items-center rounded-full border border-white/12 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#ff8ec5]">
+                    <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#ffd6ec] shadow-[0_0_16px_rgba(255,120,170,0.45)]">
                       GACHA
                     </span>
                     <h3 className="mt-2 font-display text-3xl text-white">バトルガチャ</h3>
@@ -166,11 +172,11 @@ export default async function GachaPage() {
                 <p className="text-sm leading-relaxed text-white/85">
                   来世ガチャに登場する主人公達が今度は１対１のバトルチャレンジを繰り広げる！果たして勝者はいったい誰なのか？
                 </p>
-                <div className="flex flex-wrap gap-3 text-xs text-white/70">
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
+                <div className="flex flex-wrap gap-3 text-xs">
+                  <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/12 px-4 py-1 text-[#ffd6ec] shadow-[0_0_12px_rgba(255,120,170,0.45)]">
                     1チケットで10連
                   </span>
-                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-4 py-1">
+                  <span className="inline-flex items-center rounded-full border border-[#7ad0ff]/30 bg-[#7ad0ff]/10 px-4 py-1 text-[#d9f2ff] shadow-[0_0_12px_rgba(122,208,255,0.35)]">
                     バトル演出フル収録
                   </span>
                 </div>
