@@ -226,22 +226,23 @@ function ActiveBattlePlayer({
     if (phase === 'CARD_REVEAL') triggerCardRevealVibration(gachaResult.starRating);
   }, [phase, gachaResult]);
 
-  // カードオーバーレイ：転生映像（showCardOverlay=true）の再生開始から1秒後に表示
+  // カードオーバーレイ：videoReadyになってから表示（ボタン解除後に確実に見せる）
   useEffect(() => {
     const item = phase === 'BATTLE_QUEUE' ? battleQueue[queueIndex] : null;
-    if (!item?.showCardOverlay) {
-      const t = setTimeout(() => setOverlayVisible(false), 0);
-      return () => clearTimeout(t);
+    if (!item?.showCardOverlay || !videoReady) {
+      // showCardOverlayでない or まだ動画準備中 → 非表示にして終了
+      setOverlayVisible(false);
+      return;
     }
-    const showTimer = setTimeout(() => setOverlayVisible(true), 1000);
-    const hideTimer = setTimeout(() => setOverlayVisible(false), 3500);
-    overlayTimerRef.current = showTimer;
+    // videoReady=true かつ showCardOverlay=true → 即表示して2.5秒後に消す
+    setOverlayVisible(true);
+    const hideTimer = setTimeout(() => setOverlayVisible(false), 2500);
+    overlayTimerRef.current = hideTimer;
     return () => {
-      clearTimeout(showTimer);
       clearTimeout(hideTimer);
       overlayTimerRef.current = null;
     };
-  }, [phase, queueIndex, battleQueue]);
+  }, [phase, queueIndex, battleQueue, videoReady]);
 
   const startPhase = useCallback((next: BattlePhase) => {
     setVideoReady(false);
@@ -331,9 +332,10 @@ function ActiveBattlePlayer({
   const signedVideoSrc = resolveAssetSrc(currentVideoSrc);
   const signedLossCardImage = resolveAssetSrc(lossCardImage);
   const hasVideo = Boolean(currentVideoSrc);
+  const isOverlayActive = phase === 'BATTLE_QUEUE' && overlayVisible;
   const controlsLocked = hasVideo && phase !== 'CARD_REVEAL' && !videoReady;
   const skipDisabled = phase === 'CARD_REVEAL';
-  const nextDisabled = phase === 'CARD_REVEAL' || controlsLocked;
+  const nextDisabled = phase === 'CARD_REVEAL' || controlsLocked || isOverlayActive;
 
   const handleVideoReady = useCallback(() => {
     if (lastReadyVideoKeyRef.current === videoKey) return;
