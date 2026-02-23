@@ -10,7 +10,7 @@ export type BattlePullPayload = {
   enemyStar: number;
   enemyCardImagePath: string;
   enemyCardName: string;
-  isReversal: boolean;
+  playerWins: boolean;
 };
 
 export type BattlePlayResponse = {

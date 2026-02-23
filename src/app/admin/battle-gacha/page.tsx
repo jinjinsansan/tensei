@@ -22,6 +22,8 @@ async function updateBattleSettings(formData: FormData) {
   const reversalRate = Number.isFinite(reversalRateRaw) ? Math.min(Math.max(reversalRateRaw, 0), 100) : 15;
   const dondenRateRaw = Number(formData.get('dondenRate') ?? 15);
   const dondenRate = Number.isFinite(dondenRateRaw) ? Math.min(Math.max(dondenRateRaw, 0), 100) : 15;
+  const highStarWinRateRaw = Number(formData.get('highStarWinRate') ?? 70);
+  const highStarWinRate = Number.isFinite(highStarWinRateRaw) ? Math.min(Math.max(highStarWinRateRaw, 0), 100) : 70;
 
   const starValues = Array.from({ length: 12 }, (_, i) => {
     const raw = Number(formData.get(`star_${i + 1}`) ?? 0);
@@ -38,6 +40,7 @@ async function updateBattleSettings(formData: FormData) {
     loss_rate: lossRate,
     reversal_rate: reversalRate,
     donden_rate: dondenRate,
+    high_star_win_rate: highStarWinRate,
     star_distribution: starValues,
     updated_at: new Date().toISOString(),
   };
@@ -125,9 +128,22 @@ export default async function BattleGachaAdminPage({
           </div>
         </AdminCard>
 
+        {/* 高★側勝率 */}
+        <AdminCard>
+          <AdminSectionTitle title="高★側の勝率" description="★が多いキャラクターが勝つ確率です。残りの確率で低★側が勝ちます（逆転演出）。デフォルト70%推奨。" />
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-white/70">現在の値</span>
+              <span className="text-3xl font-bold text-green-300">{settings.highStarWinRate}%</span>
+            </div>
+            <input type="range" name="highStarWinRate" min={50} max={95} step={5} defaultValue={settings.highStarWinRate} className="w-full accent-green-400" />
+            <p className="text-xs text-white/50">50% = 完全ランダム　95% = ほぼ必ず高★が勝つ</p>
+          </div>
+        </AdminCard>
+
         {/* どんでん返し率 */}
         <AdminCard>
-          <AdminSectionTitle title="どんでん返し率" description="低★lose → 高★win の逆転演出が発生する確率です。" />
+          <AdminSectionTitle title="どんでん返し率（旧設定・現在未使用）" description="現バージョンでは高★側勝率に統合されました。" />
           <div className="mt-6 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm text-white/70">現在の値</span>

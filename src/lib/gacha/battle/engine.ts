@@ -35,7 +35,7 @@ export type BattleGachaEngineResult = {
   enemyStar: number;
   enemyCardImagePath: string;
   enemyCardName: string;
-  isReversal: boolean; // true=敵★が高い（どんでん返し演出）
+  playerWins: boolean; // true=自キャラ勝利、false=敵キャラ勝利（演出のみ・カードは常に自キャラに付与）
 };
 
 export type BattleBatchResult = {
@@ -93,7 +93,7 @@ export async function generateBattleGachaBatchPlay({
       enemyStar: number;
       enemyCardImagePath: string;
       enemyCardName: string;
-      isReversal: boolean;
+      playerWins: boolean;
     }> = [];
 
     for (let i = 0; i < safeCount; i++) {
@@ -108,7 +108,7 @@ export async function generateBattleGachaBatchPlay({
         multi_session_id: sessionRow?.id ?? null,
         star_level: scenario.playerStar,
         scenario: ({} as unknown) as Json,
-        had_reversal: scenario.isReversal,
+        had_reversal: !scenario.playerWins,
         gacha_type: 'tenfold',
       });
 
@@ -118,12 +118,12 @@ export async function generateBattleGachaBatchPlay({
         character_id: scenario.character.id,
         card_id: scenario.card.id,
         star_level: scenario.playerStar,
-        had_reversal: scenario.isReversal,
+        had_reversal: !scenario.playerWins,
         scenario_snapshot: ({} as unknown) as Json,
         card_awarded: false,
         history_id: historyRow.id,
         obtained_via: 'battle_gacha',
-        metadata: ({ gacha_type: 'battle_gacha', enemy: scenario.enemyCharacterId, enemyStar: scenario.enemyStar, isReversal: scenario.isReversal } as unknown) as Json,
+        metadata: ({ gacha_type: 'battle_gacha', enemy: scenario.enemyCharacterId, enemyStar: scenario.enemyStar, isReversal: !scenario.playerWins } as unknown) as Json,
       });
 
       if (scenario.gachaResult.isLoss) {
@@ -159,7 +159,7 @@ export async function generateBattleGachaBatchPlay({
         enemyStar: scenario.enemyStar,
         enemyCardImagePath: scenario.enemyCardImagePath,
         enemyCardName: scenario.enemyCardName,
-        isReversal: scenario.isReversal,
+        playerWins: scenario.playerWins,
       } as BattleGachaEngineResult;
     });
 
@@ -204,6 +204,7 @@ async function resolveBattleScenario(
       cards[0];
     const characterRow = await getCachedCharacter(supabase, kentaDbId, characterRowCache);
     const enemyCharacterId = pickEnemy('kenta');
+    const { imagePath: lossEnemyImg, cardName: lossEnemyName } = resolveEnemyCardInfo(enemyCharacterId, 1);
     return {
       gachaResult: buildLossResult(),
       card: lossCard,
@@ -212,9 +213,9 @@ async function resolveBattleScenario(
       playerStar: 0,
       enemyCharacterId,
       enemyStar: 1,
-      enemyCardImagePath: resolveEnemyCardInfo(enemyCharacterId, 1).imagePath,
-      enemyCardName: resolveEnemyCardInfo(enemyCharacterId, 1).cardName,
-      isReversal: false,
+      enemyCardImagePath: lossEnemyImg,
+      enemyCardName: lossEnemyName,
+      playerWins: true,
     };
   }
 
@@ -264,18 +265,27 @@ async function resolveBattleScenario(
     isSequel: false,
   };
 
-  // 6. 敵キャラ・どんでん返し判定
+  // 6. 敵キャラ・★・勝敗判定
   const enemyCharacterId = pickEnemy(playerCharId);
-  const isReversal = randomFloat() * 100 < settings.reversalRate;
-  // isReversal=true → 敵★ > 自★（苦戦演出）, false → 敵★ < 自★（自キャラ優勢）
-  // 最低★3以上にして転生後らしい映像を確保する
-  const enemyStar = isReversal
-    ? Math.min(12, playerStar + 1 + Math.floor(randomFloat() * 3))              // +1〜+3
-    : Math.max(3, playerStar - 1 - Math.floor(randomFloat() * 2));              // -1〜-2 ただし最低3
+
+  // 敵★: 自★±3の範囲（最低1・最低3で転生後らしい映像を確保）
+  const enemyStar = Math.max(3, Math.min(12, playerStar + Math.floor(randomFloat() * 7) - 3));
+
+  // 勝敗判定: ★が多い方が highStarWinRate% で勝つ
+  const highStarWinRate = settings.highStarWinRate ?? 70;
+  const playerHigher = playerStar >= enemyStar;
+  let playerWins: boolean;
+  if (playerStar === enemyStar) {
+    playerWins = randomFloat() < 0.5; // 同★は50/50
+  } else if (playerHigher) {
+    playerWins = randomFloat() * 100 < highStarWinRate;
+  } else {
+    playerWins = randomFloat() * 100 >= highStarWinRate;
+  }
 
   const { imagePath: enemyCardImagePath, cardName: enemyCardName } = resolveEnemyCardInfo(enemyCharacterId, enemyStar);
 
-  return { gachaResult, card: selectedCard, character: characterRow, playerCharacterId: playerCharId, playerStar, enemyCharacterId, enemyStar, enemyCardImagePath, enemyCardName, isReversal };
+  return { gachaResult, card: selectedCard, character: characterRow, playerCharacterId: playerCharId, playerStar, enemyCharacterId, enemyStar, enemyCardImagePath, enemyCardName, playerWins };
 }
 
 function resolveEnemyCardInfo(enemyCharId: CharacterId, enemyStar: number): { imagePath: string; cardName: string } {

@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         enemyStar: pull.enemyStar,
         enemyCardImagePath: pull.enemyCardImagePath,
         enemyCardName: pull.enemyCardName,
-        isReversal: pull.isReversal,
+        playerWins: pull.playerWins,
       })),
     });
   } catch (error) {

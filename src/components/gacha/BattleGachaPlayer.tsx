@@ -40,7 +40,7 @@ type Props = {
   enemyStar?: number;
   enemyCardImagePath?: string;
   enemyCardName?: string;
-  isReversal?: boolean;
+  playerWins?: boolean;
   onClose?: () => void;
   resultId?: string | null;
   onResultResolved?: (payload: ResultResolutionPayload) => void;
@@ -56,7 +56,7 @@ export function BattleGachaPlayer({
   enemyStar,
   enemyCardImagePath = '',
   enemyCardName = '',
-  isReversal,
+  playerWins,
   onClose,
   resultId,
   onResultResolved,
@@ -92,7 +92,7 @@ export function BattleGachaPlayer({
       enemyStar={enemyStar ?? 1}
       enemyCardImagePath={enemyCardImagePath ?? ''}
       enemyCardName={enemyCardName ?? ''}
-      isReversal={isReversal ?? false}
+      playerWins={playerWins ?? true}
       onClose={onClose}
       resultId={resultId}
       onResultResolved={onResultResolved}
@@ -111,7 +111,7 @@ type ActiveProps = {
   enemyStar: number;
   enemyCardImagePath: string;
   enemyCardName: string;
-  isReversal: boolean;
+  playerWins?: boolean;
   onClose?: () => void;
   resultId?: string | null;
   onResultResolved?: (payload: ResultResolutionPayload) => void;
@@ -127,7 +127,7 @@ function ActiveBattlePlayer({
   enemyStar,
   enemyCardImagePath,
   enemyCardName,
-  isReversal,
+  playerWins,
   onClose,
   resultId,
   onResultResolved,
@@ -172,8 +172,8 @@ function ActiveBattlePlayer({
   // Battle video queue: 16本の flat list
   const battleQueue = useMemo((): BattleQueueItem[] => {
     if (gachaResult.isLoss) return [];
-    return buildBattleVideoQueue(playerCharacterId, playerStar, enemyCharacterId, enemyStar, isReversal);
-  }, [gachaResult.isLoss, playerCharacterId, playerStar, enemyCharacterId, enemyStar, isReversal]);
+    return buildBattleVideoQueue(playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins ?? true);
+  }, [gachaResult.isLoss, playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins]);
 
   // All sources for signed URL preloading
   const allSources = useMemo(() => [
@@ -323,14 +323,14 @@ function ActiveBattlePlayer({
 
   // 転生映像のどちらのカードを表示するか
   // queueIndex=8 → 自キャラ転生 → 当選カード（自キャラのカード）
-  // queueIndex=9 → 敵キャラ転生 → 敵キャラの★に対応したカード
-  const ENEMY_REINCARNATION_INDEX = 9;
-  const isEnemyReincarnation = queueIndex === ENEMY_REINCARNATION_INDEX;
-  const overlayCardImage = isEnemyReincarnation && enemyCardImagePath
+  // overlayFor フラグで自キャラ/敵キャラのカードを切り替え
+  const currentOverlayFor = battleQueue[queueIndex]?.overlayFor;
+  const isEnemyOverlay = currentOverlayFor === 'enemy';
+  const overlayCardImage = isEnemyOverlay && enemyCardImagePath
     ? enemyCardImagePath
     : gachaResult.cardImagePath;
-  const overlayStarRating = isEnemyReincarnation ? enemyStar : gachaResult.starRating;
-  const overlayCardName = isEnemyReincarnation ? enemyCardName : gachaResult.cardName;
+  const overlayStarRating = isEnemyOverlay ? enemyStar : gachaResult.starRating;
+  const overlayCardName = isEnemyOverlay ? enemyCardName : gachaResult.cardName;
 
   const videoKey = `${phase}-${queueIndex}-${countdownIndex}`;
   const isLoopPhase = phase === 'STANDBY';

@@ -7,6 +7,7 @@ export type BattleGachaSettings = {
   lossRate: number;
   reversalRate: number;
   dondenRate: number;
+  highStarWinRate: number; // 高★側が勝つ確率(%) デフォルト70
   starDistribution: number[]; // length 12, sum ~100
 };
 
@@ -42,6 +43,7 @@ export async function fetchBattleGachaSettings(
       lossRate: 60,
       reversalRate: 15,
       dondenRate: 15,
+      highStarWinRate: 70,
       starDistribution: [...DEFAULT_BATTLE_STAR_DISTRIBUTION],
     };
   }
@@ -53,6 +55,7 @@ export async function fetchBattleGachaSettings(
     lossRate: Number(row.loss_rate ?? 60),
     reversalRate: Number(row.reversal_rate ?? 15),
     dondenRate: Number(row.donden_rate ?? 15),
+    highStarWinRate: Number(row.high_star_win_rate ?? 70),
     starDistribution: parseStarDistribution(row.star_distribution),
   };
 }
@@ -68,6 +71,7 @@ export async function updateBattleGachaSettings(
   if (updates.lossRate !== undefined) patch.loss_rate = updates.lossRate;
   if (updates.reversalRate !== undefined) patch.reversal_rate = updates.reversalRate;
   if (updates.dondenRate !== undefined) patch.donden_rate = updates.dondenRate;
+  if (updates.highStarWinRate !== undefined) patch.high_star_win_rate = updates.highStarWinRate;
   if (updates.starDistribution !== undefined) patch.star_distribution = updates.starDistribution;
 
   await (client.from('battle_gacha_settings' as never) as ReturnType<typeof client.from>)
