@@ -375,6 +375,18 @@ function BattleLoadingOverlay({ message }: { message?: string }) {
             </div>
           </div>
         </div>
+
+        {/* 注意事項 */}
+        <div className="pointer-events-none absolute bottom-8 left-0 right-0 flex justify-center px-6">
+          <div className="flex items-start gap-2 rounded-2xl border border-yellow-500/30 bg-black/60 px-4 py-3 backdrop-blur-sm">
+            <span className="text-yellow-400">⚠</span>
+            <p className="text-[0.7rem] leading-relaxed text-yellow-100/90">
+              ブラウザの戻るボタンや閉じる操作は行わないでください。
+              <br className="hidden sm:inline" />
+              <span className="sm:ml-1">中断すると演出がスキップされます。</span>
+            </p>
+          </div>
+        </div>
       </div>
       <style>{`@keyframes shuffleCard { 0% { opacity: 1; } ${Math.round(100 / shuffleCards.length)}% { opacity: 0; } 100% { opacity: 0; } }`}</style>
     </div>,
