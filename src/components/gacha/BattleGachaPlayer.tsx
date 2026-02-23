@@ -169,10 +169,12 @@ function ActiveBattlePlayer({
     [countdownSelection],
   );
 
-  // Battle video queue: 16本の flat list
+  // Battle video queue
   const battleQueue = useMemo((): BattleQueueItem[] => {
     if (gachaResult.isLoss) return [];
-    return buildBattleVideoQueue(playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins ?? true);
+    const queue = buildBattleVideoQueue(playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins ?? true);
+    console.log('[BattleQueue] len=' + queue.length + '\n' + queue.map((q, i) => `  ${i}: ${q.src.split('/').pop()}`).join('\n'));
+    return queue;
   }, [gachaResult.isLoss, playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins]);
 
   // All sources for signed URL preloading
