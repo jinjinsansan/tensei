@@ -173,7 +173,6 @@ function ActiveBattlePlayer({
   const battleQueue = useMemo((): BattleQueueItem[] => {
     if (gachaResult.isLoss) return [];
     const queue = buildBattleVideoQueue(playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins ?? true);
-    console.log('[BattleQueue] len=' + queue.length + '\n' + queue.map((q, i) => `  ${i}: ${q.src.split('/').pop()}`).join('\n'));
     return queue;
   }, [gachaResult.isLoss, playerCharacterId, playerStar, enemyCharacterId, enemyStar, playerWins]);
 
