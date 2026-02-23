@@ -20,6 +20,7 @@ type PlayerPull = {
   playerStar: number;
   enemyCharacterId: string;
   enemyStar: number;
+  enemyCardImagePath: string;
   isReversal: boolean;
 };
 
@@ -85,6 +86,7 @@ export function BattleGachaNeonPlayer({ containerClassName, buttonWrapperClassNa
         playerStar: p.playerStar,
         enemyCharacterId: p.enemyCharacterId,
         enemyStar: p.enemyStar,
+        enemyCardImagePath: p.enemyCardImagePath,
         isReversal: p.isReversal,
       }));
       setActivePulls(pulls);
@@ -236,6 +238,7 @@ export function BattleGachaNeonPlayer({ containerClassName, buttonWrapperClassNa
           playerStar={currentPull.playerStar}
           enemyCharacterId={currentPull.enemyCharacterId}
           enemyStar={currentPull.enemyStar}
+          enemyCardImagePath={currentPull.enemyCardImagePath}
           isReversal={currentPull.isReversal}
           onClose={handlePlayerClose}
           resultId={currentPull.resultId}

@@ -38,6 +38,7 @@ type Props = {
   playerStar?: number;
   enemyCharacterId?: string;
   enemyStar?: number;
+  enemyCardImagePath?: string;
   isReversal?: boolean;
   onClose?: () => void;
   resultId?: string | null;
@@ -52,6 +53,7 @@ export function BattleGachaPlayer({
   playerStar,
   enemyCharacterId,
   enemyStar,
+  enemyCardImagePath = '',
   isReversal,
   onClose,
   resultId,
@@ -86,6 +88,7 @@ export function BattleGachaPlayer({
       playerStar={playerStar ?? gachaResult.starRating}
       enemyCharacterId={enemyCharacterId ?? 'shoichi'}
       enemyStar={enemyStar ?? 1}
+      enemyCardImagePath={enemyCardImagePath ?? ''}
       isReversal={isReversal ?? false}
       onClose={onClose}
       resultId={resultId}
@@ -103,6 +106,7 @@ type ActiveProps = {
   playerStar: number;
   enemyCharacterId: string;
   enemyStar: number;
+  enemyCardImagePath: string;
   isReversal: boolean;
   onClose?: () => void;
   resultId?: string | null;
@@ -117,6 +121,7 @@ function ActiveBattlePlayer({
   playerStar,
   enemyCharacterId,
   enemyStar,
+  enemyCardImagePath,
   isReversal,
   onClose,
   resultId,
@@ -172,7 +177,8 @@ function ActiveBattlePlayer({
     puchunVideo,
     ...battleQueue.map((q) => q.src),
     lossCardImage,
-  ], [standbyVideo, countdownVideos, puchunVideo, battleQueue, lossCardImage]);
+    enemyCardImagePath,
+  ], [standbyVideo, countdownVideos, puchunVideo, battleQueue, lossCardImage, enemyCardImagePath]);
 
   const { resolveAssetSrc } = useSignedAssetResolver(allSources);
 
@@ -310,11 +316,15 @@ function ActiveBattlePlayer({
   }, [phase, countdownVideos, countdownIndex, puchunVideo, standbyVideo, battleQueue, queueIndex]);
 
   // 転生映像のどちらのカードを表示するか
-  // queueIndex=8 → 自キャラ転生 → 当選カード
-  // queueIndex=9 → 敵キャラ転生 → 敵のカード（暫定: 当選カード流用）
+  // queueIndex=8 → 自キャラ転生 → 当選カード（自キャラのカード）
+  // queueIndex=9 → 敵キャラ転生 → 敵キャラの★に対応したカード
   const overlayCardImage = useMemo(() => {
-    return gachaResult.cardImagePath; // 両方の転生で当選カードを表示
-  }, [gachaResult.cardImagePath]);
+    const ENEMY_REINCARNATION_INDEX = 9;
+    if (queueIndex === ENEMY_REINCARNATION_INDEX && enemyCardImagePath) {
+      return enemyCardImagePath;
+    }
+    return gachaResult.cardImagePath;
+  }, [queueIndex, gachaResult.cardImagePath, enemyCardImagePath]);
 
   const videoKey = `${phase}-${queueIndex}-${countdownIndex}`;
   const isLoopPhase = phase === 'STANDBY';

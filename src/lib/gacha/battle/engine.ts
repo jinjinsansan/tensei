@@ -33,6 +33,7 @@ export type BattleGachaEngineResult = {
   playerStar: number;
   enemyCharacterId: CharacterId;
   enemyStar: number;
+  enemyCardImagePath: string;
   isReversal: boolean; // true=敵★が高い（どんでん返し演出）
 };
 
@@ -89,6 +90,7 @@ export async function generateBattleGachaBatchPlay({
       playerStar: number;
       enemyCharacterId: CharacterId;
       enemyStar: number;
+      enemyCardImagePath: string;
       isReversal: boolean;
     }> = [];
 
@@ -153,6 +155,7 @@ export async function generateBattleGachaBatchPlay({
         playerStar: scenario.playerStar,
         enemyCharacterId: scenario.enemyCharacterId,
         enemyStar: scenario.enemyStar,
+        enemyCardImagePath: scenario.enemyCardImagePath,
         isReversal: scenario.isReversal,
       } as BattleGachaEngineResult;
     });
@@ -206,6 +209,7 @@ async function resolveBattleScenario(
       playerStar: 0,
       enemyCharacterId,
       enemyStar: 1,
+      enemyCardImagePath: resolveEnemyCardImage(enemyCharacterId, 1),
       isReversal: false,
     };
   }
@@ -265,7 +269,18 @@ async function resolveBattleScenario(
     ? Math.min(12, playerStar + 1 + Math.floor(randomFloat() * 3))              // +1〜+3
     : Math.max(3, playerStar - 1 - Math.floor(randomFloat() * 2));              // -1〜-2 ただし最低3
 
-  return { gachaResult, card: selectedCard, character: characterRow, playerCharacterId: playerCharId, playerStar, enemyCharacterId, enemyStar, isReversal };
+  const enemyCardImagePath = resolveEnemyCardImage(enemyCharacterId, enemyStar);
+
+  return { gachaResult, card: selectedCard, character: characterRow, playerCharacterId: playerCharId, playerStar, enemyCharacterId, enemyStar, enemyCardImagePath, isReversal };
+}
+
+function resolveEnemyCardImage(enemyCharId: CharacterId, enemyStar: number): string {
+  const enemyModule = getCharacter(enemyCharId);
+  if (!enemyModule) return '';
+  const matched = enemyModule.cards.find((c) => c.starRating === enemyStar);
+  const card = matched ?? enemyModule.cards[0];
+  if (!card) return '';
+  return enemyModule.getCardImagePath(card.cardId);
 }
 
 function pickEnemy(playerCharId: CharacterId): CharacterId {
