@@ -109,7 +109,7 @@ export async function generateBattleGachaBatchPlay({
         card_id: scenario.card.id,
         star_level: scenario.star,
         had_reversal: scenario.hadReversal,
-        scenario_snapshot: null,
+        scenario_snapshot: ({} as unknown) as Json,
         card_awarded: false,
         history_id: historyRow.id,
         obtained_via: 'battle_gacha',
