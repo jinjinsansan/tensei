@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils/cn";
 import { BattleGachaPlayer } from "@/components/gacha/BattleGachaPlayer";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { CardReveal } from "@/components/gacha/CardReveal";
+import { getRandomShuffleCards } from "@/components/gacha/loading-shuffle-cards";
 import { playBattleGacha } from "@/lib/api/battle-gacha";
 import { claimGachaResult } from "@/lib/api/gacha";
 import type { GachaResult } from "@/lib/gacha/common/types";
@@ -327,30 +328,8 @@ function BatchSummaryOverlay({ cards, starRating, loading, errorMessage, onRetry
   );
 }
 
-const BATTLE_LOADING_CARDS = [
-  '/splash_cards_kenta/card01_convenience.png',
-  '/splash_cards_shoichi/shoichi_card01_fish.png',
-  '/splash_cards_kenta/card03_youtuber.png',
-  '/splash_cards_shoichi/shoichi_card03_host.png',
-  '/splash_cards_kenta/card06_boxer.png',
-  '/splash_cards_shoichi/shoichi_card06_ikemen.png',
-  '/splash_cards_kenta/card09_mercenary.png',
-  '/splash_cards_shoichi/shoichi_card09_youth_love.png',
-  '/splash_cards_kenta/card11_demon_king.png',
-  '/splash_cards_shoichi/shoichi_card11_pilot.png',
-  '/splash_cards_kenta/card12_hero.png',
-  '/splash_cards_shoichi/shoichi_card12_investor.png',
-];
-
 function BattleLoadingOverlay({ message }: { message?: string }) {
-  const [shuffleCards] = useState(() => {
-    const arr = [...BATTLE_LOADING_CARDS];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  });
+  const [shuffleCards] = useState(() => getRandomShuffleCards(12));
   if (typeof document === "undefined") return null;
   const totalDuration = shuffleCards.length * 80;
 
