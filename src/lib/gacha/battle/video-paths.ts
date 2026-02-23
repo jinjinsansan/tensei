@@ -113,8 +113,7 @@ export function buildBattleVideoQueue(
           { src: pPost('attack') },
           { src: ePost('hit') },
         ]),
-    // PHASE 5: 決着（ここで初めて勝敗が判明）
-    { src: winnerPost('attack') },  // とどめ
+    // PHASE 5: 決着（敗者→勝者の順でドラマチックに）
     { src: loserPost('lose') },     // 敗者
     { src: winnerPost('win') },     // 勝者
   ];
