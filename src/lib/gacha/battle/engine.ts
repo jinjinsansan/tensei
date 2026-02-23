@@ -265,23 +265,19 @@ async function resolveBattleScenario(
     isSequel: false,
   };
 
-  // 6. 敵キャラ・★・勝敗判定
+  // 6. 敵キャラ・★判定
   const enemyCharacterId = pickEnemy(playerCharId);
 
-  // 敵★: 自★±3の範囲（最低1・最低3で転生後らしい映像を確保）
-  const enemyStar = Math.max(3, Math.min(12, playerStar + Math.floor(randomFloat() * 7) - 3));
-
-  // 勝敗判定: ★が多い方が highStarWinRate% で勝つ
+  // 敵★: highStarWinRate% の確率で自キャラが高★（PHASE4優勢）
+  //       残り% で自キャラが低★（PHASE4劣勢→PHASE5逆転勝利）
+  // 自キャラは常に勝利 → カードと勝者が必ず一致する
   const highStarWinRate = settings.highStarWinRate ?? 70;
-  const playerHigher = playerStar >= enemyStar;
-  let playerWins: boolean;
-  if (playerStar === enemyStar) {
-    playerWins = randomFloat() < 0.5; // 同★は50/50
-  } else if (playerHigher) {
-    playerWins = randomFloat() * 100 < highStarWinRate;
-  } else {
-    playerWins = randomFloat() * 100 >= highStarWinRate;
-  }
+  const playerDominates = randomFloat() * 100 < highStarWinRate;
+  const enemyStar = playerDominates
+    ? Math.max(3, playerStar - 1 - Math.floor(randomFloat() * 2))   // 敵が低★（自キャラ順当勝ち）
+    : Math.min(12, playerStar + 1 + Math.floor(randomFloat() * 2));  // 敵が高★（自キャラ逆転勝ち）
+
+  const playerWins = true; // 自キャラ常勝: カード = 勝者のカード が保証される
 
   const { imagePath: enemyCardImagePath, cardName: enemyCardName } = resolveEnemyCardInfo(enemyCharacterId, enemyStar);
 
