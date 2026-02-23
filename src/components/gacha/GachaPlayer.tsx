@@ -783,9 +783,10 @@ function ActiveGachaPlayer({
           </div>
         ) : null}
 
-        <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-8">
-          <RoundMetalButton label="NEXT" subLabel="次へ" onClick={handleAdvance} disabled={disableNext} />
+        <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-4">
+          <RoundMetalButton label="LEFT" subLabel="◀ 次へ" onClick={handleAdvance} disabled={disableNext} />
           <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} disabled={skipDisabled} />
+          <RoundMetalButton label="RIGHT" subLabel="次へ ▶" onClick={handleAdvance} disabled={disableNext} />
         </div>
 
 
