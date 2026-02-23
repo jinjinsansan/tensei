@@ -76,32 +76,29 @@ export function buildBattleVideoQueue(
   const pPost = (action: string) => p(`c${pad2(playerStar)}_${action}`);
   const ePost = (action: string) => e(`c${pad2(enemyStar)}_${action}`);
 
-  // 勝者が先に登場（案B）
-  const winner = playerWins;
-  const fPre  = winner ? p : e;   // 先手（勝者）の転生前映像
-  const sPre  = winner ? e : p;   // 後手（敗者）の転生前映像
-  const fPost = winner ? pPost : ePost; // 先手（勝者）の転生後映像
-  const sPost = winner ? ePost : pPost; // 後手（敗者）の転生後映像
-  const fOverlay: 'player' | 'enemy' = winner ? 'player' : 'enemy';
-  const sOverlay: 'player' | 'enemy' = winner ? 'enemy' : 'player';
-
-  // PHASE 4: ★が多い方が先手（勝敗に関わらず）
+  // PHASE 1〜3は常に自キャラ先手（固定）
+  // PHASE 4は★が多い方が先手（優勢を演出するが勝敗は確定しない）
+  // PHASE 5で初めて勝敗が明らかになる（ドキドキポイント）
   const playerHigher = playerStar >= enemyStar;
 
+  // PHASE 5: 勝者映像
+  const winnerPost = playerWins ? pPost : ePost;
+  const loserPost  = playerWins ? ePost : pPost;
+
   return [
-    // PHASE 1: 対峙（勝者が先に登場）
-    { src: fPre('pre_face') },
-    { src: sPre('pre_face') },
-    // PHASE 2: 転生前バトル（勝者が先に攻撃）
-    { src: fPre('pre_shout') },
-    { src: fPre('pre_attack') },
-    { src: sPre('pre_hit') },
-    { src: sPre('pre_shout') },
-    { src: sPre('pre_attack') },
-    { src: fPre('pre_hit') },
-    // PHASE 3: 両者転生（勝者が先に転生、それぞれのカードをオーバーレイ）
-    { src: fPre('reincarnation'), showCardOverlay: true, overlayFor: fOverlay },
-    { src: sPre('reincarnation'), showCardOverlay: true, overlayFor: sOverlay },
+    // PHASE 1: 対峙（常に自キャラ先）
+    { src: p('pre_face') },
+    { src: e('pre_face') },
+    // PHASE 2: 転生前バトル（自キャラ先）
+    { src: p('pre_shout') },
+    { src: p('pre_attack') },
+    { src: e('pre_hit') },
+    { src: e('pre_shout') },
+    { src: e('pre_attack') },
+    { src: p('pre_hit') },
+    // PHASE 3: 両者転生（常に自キャラ先）
+    { src: p('reincarnation'), showCardOverlay: true, overlayFor: 'player' },
+    { src: e('reincarnation'), showCardOverlay: true, overlayFor: 'enemy' },
     // PHASE 4: 転生後バトル（★が多い方が先手）
     ...(playerHigher
       ? [
@@ -116,9 +113,9 @@ export function buildBattleVideoQueue(
           { src: pPost('attack') },
           { src: ePost('hit') },
         ]),
-    // PHASE 5: 決着（勝者がとどめ）
-    { src: fPost('attack') },  // とどめ
-    { src: sPost('lose') },    // 敗者
-    { src: fPost('win') },     // 勝者
+    // PHASE 5: 決着（ここで初めて勝敗が判明）
+    { src: winnerPost('attack') },  // とどめ
+    { src: loserPost('lose') },     // 敗者
+    { src: winnerPost('win') },     // 勝者
   ];
 }
