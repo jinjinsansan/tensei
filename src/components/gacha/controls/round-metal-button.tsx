@@ -24,7 +24,7 @@ export function RoundMetalButton({ label, subLabel, className, disabled, ...prop
       type="button"
       disabled={disabled}
       className={cn(
-        'group relative h-32 w-32 rounded-full transition-transform active:scale-95 disabled:opacity-40 disabled:saturate-50 disabled:brightness-75 disabled:cursor-not-allowed',
+        'group relative h-32 w-32 shrink-0 rounded-full transition-transform active:scale-95 disabled:opacity-40 disabled:saturate-50 disabled:brightness-75 disabled:cursor-not-allowed',
         className,
       )}
       {...props}

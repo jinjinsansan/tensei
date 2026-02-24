@@ -12,18 +12,15 @@ type Phase =
   | "C10"
   | "C9"
   | "C8"
-  | "INSERT1_SUCCESS"
-  | "INSERT1_FAIL"
   | "C7"
   | "C6"
   | "C5"
-  | "INSERT2_SUCCESS"
-  | "INSERT2_FAIL"
   | "C4"
   | "C3"
+  | "INSERT_SUCCESS"
+  | "INSERT_FAIL"
   | "C2"
   | "C1"
-  | "C0"
   | "PUCHUN"
   | "RESULT";
 
@@ -31,46 +28,43 @@ type VideoDef = { src: string; muted?: boolean; loop?: boolean };
 
 const VIDEO_MAP: Partial<Record<Phase, VideoDef>> = {
   STANDBY: { src: "/videos/harakiri/harakiri_standby.mp4", muted: true, loop: true },
+  TITLE: { src: "/videos/harakiri/harakiri_title_placeholder.mp4" },
   C10: { src: "/videos/harakiri/countdown_10.mp4" },
   C9: { src: "/videos/harakiri/countdown_9.mp4" },
   C8: { src: "/videos/harakiri/countdown_8.mp4" },
-  INSERT1_SUCCESS: { src: "/videos/harakiri/insert_success.mp4" },
-  INSERT1_FAIL: { src: "/videos/harakiri/insert_fail.mp4" },
   C7: { src: "/videos/harakiri/countdown_7.mp4" },
   C6: { src: "/videos/harakiri/countdown_6.mp4" },
   C5: { src: "/videos/harakiri/countdown_5.mp4" },
-  INSERT2_SUCCESS: { src: "/videos/harakiri/insert_success.mp4" },
-  INSERT2_FAIL: { src: "/videos/harakiri/insert_fail.mp4" },
   C4: { src: "/videos/harakiri/countdown_4.mp4" },
   C3: { src: "/videos/harakiri/countdown_3.mp4" },
+  INSERT_SUCCESS: { src: "/videos/harakiri/insert_success.mp4" },
+  INSERT_FAIL: { src: "/videos/harakiri/insert_fail.mp4" },
   C2: { src: "/videos/harakiri/countdown_2.mp4" },
   C1: { src: "/videos/harakiri/countdown_1.mp4" },
-  C0: { src: "/videos/harakiri/countdown_0.mp4" },
-  TITLE: { src: "/videos/harakiri/harakiri_title_placeholder.mp4" },
   PUCHUN: { src: "/videos/common/puchun/puchun.mp4" },
 };
 
-const PHASE_ORDER: Phase[] = [
-  "STANDBY",
-  "TITLE",
-  "C10",
-  "C9",
-  "C8",
-  "INSERT1_SUCCESS",
-  "INSERT1_FAIL",
-  "C7",
-  "C6",
-  "C5",
-  "INSERT2_SUCCESS",
-  "INSERT2_FAIL",
-  "C4",
-  "C3",
-  "C2",
-  "C1",
-  "C0",
+// Pattern A: success insert after C3
+const PHASE_ORDER_A: Phase[] = [
+  "STANDBY", "TITLE",
+  "C10", "C9", "C8", "C7", "C6", "C5", "C4", "C3",
+  "INSERT_SUCCESS",
+  "C2", "C1",
   "PUCHUN",
   "RESULT",
 ];
+
+// Pattern B: fail insert after C3
+const PHASE_ORDER_B: Phase[] = [
+  "STANDBY", "TITLE",
+  "C10", "C9", "C8", "C7", "C6", "C5", "C4", "C3",
+  "INSERT_FAIL",
+  "C2", "C1",
+  "PUCHUN",
+  "RESULT",
+];
+
+let patternCounter = 0;
 
 type Props = { open: boolean; onClose?: () => void };
 
@@ -94,6 +88,12 @@ export function HarakiriGachaPlayer({ open, onClose }: Props) {
 }
 
 function ActivePlayer({ onClose }: { onClose?: () => void }) {
+  const [phaseOrder] = useState<Phase[]>(() => {
+    const p = patternCounter % 2 === 0 ? PHASE_ORDER_A : PHASE_ORDER_B;
+    patternCounter++;
+    return p;
+  });
+
   const [phase, setPhase] = useState<Phase>("STANDBY");
   const [ready, setReady] = useState(true);
 
@@ -128,11 +128,11 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   }, [currentVideo, resolvedSrc]);
 
   const goNext = useCallback(() => {
-    const idx = PHASE_ORDER.indexOf(phase);
-    const next = PHASE_ORDER[idx + 1] ?? "RESULT";
+    const idx = phaseOrder.indexOf(phase);
+    const next = phaseOrder[idx + 1] ?? "RESULT";
     setReady(!VIDEO_MAP[next]);
     setPhase(next);
-  }, [phase]);
+  }, [phase, phaseOrder]);
 
   const handleSkip = useCallback(() => {
     setPhase("RESULT");
@@ -157,11 +157,11 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   }, [phase]);
 
   const upcomingVideos = useMemo(() => {
-    const idx = PHASE_ORDER.indexOf(phase);
-    return PHASE_ORDER.slice(idx + 1)
+    const idx = phaseOrder.indexOf(phase);
+    return phaseOrder.slice(idx + 1)
       .map((p) => resolveAssetSrc(VIDEO_MAP[p]?.src ?? null))
       .filter((src): src is string => Boolean(src));
-  }, [phase, resolveAssetSrc]);
+  }, [phase, phaseOrder, resolveAssetSrc]);
 
   const disableNext = !ready;
 
@@ -181,6 +181,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
               loop={currentVideo.loop}
               onCanPlayThrough={handleVideoReady}
               onLoadedData={handleVideoReady}
+              onPlay={handleVideoReady}
               onEnded={handleVideoEnded}
             />
           </div>
