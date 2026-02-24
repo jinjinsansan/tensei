@@ -142,7 +142,12 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     setVideoReady(true);
   }, [videoKey]);
 
-  const handleVideoEnded = useCallback(() => setVideoReady(true), []);
+  const handleVideoEnded = useCallback(() => {
+    if (lastReadyKeyRef.current !== videoKey) {
+      lastReadyKeyRef.current = videoKey;
+    }
+    setVideoReady(true);
+  }, [videoKey]);
 
   const goNext = useCallback(() => {
     const idx = phaseOrder.indexOf(phase);
