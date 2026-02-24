@@ -166,22 +166,24 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const disableNext = !ready;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black px-4 py-8">
-      <div className="relative aspect-[9/16] w-full max-w-[430px] overflow-hidden rounded-[30px] border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black">
+      <div className="relative flex h-full w-full max-w-[430px] flex-col">
         {currentVideo && (
-          <video
-            key={currentVideo.src}
-            ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover"
-            autoPlay
-            playsInline
-            preload="auto"
-            muted={currentVideo.muted}
-            loop={currentVideo.loop}
-            onCanPlayThrough={handleVideoReady}
-            onLoadedData={handleVideoReady}
-            onEnded={handleVideoEnded}
-          />
+          <div className="relative h-full w-full overflow-hidden rounded-[30px] border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
+            <video
+              key={currentVideo.src}
+              ref={videoRef}
+              className="h-full w-full object-cover"
+              autoPlay
+              playsInline
+              preload="auto"
+              muted={currentVideo.muted}
+              loop={currentVideo.loop}
+              onCanPlayThrough={handleVideoReady}
+              onLoadedData={handleVideoReady}
+              onEnded={handleVideoEnded}
+            />
+          </div>
         )}
 
         {phase === "RESULT" && (
@@ -193,7 +195,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         )}
 
         {phase !== "RESULT" && (
-          <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-4">
+          <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-4">
             <RoundMetalButton
               label="LEFT"
               subLabel={phase === "STANDBY" ? "START" : subLabel || "◀"}
