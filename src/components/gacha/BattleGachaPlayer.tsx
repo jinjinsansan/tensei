@@ -151,6 +151,13 @@ function ActiveBattlePlayer({
   const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bufferingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const clearOverlayTimer = useCallback(() => {
+    if (overlayTimerRef.current) {
+      clearTimeout(overlayTimerRef.current);
+      overlayTimerRef.current = null;
+    }
+  }, []);
+
   const presentation = usePresentationConfig();
 
   const [standbySelection] = useState<StandbySelection | null>(() =>
@@ -232,31 +239,15 @@ function ActiveBattlePlayer({
     if (phase === 'CARD_REVEAL') triggerCardRevealVibration(gachaResult.starRating);
   }, [phase, gachaResult]);
 
-  // カードオーバーレイ：videoReadyになってから表示（ボタン解除後に確実に見せる）
-  useEffect(() => {
-    const item = phase === 'BATTLE_QUEUE' ? battleQueue[queueIndex] : null;
-    if (!item?.showCardOverlay || !videoReady) {
-      // showCardOverlayでない or まだ動画準備中 → 非表示にして終了
-      setOverlayVisible(false);
-      return;
-    }
-    // videoReady=true かつ showCardOverlay=true → 即表示して2.5秒後に消す
-    setOverlayVisible(true);
-    const hideTimer = setTimeout(() => setOverlayVisible(false), 2500);
-    overlayTimerRef.current = hideTimer;
-    return () => {
-      clearTimeout(hideTimer);
-      overlayTimerRef.current = null;
-    };
-  }, [phase, queueIndex, battleQueue, videoReady]);
-
   const startPhase = useCallback((next: BattlePhase) => {
+    clearOverlayTimer();
+    setOverlayVisible(false);
     setVideoReady(false);
     setQueueIndex(0);
     lastReadyVideoKeyRef.current = null;
     if (next === 'CARD_REVEAL') ensureClaimed(resultId);
     setPhase(next);
-  }, [ensureClaimed, resultId]);
+  }, [clearOverlayTimer, ensureClaimed, resultId]);
 
   const progressPhase = useCallback(() => {
     switch (phase) {
@@ -279,6 +270,8 @@ function ActiveBattlePlayer({
         return;
       case 'BATTLE_QUEUE':
         if (queueIndex < battleQueue.length - 1) {
+          clearOverlayTimer();
+          setOverlayVisible(false);
           setQueueIndex((i) => i + 1);
           setVideoReady(false);
           lastReadyVideoKeyRef.current = null;
@@ -293,7 +286,7 @@ function ActiveBattlePlayer({
         onClose?.();
         return;
     }
-  }, [phase, countdownVideos.length, countdownIndex, queueIndex, battleQueue.length, gachaResult.isLoss, startPhase, onClose]);
+  }, [phase, countdownVideos.length, countdownIndex, queueIndex, battleQueue.length, gachaResult.isLoss, startPhase, onClose, clearOverlayTimer]);
 
   const handleAdvance = useCallback(() => {
     if (phase !== 'CARD_REVEAL' && !videoReady) return;
@@ -351,7 +344,22 @@ function ActiveBattlePlayer({
     if (lastReadyVideoKeyRef.current === videoKey) return;
     lastReadyVideoKeyRef.current = videoKey;
     setVideoReady(true);
-  }, [videoKey]);
+    clearOverlayTimer();
+    if (phase === 'BATTLE_QUEUE') {
+      const item = battleQueue[queueIndex];
+      if (item?.showCardOverlay) {
+        setOverlayVisible(true);
+        overlayTimerRef.current = setTimeout(() => {
+          setOverlayVisible(false);
+          overlayTimerRef.current = null;
+        }, 2500);
+      } else {
+        setOverlayVisible(false);
+      }
+    } else {
+      setOverlayVisible(false);
+    }
+  }, [videoKey, phase, battleQueue, queueIndex, clearOverlayTimer]);
 
   useEffect(() => {
     const v = videoRef.current;

@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { GachaStateProvider, GachaPendingBanner, GachaButton } from "@/components/gacha/GachaSection";
 import { BattleGachaButton } from "@/components/gacha/BattleGachaSection";
+import { HarakiriGachaButton } from "@/components/gacha/HarakiriGachaSection";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { getSessionWithSnapshot } from "@/lib/app/session";
@@ -47,6 +48,10 @@ export default async function GachaPage() {
     getBattleEnabled(),
   ]);
 
+  const showReincarnation = process.env.NEXT_PUBLIC_SHOW_REINCARNATION_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_REINCARNATION_GACHA !== '0';
+  const showBattle = process.env.NEXT_PUBLIC_SHOW_BATTLE_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_BATTLE_GACHA !== '0';
+  const showHarakiri = process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== '0';
+
   return (
     <section className="mx-auto w-full max-w-5xl space-y-10 pb-10">
       <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 px-6 py-8 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
@@ -73,131 +78,194 @@ export default async function GachaPage() {
         <GachaPendingBanner />
 
         {/* 来世ガチャカード */}
-        <article className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_60px_rgba(63,200,255,0.25),0_30px_80px_rgba(0,0,0,0.6)]"
-          style={{ background: 'linear-gradient(135deg, rgba(63,200,255,0.6) 0%, rgba(150,100,255,0.4) 40%, rgba(255,100,200,0.3) 100%)' }}>
-          <div className="relative overflow-hidden rounded-[35px] bg-gradient-to-br from-[#0d1528] via-[#111e35] to-[#0a0f1e] px-6 py-8 sm:px-8">
-            {/* 背景グロー群 */}
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute -left-10 -top-10 h-56 w-56 rounded-full bg-[#3fc8ff]/20 blur-3xl" />
-              <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#9664ff]/15 blur-3xl" />
-              <div className="absolute bottom-0 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full bg-[#3fc8ff]/10 blur-2xl" />
-              {/* 光沢ライン */}
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#3fc8ff]/60 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            </div>
+        {showReincarnation && (
+          <article className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_60px_rgba(63,200,255,0.25),0_30px_80px_rgba(0,0,0,0.6)]"
+            style={{ background: 'linear-gradient(135deg, rgba(63,200,255,0.6) 0%, rgba(150,100,255,0.4) 40%, rgba(255,100,200,0.3) 100%)' }}>
+            <div className="relative overflow-hidden rounded-[35px] bg-gradient-to-br from-[#0d1528] via-[#111e35] to-[#0a0f1e] px-6 py-8 sm:px-8">
+              {/* 背景グロー群 */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -left-10 -top-10 h-56 w-56 rounded-full bg-[#3fc8ff]/20 blur-3xl" />
+                <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#9664ff]/15 blur-3xl" />
+                <div className="absolute bottom-0 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full bg-[#3fc8ff]/10 blur-2xl" />
+                {/* 光沢ライン */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#3fc8ff]/60 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              </div>
 
-            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
-              <div className="flex flex-1 flex-col gap-5">
-                {/* ヘッダー */}
-                <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[#3fc8ff]/50 bg-black/40 shadow-[0_0_24px_rgba(63,200,255,0.6),0_0_8px_rgba(63,200,255,0.4)]">
-                    <Image
-                      src="/kenta_cards/card01_convenience.png"
-                      alt="健太 アイコン"
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
+              <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
+                <div className="flex flex-1 flex-col gap-5">
+                  {/* ヘッダー */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[#3fc8ff]/50 bg-black/40 shadow-[0_0_24px_rgba(63,200,255,0.6),0_0_8px_rgba(63,200,255,0.4)]">
+                      <Image
+                        src="/kenta_cards/card01_convenience.png"
+                        alt="健太 アイコン"
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center rounded-full border border-[#3fc8ff]/30 bg-[#3fc8ff]/10 px-3 py-1 text-[10px] uppercase tracking-[0.4em] text-[#7ddeff]">
+                        GACHA
+                      </span>
+                      <h3 className="mt-1.5 font-display text-3xl text-white drop-shadow-[0_0_20px_rgba(63,200,255,0.5)]">
+                        来世ガチャ
+                      </h3>
+                    </div>
                   </div>
-                  <div>
-                    <span className="inline-flex items-center rounded-full border border-[#3fc8ff]/30 bg-[#3fc8ff]/10 px-3 py-1 text-[10px] uppercase tracking-[0.4em] text-[#7ddeff]">
-                      GACHA
+                  {/* 説明文 */}
+                  <p className="text-sm leading-relaxed text-white/80">
+                    コンビニエンスストアの深夜バイトで働く22歳健太。チビハゲデブ独身の4重苦の58歳　冴えないサラリーマン正一。たくさんの主人公達に転生チャンスが訪れる！果たして望む来世を手に入れることが出来るのか？
+                  </p>
+                  {/* バッジ */}
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    <span className="inline-flex items-center rounded-full border border-[#3fc8ff]/25 bg-[#3fc8ff]/8 px-4 py-1.5 text-[#a8f1ff]">
+                      1チケットで必ず10連プレイ
                     </span>
-                    <h3 className="mt-1.5 font-display text-3xl text-white drop-shadow-[0_0_20px_rgba(63,200,255,0.5)]">
-                      来世ガチャ
-                    </h3>
+                    <span className="inline-flex items-center rounded-full border border-[#9664ff]/25 bg-[#9664ff]/8 px-4 py-1.5 text-[#c4a8ff]">
+                      動画演出フル収録
+                    </span>
                   </div>
                 </div>
-                {/* 説明文 */}
-                <p className="text-sm leading-relaxed text-white/80">
-                  コンビニエンスストアの深夜バイトで働く22歳健太。チビハゲデブ独身の4重苦の58歳　冴えないサラリーマン正一。たくさんの主人公達に転生チャンスが訪れる！果たして望む来世を手に入れることが出来るのか？
-                </p>
-                {/* バッジ */}
-                <div className="flex flex-wrap gap-3 text-xs">
-                  <span className="inline-flex items-center rounded-full border border-[#3fc8ff]/25 bg-[#3fc8ff]/8 px-4 py-1.5 text-[#a8f1ff]">
-                    1チケットで必ず10連プレイ
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-[#9664ff]/25 bg-[#9664ff]/8 px-4 py-1.5 text-[#c4a8ff]">
-                    動画演出フル収録
-                  </span>
+
+                {/* ガチャボタン */}
+                <div className="flex items-center justify-center lg:shrink-0">
+                  <GachaButton />
                 </div>
               </div>
-
-              {/* ガチャボタン */}
-              <div className="flex items-center justify-center lg:shrink-0">
-                <GachaButton />
-              </div>
             </div>
-          </div>
-        </article>
+          </article>
+        )}
 
         {/* バトルガチャカード */}
-        <article
-          className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_55px_rgba(255,120,170,0.25),0_30px_80px_rgba(0,0,0,0.55)]"
-          style={{ background: 'linear-gradient(140deg, rgba(255,120,170,0.5) 0%, rgba(130,200,255,0.4) 45%, rgba(40,15,30,0.6) 100%)' }}
-        >
-          <div className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-[#1b0b18] via-[#120712] to-[#0a0510] px-6 py-8 sm:px-8">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute -left-14 -top-10 h-60 w-60 rounded-full bg-[#ff78aa]/18 blur-3xl" />
-              <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#7ad0ff]/16 blur-3xl" />
-              <div className="absolute bottom-0 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full bg-[#ffb7e0]/10 blur-2xl" />
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#ff78aa]/25 to-transparent" />
-              <div className="absolute inset-0 rounded-[34px] border border-white/12" />
-            </div>
-            {!battleEnabled && (
-              <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#ff6fb0] to-[#ff4378] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(255,67,120,0.35)]">
-                準備中
+        {showBattle && (
+          <article
+            className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_55px_rgba(255,120,170,0.25),0_30px_80px_rgba(0,0,0,0.55)]"
+            style={{ background: 'linear-gradient(140deg, rgba(255,120,170,0.5) 0%, rgba(130,200,255,0.4) 45%, rgba(40,15,30,0.6) 100%)' }}
+          >
+            <div className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-[#1b0b18] via-[#120712] to-[#0a0510] px-6 py-8 sm:px-8">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -left-14 -top-10 h-60 w-60 rounded-full bg-[#ff78aa]/18 blur-3xl" />
+                <div className="absolute -right-10 top-0 h-48 w-48 rounded-full bg-[#7ad0ff]/16 blur-3xl" />
+                <div className="absolute bottom-0 left-1/2 h-32 w-64 -translate-x-1/2 rounded-full bg-[#ffb7e0]/10 blur-2xl" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#ff78aa]/25 to-transparent" />
+                <div className="absolute inset-0 rounded-[34px] border border-white/12" />
               </div>
-            )}
-            <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
-              <div className="flex flex-1 flex-col gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-[#ff8ec5]/40 bg-black/40 shadow-[0_0_28px_rgba(255,120,170,0.55),0_0_14px_rgba(122,208,255,0.35)]">
-                    <Image
-                      src="/kenta_cards/card12_hero.png"
-                      alt="バトルガチャ アイコン"
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
+              {!battleEnabled && (
+                <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#ff6fb0] to-[#ff4378] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(255,67,120,0.35)]">
+                  準備中
+                </div>
+              )}
+              <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
+                <div className="flex flex-1 flex-col gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-[#ff8ec5]/40 bg-black/40 shadow-[0_0_28px_rgba(255,120,170,0.55),0_0_14px_rgba(122,208,255,0.35)]">
+                      <Image
+                        src="/kenta_cards/card12_hero.png"
+                        alt="バトルガチャ アイコン"
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#ffd6ec] shadow-[0_0_16px_rgba(255,120,170,0.45)]">
+                        GACHA
+                      </span>
+                      <h3 className="mt-2 font-display text-3xl text-white">バトルガチャ</h3>
+                    </div>
                   </div>
-                  <div>
-                    <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#ffd6ec] shadow-[0_0_16px_rgba(255,120,170,0.45)]">
-                      GACHA
+                  <p className="text-sm leading-relaxed text-white/85">
+                    来世ガチャに登場する主人公達が今度は１対１のバトルチャレンジを繰り広げる！果たして勝者はいったい誰なのか？
+                  </p>
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/12 px-4 py-1 text-[#ffd6ec] shadow-[0_0_12px_rgba(255,120,170,0.45)]">
+                      1チケットで必ず10連プレイ
                     </span>
-                    <h3 className="mt-2 font-display text-3xl text-white">バトルガチャ</h3>
+                    <span className="inline-flex items-center rounded-full border border-[#7ad0ff]/30 bg-[#7ad0ff]/10 px-4 py-1 text-[#d9f2ff] shadow-[0_0_12px_rgba(122,208,255,0.35)]">
+                      バトル演出フル収録
+                    </span>
                   </div>
                 </div>
-                <p className="text-sm leading-relaxed text-white/85">
-                  来世ガチャに登場する主人公達が今度は１対１のバトルチャレンジを繰り広げる！果たして勝者はいったい誰なのか？
-                </p>
-                <div className="flex flex-wrap gap-3 text-xs">
-                  <span className="inline-flex items-center rounded-full border border-[#ff9ad6]/30 bg-[#ff9ad6]/12 px-4 py-1 text-[#ffd6ec] shadow-[0_0_12px_rgba(255,120,170,0.45)]">
-                    1チケットで必ず10連プレイ
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-[#7ad0ff]/30 bg-[#7ad0ff]/10 px-4 py-1 text-[#d9f2ff] shadow-[0_0_12px_rgba(122,208,255,0.35)]">
-                    バトル演出フル収録
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-1 items-center justify-center lg:justify-end">
-                <div className="w-full max-w-[150px]">
-                  {battleEnabled ? (
-                    <BattleGachaButton />
-                  ) : (
-                    <RoundMetalButton
-                      label={"ガチャを\n始める"}
-                      subLabel="START"
-                      disabled
-                      className="mx-auto"
-                    />
-                  )}
+                <div className="flex flex-1 items-center justify-center lg:justify-end">
+                  <div className="w-full max-w-[150px]">
+                    {battleEnabled ? (
+                      <BattleGachaButton />
+                    ) : (
+                      <RoundMetalButton
+                        label={"ガチャを\n始める"}
+                        subLabel="START"
+                        disabled
+                        className="mx-auto"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </article>
+          </article>
+        )}
+
+        {showHarakiri && (
+          <article
+            className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_60px_rgba(255,150,80,0.3),0_30px_80px_rgba(0,0,0,0.65)]"
+            style={{ background: 'linear-gradient(135deg, rgba(255,170,80,0.55) 0%, rgba(255,70,120,0.45) 45%, rgba(70,30,110,0.7) 100%)' }}
+          >
+            <div className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-[#140805] via-[#1b0b0f] to-[#0c0614] px-6 py-8 sm:px-8">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-[#ff9650]/20 blur-3xl" />
+                <div className="absolute -right-10 top-6 h-48 w-48 rounded-full bg-[#ff3f7a]/18 blur-3xl" />
+                <div className="absolute bottom-2 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full bg-[#ffdf9f]/12 blur-3xl" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ffb86c]/60 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#ff6fa0]/30 to-transparent" />
+                <div className="absolute inset-0 rounded-[34px] border border-white/10" />
+              </div>
+
+              <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
+                <div className="flex flex-1 flex-col gap-5">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-[#ffb86c]/50 bg-black/50 shadow-[0_0_26px_rgba(255,150,80,0.55),0_0_12px_rgba(255,70,120,0.35)]">
+                      <Image
+                        src="/kenta_cards/card12_hero.png"
+                        alt="VVV ガチャ アイコン"
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center rounded-full border border-[#ffb86c]/35 bg-[#ffb86c]/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#ffd9a1] shadow-[0_0_16px_rgba(255,150,80,0.4)]">
+                        GACHA
+                      </span>
+                      <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_0_18px_rgba(255,150,80,0.5)]">
+                        VVVガチャ（ハラキリ）
+                      </h3>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-white/85">
+                    パチスロ革命機ヴァルヴレイヴのハラキリチャレンジを再現。炎背景＋ゴールド数字のカウントダウン、差し込み煽り、プチュン昇天を3ボタン操作で体験。
+                  </p>
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    <span className="inline-flex items-center rounded-full border border-[#ffb86c]/35 bg-[#ffb86c]/12 px-4 py-1 text-[#ffe7bf] shadow-[0_0_12px_rgba(255,150,80,0.4)]">
+                      炎ループ＋ゴールド数字
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-[#ff6fa0]/35 bg-[#ff6fa0]/12 px-4 py-1 text-[#ffd4e6] shadow-[0_0_12px_rgba(255,111,160,0.4)]">
+                      プチュン演出収録
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 items-center justify-center lg:justify-end">
+                  <div className="w-full max-w-[150px]">
+                    <HarakiriGachaButton />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        )}
       </section>
       </GachaStateProvider>
 
