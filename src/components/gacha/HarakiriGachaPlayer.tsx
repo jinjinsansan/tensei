@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
+import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
 
 type Phase =
   | "STANDBY"
@@ -29,7 +30,7 @@ type Phase =
 type VideoDef = { src: string; muted?: boolean; loop?: boolean };
 
 const VIDEO_MAP: Partial<Record<Phase, VideoDef>> = {
-  STANDBY: { src: "/videos/harakiri/harakiri_standby.mp4", muted: false, loop: true },
+  STANDBY: { src: "/videos/harakiri/harakiri_standby.mp4", muted: true, loop: true },
   C10: { src: "/videos/harakiri/countdown_10.mp4" },
   C9: { src: "/videos/harakiri/countdown_9.mp4" },
   C8: { src: "/videos/harakiri/countdown_8.mp4" },
@@ -75,6 +76,19 @@ type Props = { open: boolean; onClose?: () => void };
 
 export function HarakiriGachaPlayer({ open, onClose }: Props) {
   const target = typeof window === "undefined" ? null : document.body;
+  useEffect(() => {
+    if (!open || typeof document === "undefined") return undefined;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const nav = document.querySelector("nav") as HTMLElement | null;
+    const prevNavDisplay = nav?.style.display;
+    if (nav) nav.style.display = "none";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      if (nav) nav.style.display = prevNavDisplay ?? "";
+    };
+  }, [open]);
+
   if (!open || !target) return null;
   return createPortal(<ActivePlayer onClose={onClose} />, target);
 }
@@ -85,12 +99,25 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const allSources = useMemo(() => {
+    const entries = Object.values(VIDEO_MAP).map((v) => v?.src).filter(Boolean);
+    return Array.from(new Set(entries)) as string[];
+  }, []);
+  const { resolveAssetSrc } = useSignedAssetResolver(allSources);
+
   const currentVideo = useMemo(() => VIDEO_MAP[phase] ?? null, [phase]);
+  const resolvedSrc = useMemo(() => resolveAssetSrc(currentVideo?.src ?? null), [currentVideo, resolveAssetSrc]);
 
   useEffect(() => {
     const v = videoRef.current;
     if (!currentVideo || !v) return;
-    v.src = currentVideo.src;
+    if (!resolvedSrc) {
+      v.pause();
+      v.removeAttribute("src");
+      v.load();
+      return;
+    }
+    v.src = resolvedSrc;
     v.loop = Boolean(currentVideo.loop);
     v.muted = Boolean(currentVideo.muted);
     v.currentTime = 0;
@@ -98,9 +125,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     if (playPromise) {
       void playPromise.catch(() => undefined);
     }
-  }, [currentVideo]);
-
-  const canPress = ready;
+  }, [currentVideo, resolvedSrc]);
 
   const goNext = useCallback(() => {
     const idx = PHASE_ORDER.indexOf(phase);
@@ -108,6 +133,14 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     setReady(!VIDEO_MAP[next]);
     setPhase(next);
   }, [phase]);
+
+  const handleSkip = useCallback(() => {
+    setPhase("RESULT");
+    setReady(true);
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+  }, []);
 
   const handleVideoReady = useCallback(() => setReady(true), []);
 
@@ -123,15 +156,24 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     return "";
   }, [phase]);
 
+  const upcomingVideos = useMemo(() => {
+    const idx = PHASE_ORDER.indexOf(phase);
+    return PHASE_ORDER.slice(idx + 1)
+      .map((p) => resolveAssetSrc(VIDEO_MAP[p]?.src ?? null))
+      .filter((src): src is string => Boolean(src));
+  }, [phase, resolveAssetSrc]);
+
+  const disableNext = !ready;
+
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 px-4 py-8">
-      <div className="relative w-[min(430px,100%)] max-w-[430px] aspect-[9/16] overflow-hidden rounded-[30px] border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
-        {/* MAIN VIDEO */}
+    <div className="fixed inset-0 z-[200] bg-black">
+      <div className="relative h-full w-full overflow-hidden">
         {currentVideo && (
           <video
             key={currentVideo.src}
             ref={videoRef}
             className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
             playsInline
             preload="auto"
             muted={currentVideo.muted}
@@ -151,15 +193,31 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         )}
 
         {phase !== "RESULT" && (
-          <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center">
+          <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-4">
             <RoundMetalButton
-              label={phase === "STANDBY" ? "VVV" : "NEXT"}
-              subLabel={phase === "STANDBY" ? "START" : subLabel}
+              label="LEFT"
+              subLabel={phase === "STANDBY" ? "START" : subLabel || "◀"}
               onClick={goNext}
-              disabled={!canPress}
+              disabled={disableNext}
+            />
+            <RoundMetalButton label="SKIP" subLabel="スキップ" onClick={handleSkip} />
+            <RoundMetalButton
+              label="RIGHT"
+              subLabel={phase === "STANDBY" ? "START" : subLabel || "▶"}
+              onClick={goNext}
+              disabled={disableNext}
             />
           </div>
         )}
+
+        <div
+          aria-hidden
+          style={{ position: "fixed", top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: "none", overflow: "hidden" }}
+        >
+          {upcomingVideos.map((src) => (
+            <video key={src} src={src} preload="auto" playsInline muted />
+          ))}
+        </div>
       </div>
     </div>
   );
