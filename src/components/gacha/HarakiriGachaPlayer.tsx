@@ -95,7 +95,7 @@ export function HarakiriGachaPlayer({ open, onClose }: Props) {
 
 function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const [phase, setPhase] = useState<Phase>("STANDBY");
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
