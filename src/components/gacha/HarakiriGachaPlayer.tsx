@@ -1,43 +1,78 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 
 type Phase =
-  | "STANDBY"   // harakiri_standby.mp4 ループ
-  | "COUNTDOWN" // cd_red_transparent_N.png フル画面表示、ボタン1回=1コマ
-  | "INSERT_A"  // 差し込みA映像（素材未提供→スキップ）
-  | "INSERT_B"  // 差し込みB映像（素材未提供→スキップ）
-  | "PUCHUN"    // 当たり演出映像
-  | "LOSS"      // ハズレ映像
+  | "STANDBY"   // 待機ループ
+  | "TITLE"     // 盛り上がりタイトル
+  | "COUNTDOWN" // カウントダウン（10→0）
+  | "INSERT_A"  // 差し込みA
+  | "INSERT_B"  // 差し込みB
+  | "PUCHUN"    // 当たり演出
+  | "LOSS"      // ハズレ演出
   | "RESULT";   // 結果表示
 
-const STANDBY_VIDEO  = "/videos/harakiri/harakiri_standby.mp4";
-const INSERT_A_VIDEO = "/videos/harakiri/insert_a.mp4";
-const INSERT_B_VIDEO = "/videos/harakiri/insert_b.mp4";
-const PUCHUN_VIDEO   = "/videos/common/puchun/puchun.mp4";
-const LOSS_VIDEO     = "/videos/harakiri/harakiri_loss.mp4";
+const BG_LOOP_VIDEO   = "/videos/harakiri/harakiri_fire_loop.mp4";
+const STANDBY_VIDEO   = "/videos/harakiri/harakiri_standby.mp4";
+const TITLE_VIDEO     = "/videos/harakiri/harakiri_title.mp4";
+const INSERT_A_VIDEO  = "/videos/harakiri/insert_a.mp4";
+const INSERT_B_VIDEO  = "/videos/harakiri/insert_b.mp4";
+const PUCHUN_VIDEO    = "/videos/common/puchun/puchun.mp4";
+const LOSS_VIDEO      = "/videos/harakiri/harakiri_loss.mp4";
+
+const COUNTDOWN_VIDEO_SRC: Partial<Record<number, string>> = {
+  8: "/videos/harakiri/countdown_8_fire.mp4",
+  7: "/videos/harakiri/countdown_7_fire.mp4",
+  6: "/videos/harakiri/countdown_6_fire.mp4",
+  5: "/videos/harakiri/countdown_5_fire.mp4",
+};
 
 const numSrc = (n: number) => `/harakiri_numbers_red/cd_red_transparent_${n}.png`;
 
 type GachaResult = {
   isWin: boolean;
-  stopAt: number;    // 当たりカウント（1〜10）
+  stopAt: number; // 10〜0
   showInsertA: boolean;
   showInsertB: boolean;
 };
 
+const STOP_AT_WEIGHTS: { value: number; weight: number }[] = [
+  { value: 10, weight: 80 },
+  { value: 9, weight: 70 },
+  { value: 8, weight: 60 },
+  { value: 7, weight: 50 },
+  { value: 6, weight: 40 },
+  { value: 5, weight: 30 },
+  { value: 4, weight: 25 },
+  { value: 3, weight: 20 },
+  { value: 2, weight: 12 },
+  { value: 1, weight: 8 },
+  { value: 0, weight: 3 },
+];
+
+function pickByWeight(values: { value: number; weight: number }[]): number {
+  const total = values.reduce((sum, entry) => sum + entry.weight, 0);
+  const roll = Math.random() * total;
+  let acc = 0;
+  for (const entry of values) {
+    acc += entry.weight;
+    if (roll <= acc) return entry.value;
+  }
+  return values[values.length - 1]?.value ?? 0;
+}
+
 function drawResult(): GachaResult {
-  const isWin = Math.random() < 0.3;
+  const isWin = Math.random() < 0.45;
+  const stopAt = isWin ? pickByWeight(STOP_AT_WEIGHTS) : 0;
   return {
     isWin,
-    stopAt: isWin
-      ? Math.floor(Math.random() * 10) + 1  // 1〜10
-      : 0,
-    showInsertA: false, // 素材提供後に有効化
-    showInsertB: false,
+    stopAt,
+    showInsertA: Math.random() < 0.45,
+    showInsertB: Math.random() < 0.45,
   };
 }
 
@@ -54,15 +89,51 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const [countdown, setCountdown] = useState(10);
   const [result] = useState<GachaResult>(drawResult);
 
-  // ready フラグ
   const [standbyReady, setStandbyReady] = useState(false);
-  const [numReady, setNumReady] = useState(false);
-  const [videoReady, setVideoReady] = useState(false);
+  const [titleReady, setTitleReady] = useState(false);
+  const [countImageReady, setCountImageReady] = useState(false);
+  const [countVideoReady, setCountVideoReady] = useState(true);
+  const [fgVideoReady, setFgVideoReady] = useState(false);
 
   const standbyRef = useRef<HTMLVideoElement>(null);
+  const bgRef = useRef<HTMLVideoElement>(null);
   const fgRef = useRef<HTMLVideoElement>(null);
+  const titleRef = useRef<HTMLVideoElement>(null);
+  const countVideoRef = useRef<HTMLVideoElement>(null);
 
-  // STANDBY 映像ループ
+  const countdownVideoSrc = COUNTDOWN_VIDEO_SRC[countdown];
+  const countdownReady = countImageReady && countVideoReady;
+
+  const resetCountdownReady = useCallback((nextCount: number) => {
+    setCountImageReady(false);
+    setCountVideoReady(!COUNTDOWN_VIDEO_SRC[nextCount]);
+  }, []);
+
+  const goToPhase = useCallback((next: Phase) => {
+    if (next === "INSERT_A" || next === "INSERT_B" || next === "PUCHUN" || next === "LOSS") {
+      setFgVideoReady(false);
+    }
+    if (next === "TITLE") {
+      setTitleReady(false);
+    }
+    setPhase(next);
+  }, []);
+
+  const goToCountdown = useCallback((value: number) => {
+    resetCountdownReady(value);
+    setCountdown(value);
+    setPhase("COUNTDOWN");
+  }, [resetCountdownReady]);
+
+  // 背景ループは常時再生
+  useEffect(() => {
+    const v = bgRef.current;
+    if (!v) return;
+    v.muted = true;
+    void v.play().catch(() => undefined);
+  }, []);
+
+  // STANDBY ループ
   useEffect(() => {
     const v = standbyRef.current;
     if (!v) return;
@@ -70,14 +141,6 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     void v.play().catch(() => undefined);
   }, []);
 
-  // フェーズが変わったら映像 ready をリセット
-  useEffect(() => {
-    if (phase !== "STANDBY" && phase !== "COUNTDOWN") {
-      setVideoReady(false);
-    }
-  }, [phase]);
-
-  // 現フェーズに対応する映像ソース
   const fgSrc = useMemo(() => {
     switch (phase) {
       case "INSERT_A": return INSERT_A_VIDEO;
@@ -88,86 +151,98 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     }
   }, [phase]);
 
+  // stopAt で自動プチュン割り込み
+  useEffect(() => {
+    if (phase !== "COUNTDOWN") return;
+    if (!result.isWin) return;
+    if (countdown !== result.stopAt) return;
+    if (!countdownReady) return;
+
+    const timer = setTimeout(() => goToPhase("PUCHUN"), 120);
+    return () => clearTimeout(timer);
+  }, [phase, result, countdown, countdownReady, goToPhase]);
+
   // ボタン押下可否
   const canPress = useMemo(() => {
     switch (phase) {
       case "STANDBY":   return standbyReady;
-      case "COUNTDOWN": return numReady;
+      case "TITLE":     return titleReady;
+      case "COUNTDOWN": return countdownReady;
       case "INSERT_A":
       case "INSERT_B":
       case "PUCHUN":
-      case "LOSS":      return videoReady;
+      case "LOSS":      return fgVideoReady;
       case "RESULT":    return true;
       default: return false;
     }
-  }, [phase, standbyReady, numReady, videoReady]);
+  }, [phase, standbyReady, titleReady, countdownReady, fgVideoReady]);
 
   const handleNext = useCallback(() => {
     if (!canPress) return;
 
     switch (phase) {
       case "STANDBY":
-        setCountdown(10);
-        setNumReady(false);
-        setPhase("COUNTDOWN");
+        goToPhase("TITLE");
+        return;
+
+      case "TITLE":
+        goToCountdown(10);
         return;
 
       case "COUNTDOWN": {
         const cur = countdown;
 
-        // 当たり判定
         if (result.isWin && cur === result.stopAt) {
-          setPhase("PUCHUN");
+          goToPhase("PUCHUN");
           return;
         }
 
-        // 差し込みA（8のタイミング）
         if (cur === 8 && result.showInsertA) {
-          setPhase("INSERT_A");
+          goToPhase("INSERT_A");
           return;
         }
 
-        // 差し込みB（5のタイミング）
         if (cur === 5 && result.showInsertB) {
-          setPhase("INSERT_B");
+          goToPhase("INSERT_B");
           return;
         }
 
         if (cur > 0) {
-          setNumReady(false);
-          setCountdown(cur - 1);
+          goToCountdown(cur - 1);
           return;
         }
 
-        // 0 到達→ハズレ
-        setPhase("LOSS");
+        goToPhase("LOSS");
         return;
       }
 
       case "INSERT_A":
-        setNumReady(false);
-        setCountdown(7);
-        setPhase("COUNTDOWN");
+        goToCountdown(7);
         return;
 
       case "INSERT_B":
-        setNumReady(false);
-        setCountdown(4);
-        setPhase("COUNTDOWN");
+        goToCountdown(4);
         return;
 
       case "PUCHUN":
       case "LOSS":
-        setPhase("RESULT");
+        goToPhase("RESULT");
         return;
 
       case "RESULT":
         onClose?.();
         return;
     }
-  }, [canPress, phase, countdown, result, onClose]);
+  }, [canPress, phase, countdown, result, onClose, goToPhase, goToCountdown]);
 
-  // プリロード
+  // 映像終了時の遷移（挿入は手動、当たり/ハズレは自動）
+  const handleFgEnded = useCallback(() => {
+    setFgVideoReady(true);
+    if (phase === "PUCHUN" || phase === "LOSS") {
+      goToPhase("RESULT");
+    }
+  }, [phase, goToPhase]);
+
   const preloadNums = useMemo(
     () => Array.from({ length: 11 }, (_, i) => numSrc(i)),
     [],
@@ -175,8 +250,18 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] bg-black">
+      {/* 背景ループ（常時） */}
+      <video
+        ref={bgRef}
+        src={BG_LOOP_VIDEO}
+        className="absolute inset-0 h-full w-full object-cover opacity-100"
+        loop
+        muted
+        playsInline
+        preload="auto"
+      />
 
-      {/* STANDBY: 映像ループ */}
+      {/* STANDBY ループ */}
       {phase === "STANDBY" && (
         <video
           ref={standbyRef}
@@ -191,18 +276,50 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         />
       )}
 
-      {/* COUNTDOWN: PNG をフル画面表示 */}
-      {phase === "COUNTDOWN" && (
-        <img
-          key={countdown}
-          src={numSrc(countdown)}
-          alt={`${countdown}`}
-          className="absolute inset-0 h-full w-full object-cover animate-[vvvIn_0.18s_ease-out_forwards]"
-          onLoad={() => setNumReady(true)}
+      {/* TITLE 盛り上がり */}
+      {phase === "TITLE" && (
+        <video
+          ref={titleRef}
+          src={TITLE_VIDEO}
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onCanPlayThrough={() => setTitleReady(true)}
+          onEnded={() => setTitleReady(true)}
         />
       )}
 
-      {/* INSERT_A / INSERT_B / PUCHUN / LOSS: 映像フル画面 */}
+      {/* COUNTDOWN: 背景に炎動画(任意) + 数字PNG */}
+      {phase === "COUNTDOWN" && countdownVideoSrc && (
+        <video
+          key={countdownVideoSrc}
+          ref={countVideoRef}
+          src={countdownVideoSrc}
+          className="absolute inset-0 h-full w-full object-cover"
+          autoPlay
+          muted
+          playsInline
+          preload="auto"
+          onCanPlayThrough={() => setCountVideoReady(true)}
+          onEnded={() => setCountVideoReady(true)}
+        />
+      )}
+
+      {phase === "COUNTDOWN" && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img
+            key={countdown}
+            src={numSrc(countdown)}
+            alt={`${countdown}`}
+            className="h-[78vh] w-auto drop-shadow-[0_0_24px_rgba(255,70,70,0.9)] animate-[vvvIn_0.22s_ease-out_forwards]"
+            onLoad={() => setCountImageReady(true)}
+          />
+        </div>
+      )}
+
+      {/* INSERT_A / INSERT_B / PUCHUN / LOSS */}
       {fgSrc && (
         <video
           key={fgSrc}
@@ -213,47 +330,53 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
           muted
           playsInline
           preload="auto"
-          onCanPlayThrough={() => setVideoReady(true)}
-          onEnded={() => setVideoReady(true)}
+          onCanPlayThrough={() => setFgVideoReady(true)}
+          onEnded={handleFgEnded}
         />
       )}
 
-      {/* RESULT: 仮表示 */}
+      {/* RESULT */}
       {phase === "RESULT" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-black">
-          <p className="text-2xl font-bold tracking-[0.3em] text-red-300">VVV GACHA</p>
-          <p className="text-5xl font-extrabold text-white drop-shadow-[0_0_24px_rgba(255,80,80,1)]">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-black/80">
+          <p className="text-xs uppercase tracking-[0.6em] text-red-300">VVV GACHA</p>
+          <p className="text-5xl font-extrabold text-white drop-shadow-[0_0_28px_rgba(255,80,80,1)]">
             {result.isWin ? "当たり" : "ハズレ"}
           </p>
           <RoundMetalButton label="CLOSE" subLabel="戻る" onClick={onClose} />
         </div>
       )}
 
-      {/* ボタン */}
+      {/* ボタン（3つ同動作） */}
       {phase !== "RESULT" && (
-        <div className="absolute bottom-10 left-0 right-0 z-20 flex items-center justify-center">
-          <RoundMetalButton
-            label={phase === "STANDBY" ? "VVV" : "NEXT"}
-            subLabel={phase === "STANDBY" ? "START" : phase === "COUNTDOWN" ? `${countdown}` : ""}
-            onClick={handleNext}
-            disabled={!canPress}
-          />
+        <div className="absolute bottom-10 left-0 right-0 z-20 flex items-center justify-center gap-4">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <RoundMetalButton
+              key={idx}
+              label={phase === "STANDBY" ? "VVV" : "NEXT"}
+              subLabel={phase === "STANDBY" ? "START" : phase === "COUNTDOWN" ? `${countdown}` : ""}
+              onClick={handleNext}
+              disabled={!canPress}
+            />
+          ))}
         </div>
       )}
 
       {/* プリロード */}
       <div aria-hidden className="hidden">
         {preloadNums.map((src) => <img key={src} src={src} alt="" />)}
-        <video src={PUCHUN_VIDEO}   preload="auto" />
-        <video src={LOSS_VIDEO}     preload="auto" />
+        <video src={PUCHUN_VIDEO} preload="auto" />
+        <video src={LOSS_VIDEO} preload="auto" />
         <video src={INSERT_A_VIDEO} preload="auto" />
         <video src={INSERT_B_VIDEO} preload="auto" />
+        <video src={TITLE_VIDEO} preload="auto" />
+        <video src={STANDBY_VIDEO} preload="auto" />
+        {Object.values(COUNTDOWN_VIDEO_SRC).map((src) => src && <video key={src} src={src} preload="auto" />)}
       </div>
 
       <style>{`
         @keyframes vvvIn {
-          from { opacity: 0; transform: scale(1.08); }
-          to   { opacity: 1; transform: scale(1); }
+          from { opacity: 0; transform: translateY(12px) scale(1.04); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>
     </div>
