@@ -111,14 +111,6 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
   const currentVideo = useMemo(() => VIDEO_MAP[phase] ?? null, [phase]);
   const resolvedSrc = useMemo(() => resolveAssetSrc(currentVideo?.src ?? null), [currentVideo, resolveAssetSrc]);
-  const nextPhase = useMemo(() => {
-    const idx = phaseOrder.indexOf(phase);
-    return phaseOrder[idx + 1];
-  }, [phase, phaseOrder]);
-  const nextResolvedSrc = useMemo(
-    () => resolveAssetSrc(nextPhase ? VIDEO_MAP[nextPhase]?.src ?? null : null),
-    [nextPhase, resolveAssetSrc],
-  );
 
   // Unique key for the current video (used to debounce ready events and as video element key)
   const videoKey = currentVideo ? `${phase}-${currentVideo.src}` : "none";
@@ -143,21 +135,6 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     syncVideoPlayback();
   }, [syncVideoPlayback, resolvedSrc, videoKey]);
 
-  // Aggressively warm the NEXT phase by actually starting playback (muted) on a hidden video element.
-  // iOS Safari often ignores preload unless playback begins; autoplay of muted video is allowed.
-  const preloadRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const pre = preloadRef.current;
-    if (!pre || !nextResolvedSrc) return;
-    pre.src = nextResolvedSrc;
-    pre.muted = true;
-    pre.playsInline = true;
-    pre.preload = "auto";
-    pre.loop = false;
-    pre.currentTime = 0;
-    const p = pre.play();
-    if (p) void p.catch(() => undefined);
-  }, [nextResolvedSrc]);
 
   // Readiness: debounced by videoKey (same pattern as GachaPlayer)
   const handleVideoReady = useCallback(() => {
@@ -206,10 +183,9 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     return "";
   }, [phase]);
 
-  // Limit to next 3 to avoid overwhelming iOS preload budget
   const upcomingVideos = useMemo(() => {
     const idx = phaseOrder.indexOf(phase);
-    return phaseOrder.slice(idx + 1, idx + 4)
+    return phaseOrder.slice(idx + 1)
       .map((p) => resolveAssetSrc(VIDEO_MAP[p]?.src ?? null))
       .filter((src): src is string => Boolean(src));
   }, [phase, phaseOrder, resolveAssetSrc]);
@@ -265,12 +241,11 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      {/* Preload next 3 videos (1x1px offscreen — iOS Safari ignores display:none preloads) */}
+      {/* Preload upcoming videos (1x1px offscreen — same方式 as other gachas) */}
       <div
         aria-hidden
         style={{ position: "fixed", top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: "none", overflow: "hidden" }}
       >
-        <video ref={preloadRef} autoPlay muted playsInline preload="auto" />
         {upcomingVideos.map((src) => (
           <video key={src} src={src} preload="auto" playsInline muted />
         ))}
