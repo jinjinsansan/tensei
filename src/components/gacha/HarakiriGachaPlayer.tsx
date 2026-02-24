@@ -166,8 +166,8 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const disableNext = !ready;
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black">
-      <div className="relative h-full w-full overflow-hidden">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black px-4 py-8">
+      <div className="relative aspect-[9/16] w-full max-w-[430px] overflow-hidden rounded-[30px] border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
         {currentVideo && (
           <video
             key={currentVideo.src}
@@ -193,7 +193,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         )}
 
         {phase !== "RESULT" && (
-          <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-4">
+          <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center gap-4">
             <RoundMetalButton
               label="LEFT"
               subLabel={phase === "STANDBY" ? "START" : subLabel || "◀"}
@@ -209,15 +209,15 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
             />
           </div>
         )}
+      </div>
 
-        <div
-          aria-hidden
-          style={{ position: "fixed", top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: "none", overflow: "hidden" }}
-        >
-          {upcomingVideos.map((src) => (
-            <video key={src} src={src} preload="auto" playsInline muted />
-          ))}
-        </div>
+      <div
+        aria-hidden
+        style={{ position: "fixed", top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: "none", overflow: "hidden" }}
+      >
+        {upcomingVideos.map((src) => (
+          <video key={src} src={src} preload="auto" playsInline muted />
+        ))}
       </div>
     </div>
   );
