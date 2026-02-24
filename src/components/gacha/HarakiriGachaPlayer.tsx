@@ -24,10 +24,10 @@ type Phase =
   | "PUCHUN"
   | "RESULT";
 
-type VideoDef = { src: string; muted?: boolean; loop?: boolean };
+type VideoDef = { src: string; loop?: boolean };
 
 const VIDEO_MAP: Partial<Record<Phase, VideoDef>> = {
-  STANDBY: { src: "/videos/harakiri/harakiri_standby.mp4", muted: true, loop: true },
+  STANDBY: { src: "/videos/harakiri/harakiri_standby.mp4", loop: true },
   TITLE: { src: "/videos/harakiri/harakiri_title_placeholder.mp4" },
   C10: { src: "/videos/harakiri/countdown_10.mp4" },
   C9: { src: "/videos/harakiri/countdown_9.mp4" },
@@ -95,9 +95,13 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   });
 
   const [phase, setPhase] = useState<Phase>("STANDBY");
-  const [ready, setReady] = useState(true);
+  const [videoReady, setVideoReady] = useState(true);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  // Track the last videoKey that triggered readiness (prevents duplicate fires)
+  const lastReadyKeyRef = useRef<string | null>(null);
+  // Set to true when user presses NEXT — allows unmute after play() resolves
+  const allowUnmuteRef = useRef(false);
 
   const allSources = useMemo(() => {
     const entries = Object.values(VIDEO_MAP).map((v) => v?.src).filter(Boolean);
@@ -108,44 +112,61 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const currentVideo = useMemo(() => VIDEO_MAP[phase] ?? null, [phase]);
   const resolvedSrc = useMemo(() => resolveAssetSrc(currentVideo?.src ?? null), [currentVideo, resolveAssetSrc]);
 
-  useEffect(() => {
+  // Unique key for the current video (used to debounce ready events and as video element key)
+  const videoKey = currentVideo ? `${phase}-${currentVideo.src}` : "none";
+
+  // Mirror GachaPlayer/BattleGachaPlayer pattern exactly:
+  // Start muted → play() → unmute in .then() if user has interacted
+  const syncVideoPlayback = useCallback(() => {
     const v = videoRef.current;
-    if (!currentVideo || !v) return;
-    if (!resolvedSrc) {
-      v.pause();
-      v.removeAttribute("src");
-      v.load();
-      return;
-    }
-    v.src = resolvedSrc;
-    v.loop = Boolean(currentVideo.loop);
-    v.muted = Boolean(currentVideo.muted);
-    v.currentTime = 0;
-    const playPromise = v.play();
-    if (playPromise) {
-      void playPromise.catch(() => undefined);
-    }
-  }, [currentVideo, resolvedSrc]);
+    if (!v) return;
+    v.muted = true;
+    const shouldUnmute = allowUnmuteRef.current;
+    void v.play()
+      .then(() => {
+        if (shouldUnmute && videoRef.current) {
+          videoRef.current.muted = false;
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    syncVideoPlayback();
+  }, [syncVideoPlayback, resolvedSrc, videoKey]);
+
+  // Readiness: debounced by videoKey (same pattern as GachaPlayer)
+  const handleVideoReady = useCallback(() => {
+    if (lastReadyKeyRef.current === videoKey) return;
+    lastReadyKeyRef.current = videoKey;
+    setVideoReady(true);
+  }, [videoKey]);
+
+  const handleVideoEnded = useCallback(() => setVideoReady(true), []);
 
   const goNext = useCallback(() => {
     const idx = phaseOrder.indexOf(phase);
     const next = phaseOrder[idx + 1] ?? "RESULT";
-    setReady(!VIDEO_MAP[next]);
+    const hasNextVideo = Boolean(VIDEO_MAP[next]);
+
+    // Activate media element for audio WITHIN user gesture (iOS Safari requirement)
+    allowUnmuteRef.current = true;
+    const v = videoRef.current;
+    if (v) {
+      v.muted = false;
+      void v.play().catch(() => undefined);
+    }
+
+    setVideoReady(!hasNextVideo);
     setPhase(next);
   }, [phase, phaseOrder]);
 
   const handleSkip = useCallback(() => {
+    allowUnmuteRef.current = true;
+    const v = videoRef.current;
+    if (v) v.pause();
     setPhase("RESULT");
-    setReady(true);
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
-  }, []);
-
-  const handleVideoReady = useCallback(() => setReady(true), []);
-
-  const handleVideoEnded = useCallback(() => {
-    setReady(true);
+    setVideoReady(true);
   }, []);
 
   const subLabel = useMemo(() => {
@@ -156,14 +177,15 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     return "";
   }, [phase]);
 
+  // Limit to next 3 to avoid overwhelming iOS preload budget
   const upcomingVideos = useMemo(() => {
     const idx = phaseOrder.indexOf(phase);
-    return phaseOrder.slice(idx + 1)
+    return phaseOrder.slice(idx + 1, idx + 4)
       .map((p) => resolveAssetSrc(VIDEO_MAP[p]?.src ?? null))
       .filter((src): src is string => Boolean(src));
   }, [phase, phaseOrder, resolveAssetSrc]);
 
-  const disableNext = !ready;
+  const disableNext = !videoReady;
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black">
@@ -171,17 +193,17 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         {currentVideo && (
           <div className="relative h-full w-full overflow-hidden rounded-[30px] border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
             <video
-              key={currentVideo.src}
               ref={videoRef}
+              key={videoKey}
+              src={resolvedSrc ?? undefined}
               className="h-full w-full object-cover"
               autoPlay
-              playsInline
+              muted
               preload="auto"
-              muted={currentVideo.muted}
-              loop={currentVideo.loop}
+              loop={Boolean(currentVideo.loop)}
+              playsInline
               onCanPlayThrough={handleVideoReady}
               onLoadedData={handleVideoReady}
-              onPlay={handleVideoReady}
               onEnded={handleVideoEnded}
             />
           </div>
@@ -214,6 +236,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
+      {/* Preload next 3 videos (1x1px offscreen — iOS Safari ignores display:none preloads) */}
       <div
         aria-hidden
         style={{ position: "fixed", top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: "none", overflow: "hidden" }}
