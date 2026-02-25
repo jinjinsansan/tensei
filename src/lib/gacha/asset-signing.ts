@@ -129,21 +129,20 @@ function removeBase(path: string, base: string | null | undefined): string {
   return path;
 }
 
+const ALLOWED_PREFIXES = [
+  'common/',
+  'characters/',
+  'numbers/',
+  'harakiri/',
+  'battle/',
+];
+
 function ensureAllowedPrefix(value: string): string {
   const trimmed = value.replace(/^\/+/g, '');
-  if (trimmed.startsWith('common/')) {
-    return trimmed;
-  }
-  if (trimmed.startsWith('characters/')) {
-    return trimmed;
-  }
-  const commonIndex = trimmed.indexOf('common/');
-  if (commonIndex >= 0) {
-    return trimmed.slice(commonIndex);
-  }
-  const characterIndex = trimmed.indexOf('characters/');
-  if (characterIndex >= 0) {
-    return trimmed.slice(characterIndex);
+  for (const prefix of ALLOWED_PREFIXES) {
+    if (trimmed.startsWith(prefix)) return trimmed;
+    const idx = trimmed.indexOf(prefix);
+    if (idx >= 0) return trimmed.slice(idx);
   }
   return '';
 }
