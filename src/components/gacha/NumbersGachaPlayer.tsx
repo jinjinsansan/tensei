@@ -261,11 +261,9 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
           </div>
         )}
 
-        {/* ローディング */}
+        {/* ローディング (テキスト非表示、黒背景のみ) */}
         {playState.status === "loading" && (
-          <div className="flex h-full items-center justify-center text-sm text-white/70">
-            読み込み中...
-          </div>
+          <div className="h-full bg-black" />
         )}
 
         {/* エラー */}

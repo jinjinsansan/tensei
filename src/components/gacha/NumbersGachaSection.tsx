@@ -15,6 +15,7 @@ export function NumbersGachaButton() {
         subLabel="START"
         onClick={() => setOpen(true)}
         className="mx-auto"
+        labelClassName="text-xs tracking-[0.05em]"
       />
       {open && <NumbersGachaPlayer open={open} onClose={() => setOpen(false)} />}
     </>
