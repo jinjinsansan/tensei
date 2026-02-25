@@ -166,6 +166,15 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const resolvedSrc = useMemo(() => resolveAssetSrc(current?.src ?? null), [current, resolveAssetSrc]);
   const videoKey    = current ? `${index}-${current.key}` : "none";
 
+  // ── 先読み: 次の3動画を隠し video で先にバッファ ────
+  const upcomingVideos = useMemo(() => {
+    return queue
+      .slice(index + 1, index + 4)
+      .filter((item) => !item.loop)
+      .map((item) => resolveAssetSrc(item.src))
+      .filter((src): src is string => Boolean(src));
+  }, [index, queue, resolveAssetSrc]);
+
   // ── 再生 ─────────────────────────────────────────
   const syncPlayback = useCallback(() => {
     const v = videoRef.current;
@@ -330,6 +339,16 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
             />
           </div>
         )}
+      </div>
+
+      {/* 先読み: 隠し video で次の動画をバッファ (iPhone タイムラグ対策) */}
+      <div
+        aria-hidden
+        style={{ position: "fixed", top: -2, left: -2, width: 1, height: 1, opacity: 0, pointerEvents: "none", overflow: "hidden" }}
+      >
+        {upcomingVideos.map((src) => (
+          <video key={src} src={src} preload="auto" playsInline muted />
+        ))}
       </div>
     </div>
   );
