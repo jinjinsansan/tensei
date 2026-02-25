@@ -84,7 +84,6 @@ function toScenarioRow(entry: NumbersScenario) {
     description: entry.description ?? null,
     result_type: entry.resultType,
     sequence: entry.sequence,
-    puchun_index: entry.puchunIndex ?? null,
     final_stage: entry.finalStage,
     weight: entry.weight ?? 10,
     is_active: entry.isActive ?? true,
@@ -92,13 +91,22 @@ function toScenarioRow(entry: NumbersScenario) {
   };
 }
 
-export async function seedDefaultNumbersScenarios(client: SupabaseClient<Database>): Promise<number> {
-  const { data: existing } = await client
-    .from('numbers_gacha_scenarios' as never)
-    .select('id')
-    .limit(1);
-
-  if (existing && existing.length > 0) return 0;
+export async function seedDefaultNumbersScenarios(
+  client: SupabaseClient<Database>,
+  force = false,
+): Promise<number> {
+  if (!force) {
+    const { data: existing } = await client
+      .from('numbers_gacha_scenarios' as never)
+      .select('id')
+      .limit(1);
+    if (existing && existing.length > 0) return 0;
+  } else {
+    // 既存の非カスタムシナリオを全削除して再投入
+    await (client.from('numbers_gacha_scenarios' as never) as ReturnType<typeof client.from>)
+      .delete()
+      .eq('is_custom', false as never);
+  }
 
   const payload = withSanitizedScenarios(DEFAULT_NUMBERS_SCENARIOS).map(toScenarioRow);
   const { error } = await (client.from('numbers_gacha_scenarios' as never) as ReturnType<typeof client.from>)
@@ -134,12 +142,12 @@ export async function fetchNumbersScenarios(
     description: row.description ?? undefined,
     resultType: row.result_type as NumbersResultType,
     sequence: row.sequence as NumbersStep[],
-    puchunIndex: row.puchun_index ?? null,
     finalStage: (row.final_stage ?? 'first') as NumbersScenario['finalStage'],
     weight: Number(row.weight ?? 10),
     isActive: Boolean(row.is_active ?? true),
     isCustom: Boolean(row.is_custom ?? false),
   }));
+
 }
 
 export function chooseNumbersResultType(settings: NumbersSettings): NumbersResultType {

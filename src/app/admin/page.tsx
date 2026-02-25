@@ -25,8 +25,8 @@ const cards = [
     href: "/admin/presentation",
   },
   {
-    title: "ナンバーズガチャ",
-    description: "VVVナンバーズガチャのハズレ率・★率・シナリオを管理します。",
+    title: "カウントダウンチャレンジ",
+    description: "カウントダウンチャレンジのハズレ率・★率・シナリオを管理します。",
     href: "/admin/numbers-gacha",
   },
   {

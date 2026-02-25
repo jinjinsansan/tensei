@@ -72,7 +72,7 @@ async function updateScenarios(formData: FormData) {
 async function seedPresets() {
   'use server';
   const supabase = getServiceSupabase();
-  await seedDefaultNumbersScenarios(supabase);
+  await seedDefaultNumbersScenarios(supabase, true);
   revalidatePath('/admin/numbers-gacha');
   return redirect('/admin/numbers-gacha?saved=seeded');
 }
@@ -92,9 +92,9 @@ export default async function NumbersGachaAdminPage({
   return (
     <div className="space-y-6">
       <AdminPageHero
-        eyebrow="Numbers Gacha"
-        title="ナンバーズガチャ設定"
-        description="VVVナンバーズガチャのハズレ率と★出現率、シナリオ一覧を管理します。"
+        eyebrow="Countdown Challenge"
+        title="カウントダウンチャレンジ設定"
+        description="カウントダウンチャレンジのハズレ率と★出現率、シナリオ一覧を管理します。"
       />
 
       {params?.saved && (

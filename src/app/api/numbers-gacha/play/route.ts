@@ -6,6 +6,22 @@ import type { NumbersStep } from '@/lib/numbers-gacha/types';
 import { getServiceSupabase } from '@/lib/supabase/service';
 import { buildGachaAssetPath } from '@/lib/gacha/assets';
 
+// 結果レア度 → 期待度レベル(1-5)変換 (60%精度でぼかす)
+function computeExpectationStars(resultType: string): number {
+  const trueLevel = (() => {
+    if (resultType === 'miss')   return 1;
+    const n = Number(resultType.replace('star', ''));
+    if (n <= 2)  return 1;
+    if (n <= 4)  return 2;
+    if (n <= 6)  return 3;
+    if (n <= 9)  return 4;
+    return 5;
+  })();
+  // 60%の確率で正確、40%でランダム
+  if (Math.random() < 0.6) return trueLevel;
+  return Math.floor(Math.random() * 5) + 1;
+}
+
 export async function POST() {
   try {
     const supabase = getServiceSupabase();
@@ -32,6 +48,7 @@ export async function POST() {
       scenarioId: scenario.id ?? null,
       resultLogId: logId,
       videoBasePath: buildGachaAssetPath('numbers'),
+      expectationStars: computeExpectationStars(resultType),
     });
   } catch (error) {
     console.error('[numbers-gacha/play] error', error);

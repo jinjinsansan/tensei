@@ -11,7 +11,7 @@ export function NumbersGachaButton() {
   return (
     <>
       <RoundMetalButton
-        label={"ナンバーズ\nガチャ"}
+        label={"カウントダウン\nチャレンジ"}
         subLabel="START"
         onClick={() => setOpen(true)}
         className="mx-auto"

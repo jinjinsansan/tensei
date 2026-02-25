@@ -9,6 +9,7 @@ export type NumbersPlayResponse = {
   scenarioId: string | null;
   resultLogId: string;
   videoBasePath: string;
+  expectationStars: number;
 };
 
 function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {

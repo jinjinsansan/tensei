@@ -240,12 +240,12 @@ export default async function GachaPage() {
                         GACHA
                       </span>
                       <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_0_18px_rgba(255,150,80,0.5)]">
-                        ナンバーズガチャ（VVV）
+                        カウントダウンチャレンジ
                       </h3>
                     </div>
                   </div>
                   <p className="text-sm leading-relaxed text-white/85">
-                    炎のカウントダウンで昇格・降格・復活が入り乱れるナンバーズガチャ。プチュン発生で★1〜★12のカード、発生しなければハズレカードを獲得します。
+                    炎のカウントダウンで昇格・降格・どんでん返しが入り乱れる！プチュン発生で★1〜★12のカードを獲得。パトライト・虹色復活で激アツの展開へ。
                   </p>
                   <div className="flex flex-wrap gap-3 text-xs">
                     <span className="inline-flex items-center rounded-full border border-[#ffb86c]/35 bg-[#ffb86c]/12 px-4 py-1 text-[#ffe7bf] shadow-[0_0_12px_rgba(255,150,80,0.4)]">
