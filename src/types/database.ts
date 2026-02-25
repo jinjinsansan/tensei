@@ -1233,6 +1233,132 @@ export type Database = {
         };
         Relationships: [];
       };
+      numbers_gacha_settings: {
+        Row: {
+          id: string;
+          is_active: boolean;
+          loss_rate: number;
+          star_distribution: Json;
+          early_miss_enabled: boolean;
+          early_miss_min_count: number;
+          revival_rate: number;
+          demotion_enabled: boolean;
+          max_promotions: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          is_active?: boolean;
+          loss_rate?: number;
+          star_distribution?: Json;
+          early_miss_enabled?: boolean;
+          early_miss_min_count?: number;
+          revival_rate?: number;
+          demotion_enabled?: boolean;
+          max_promotions?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['numbers_gacha_settings']['Row']>;
+        Relationships: [];
+      };
+      numbers_gacha_scenarios: {
+        Row: {
+          id: string;
+          scenario_code: string;
+          label: string;
+          description: string | null;
+          result_type: string;
+          sequence: Json;
+          puchun_index: number | null;
+          final_stage: string;
+          weight: number;
+          is_active: boolean;
+          is_custom: boolean;
+          created_at: string;
+          updated_at: string;
+          created_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          scenario_code: string;
+          label: string;
+          description?: string | null;
+          result_type: string;
+          sequence: Json;
+          puchun_index?: number | null;
+          final_stage?: string;
+          weight?: number;
+          is_active?: boolean;
+          is_custom?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          created_by?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['numbers_gacha_scenarios']['Row']>;
+        Relationships: [];
+      };
+      numbers_gacha_results: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          session_id: string | null;
+          result_type: string;
+          scenario_id: string | null;
+          scenario_code: string | null;
+          final_stage: string | null;
+          puchun_triggered: boolean | null;
+          revival_triggered: boolean | null;
+          total_video_count: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          session_id?: string | null;
+          result_type: string;
+          scenario_id?: string | null;
+          scenario_code?: string | null;
+          final_stage?: string | null;
+          puchun_triggered?: boolean | null;
+          revival_triggered?: boolean | null;
+          total_video_count?: number | null;
+          created_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['numbers_gacha_results']['Row']>;
+        Relationships: [];
+      };
+      numbers_gacha_video_assets: {
+        Row: {
+          id: string;
+          asset_key: string;
+          file_name: string;
+          storage_path: string;
+          file_size_bytes: number | null;
+          duration_seconds: number | null;
+          stage: string | null;
+          number_value: number | null;
+          is_active: boolean;
+          uploaded_at: string;
+          uploaded_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          asset_key: string;
+          file_name: string;
+          storage_path: string;
+          file_size_bytes?: number | null;
+          duration_seconds?: number | null;
+          stage?: string | null;
+          number_value?: number | null;
+          is_active?: boolean;
+          uploaded_at?: string;
+          uploaded_by?: string | null;
+        };
+        Update: Partial<Database['public']['Tables']['numbers_gacha_video_assets']['Row']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

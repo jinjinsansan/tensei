@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { GachaStateProvider, GachaPendingBanner, GachaButton } from "@/components/gacha/GachaSection";
 import { BattleGachaButton } from "@/components/gacha/BattleGachaSection";
-import { HarakiriGachaButton } from "@/components/gacha/HarakiriGachaSection";
+import { NumbersGachaButton } from "@/components/gacha/NumbersGachaSection";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { getSessionWithSnapshot } from "@/lib/app/session";
@@ -50,7 +50,7 @@ export default async function GachaPage() {
 
   const showReincarnation = process.env.NEXT_PUBLIC_SHOW_REINCARNATION_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_REINCARNATION_GACHA !== '0';
   const showBattle = process.env.NEXT_PUBLIC_SHOW_BATTLE_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_BATTLE_GACHA !== '0';
-  const showHarakiri = process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== '0';
+  const showNumbers = process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== '0';
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-10 pb-10">
@@ -208,7 +208,7 @@ export default async function GachaPage() {
           </article>
         )}
 
-        {showHarakiri && (
+        {showNumbers && (
           <article
             className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_60px_rgba(255,150,80,0.3),0_30px_80px_rgba(0,0,0,0.65)]"
             style={{ background: 'linear-gradient(135deg, rgba(255,170,80,0.55) 0%, rgba(255,70,120,0.45) 45%, rgba(70,30,110,0.7) 100%)' }}
@@ -240,12 +240,12 @@ export default async function GachaPage() {
                         GACHA
                       </span>
                       <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_0_18px_rgba(255,150,80,0.5)]">
-                        VVVガチャ（ハラキリ）
+                        ナンバーズガチャ（VVV）
                       </h3>
                     </div>
                   </div>
                   <p className="text-sm leading-relaxed text-white/85">
-                    パチスロ革命機ヴァルヴレイヴのハラキリチャレンジを再現。炎背景＋ゴールド数字のカウントダウン、差し込み煽り、プチュン昇天を3ボタン操作で体験。
+                    炎のカウントダウンで昇格・降格・復活が入り乱れるナンバーズガチャ。プチュン発生で★1〜★12のカード、発生しなければハズレカードを獲得します。
                   </p>
                   <div className="flex flex-wrap gap-3 text-xs">
                     <span className="inline-flex items-center rounded-full border border-[#ffb86c]/35 bg-[#ffb86c]/12 px-4 py-1 text-[#ffe7bf] shadow-[0_0_12px_rgba(255,150,80,0.4)]">
@@ -259,7 +259,7 @@ export default async function GachaPage() {
 
                 <div className="flex flex-1 items-center justify-center lg:justify-end">
                   <div className="w-full max-w-[150px]">
-                    <HarakiriGachaButton />
+                    <NumbersGachaButton />
                   </div>
                 </div>
               </div>
