@@ -172,6 +172,17 @@ function ActiveNumbersPlayer({ onClose }: { onClose?: () => void }) {
     setVideoReady(true);
   }, [videoKey]);
 
+  const handleError = useCallback(() => {
+    // Fallback: allow progression even if video failed to load
+    setVideoReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (videoReady) return undefined;
+    const timer = setTimeout(() => setVideoReady(true), 1500);
+    return () => clearTimeout(timer);
+  }, [videoReady, videoKey]);
+
   const goNext = useCallback(() => {
     if (!queue.length) return;
     allowUnmuteRef.current = true;
@@ -251,6 +262,7 @@ function ActiveNumbersPlayer({ onClose }: { onClose?: () => void }) {
                 onCanPlayThrough={handleReady}
                 onLoadedData={handleReady}
                 onEnded={handleEnded}
+                onError={handleError}
               />
             </div>
 
