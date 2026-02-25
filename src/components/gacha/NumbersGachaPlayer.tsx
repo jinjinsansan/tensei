@@ -9,7 +9,7 @@ import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button
 import { startNumbersGacha } from "@/lib/api/numbers-gacha";
 import type { NumbersStage, NumbersStep } from "@/lib/numbers-gacha/types";
 import { useSignedAssetResolver } from "@/lib/gacha/client-assets";
-import { buildGachaAssetPath, buildCommonAssetPath } from "@/lib/gacha/assets";
+import { buildCommonAssetPath } from "@/lib/gacha/assets";
 
 type VideoItem = {
   key: string;
@@ -226,11 +226,9 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const handleSkip = useCallback(() => { setShowResult(true); }, []);
 
   // ── ステージバッジ ─────────────────────────────────
-  const stage = useMemo<NumbersStage>(() => {
-    if (current?.stageHint) return current.stageHint;
-    if (playState.status === "ready") return playState.finalStage;
-    return "first";
-  }, [current?.stageHint, playState]);
+  const lastStageRef = useRef<NumbersStage>("first");
+  if (current?.stageHint) lastStageRef.current = current.stageHint;
+  const stage = lastStageRef.current;
 
   const badge = useMemo(() => {
     const map: Record<NumbersStage, { label: string; color: string }> = {

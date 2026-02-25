@@ -181,8 +181,8 @@ export const DEFAULT_NUMBERS_SCENARIOS: NumbersScenario[] = [
   // ══════════════════════════════════════════════════
   // ★6 (S-042〜S-047)
   // ══════════════════════════════════════════════════
-  scenario('S-042','青1プチュン★6','star6',
-    seq('standby_white','title',...RED_MANDATORY,'cd_red_3',PA,...GREEN_MANDATORY,'cd_green_3',PB,...BLUE_MANDATORY,'cd_blue_3','cd_blue_2','cd_blue_1','puchun'),'third',10),
+  scenario('S-042','青2プチュン★6','star6',
+    seq('standby_white','title',...RED_MANDATORY,'cd_red_3',PA,...GREEN_MANDATORY,'cd_green_3',PB,...BLUE_MANDATORY,'cd_blue_3','cd_blue_2','puchun'),'third',10),
   scenario('S-043','青深めプチュン★6','star6',
     seq('standby_blue','title',...RED_MANDATORY,'cd_red_3',PB,...GREEN_MANDATORY,'cd_green_3',PA,...BLUE_MANDATORY,...cdb(3,2),'puchun'),'third',9),
   scenario('S-044','昇格2回→青深め★6','star6',
