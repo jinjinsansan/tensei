@@ -280,7 +280,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         {/* 映像プレイヤー */}
         {playState.status === "ready" && current && !showResult && (
           <>
-            <div className="relative h-full w-full overflow-hidden rounded-[30px] border border-white/10 bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
+            <div className="relative h-full w-full overflow-hidden rounded-[30px] bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
               <video
                 ref={videoRef}
                 key={videoKey}

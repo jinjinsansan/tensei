@@ -228,8 +228,8 @@ export default async function GachaPage() {
                   <div className="flex items-center gap-4">
                     <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-[#ffb86c]/50 bg-black/50 shadow-[0_0_26px_rgba(255,150,80,0.55),0_0_12px_rgba(255,70,120,0.35)]">
                       <Image
-                        src="/kenta_cards/card12_hero.png"
-                        alt="VVV ガチャ アイコン"
+                        src="/cd_rainbow_7.png"
+                        alt="カウントダウンチャレンジ アイコン"
                         fill
                         sizes="64px"
                         className="object-cover"
@@ -240,7 +240,7 @@ export default async function GachaPage() {
                         GACHA
                       </span>
                       <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_0_18px_rgba(255,150,80,0.5)]">
-                        カウントダウンチャレンジ
+                        カウントダウン<br />チャレンジ
                       </h3>
                     </div>
                   </div>
