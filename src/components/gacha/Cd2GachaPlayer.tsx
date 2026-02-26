@@ -18,6 +18,7 @@ type VideoItem = {
   step: Cd2Step;
   showOverlay?: boolean;
   isFreeze?: boolean;
+  autoAdvance?: boolean; // true = 映像終了後に自動で次へ進む（NEXTボタン非表示）
 };
 
 // ─── PlayState ────────────────────────────────────────────
@@ -59,39 +60,47 @@ function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
     }
 
     if (step === "title_red") {
-      items.push({ key, src: `${basePath}/title_red.mp4`, step, showOverlay: true });
+      // タイトルは自動再生（NEXTボタンなし）
+      items.push({ key, src: `${basePath}/title_red.mp4`, step, showOverlay: true, autoAdvance: true });
       return;
     }
 
-    // 汎用マップ (step名 → ファイル名)
-    const FILE_MAP: Partial<Record<Cd2Step, string>> = {
-      red_10: "red_10.mp4",
-      red_9:  "red_9.mp4",
-      red_8:  "red_8.mp4",
-      red_7:  "red_7.mp4",
-      red_6:  "red_6.mp4",
-      red_5:  "red_5.mp4",
-      red_4:  "red_4.mp4",
-      red_3:  "red_3.mp4",
-      red_2:  "red_2.mp4",
-      red_1:  "red_1.mp4",
-      red_0:  "red_0.mp4",
-      red_3_win:  "red_3_win.mp4",
-      red_2_win:  "red_2_win.mp4",
-      red_1_win:  "red_1_win.mp4",
-      red_0_win:  "red_0_win.mp4",
-      red_3_loss: "red_3_loss.mp4",
-      red_2_loss: "red_2_loss.mp4",
-      red_0_loss: "red_0_loss.mp4",
-      red_loss:   "red_loss.mp4",
-      patlite:    "patlite.mp4",
-      donden:     "donden.mp4",
-      jackpot:    "jackpot.mp4",
+    // 汎用マップ (step名 → ファイル名 + autoAdvance)
+    type FileEntry = { file: string; auto?: boolean };
+    const FILE_MAP: Partial<Record<Cd2Step, FileEntry>> = {
+      red_10:     { file: "red_10.mp4" },
+      red_9:      { file: "red_9.mp4" },
+      red_8:      { file: "red_8.mp4" },
+      red_7:      { file: "red_7.mp4" },
+      red_6:      { file: "red_6.mp4" },
+      red_5:      { file: "red_5.mp4" },
+      red_4:      { file: "red_4.mp4" },
+      red_3:      { file: "red_3.mp4" },
+      red_2:      { file: "red_2.mp4" },
+      red_1:      { file: "red_1.mp4" },
+      red_0:      { file: "red_0.mp4" },
+      red_3_win:  { file: "red_3_win.mp4" },
+      red_2_win:  { file: "red_2_win.mp4" },
+      red_1_win:  { file: "red_1_win.mp4" },
+      red_0_win:  { file: "red_0_win.mp4" },
+      red_3_loss: { file: "red_3_loss.mp4" },
+      red_2_loss: { file: "red_2_loss.mp4" },
+      red_1_loss: { file: "red_loss.mp4" },   // 素材なし → 汎用ハズレで代用
+      red_0_loss: { file: "red_0_loss.mp4" },
+      red_loss:   { file: "red_loss.mp4" },
+      patlite:    { file: "patlite.mp4",  auto: true }, // 自動再生
+      donden:     { file: "donden.mp4",   auto: true }, // 自動再生
+      jackpot:    { file: "jackpot.mp4",  auto: true }, // 自動再生
     };
 
-    const filename = FILE_MAP[step];
-    if (filename) {
-      items.push({ key, src: `${basePath}/${filename}`, step });
+    const entry = FILE_MAP[step];
+    if (entry) {
+      items.push({
+        key,
+        src: `${basePath}/${entry.file}`,
+        step,
+        autoAdvance: entry.auto ?? false,
+      });
     }
   });
 
@@ -302,17 +311,26 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
   const handleEnded = useCallback(() => {
     lastReadyKeyRef.current = videoKey;
-    setVideoReady(true);
-  }, [videoKey]);
+    if (current?.autoAdvance) {
+      // 自動再生ステップ: 映像終了後に自動で次へ
+      allowUnmuteRef.current = true;
+      const next = index + 1;
+      if (next >= queue.length) { setShowResult(true); return; }
+      setVideoReady(false);
+      setIndex(next);
+    } else {
+      setVideoReady(true);
+    }
+  }, [videoKey, current?.autoAdvance, index, queue.length]);
 
   const handleError = useCallback(() => { setVideoReady(true); }, []);
 
-  // 1.5秒フォールバック
+  // 1.5秒フォールバック (autoAdvance ステップは除外)
   useEffect(() => {
-    if (videoReady || current?.isFreeze) return undefined;
+    if (videoReady || current?.isFreeze || current?.autoAdvance) return undefined;
     const t = setTimeout(() => setVideoReady(true), 1500);
     return () => clearTimeout(t);
-  }, [videoReady, videoKey, current?.isFreeze]);
+  }, [videoReady, videoKey, current?.isFreeze, current?.autoAdvance]);
 
   // ── NEXT / SKIP ────────────────────────────────────────────
   const goNext = useCallback(() => {
@@ -328,9 +346,11 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
   const handleSkip = useCallback(() => { setShowResult(true); }, []);
 
-  const isFreezeStep  = Boolean(current?.isFreeze);
-  const nextDisabled  = !videoReady || playState.status !== "ready" || isFreezeStep;
-  const skipDisabled  = isFreezeStep;
+  const isFreezeStep   = Boolean(current?.isFreeze);
+  const isAutoStep     = Boolean(current?.autoAdvance);
+  const nextDisabled   = !videoReady || playState.status !== "ready" || isFreezeStep;
+  const skipDisabled   = isFreezeStep;
+  const showButtons    = !isFreezeStep && !isAutoStep;
   const expStars      = playState.status === "ready" ? playState.expectationStars : 0;
   const isWin         = playState.status === "ready" ? playState.isWin : false;
 
@@ -384,8 +404,8 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
               </div>
             )}
 
-            {/* NEXT / SKIP ボタン */}
-            {!isFreezeStep && (
+            {/* NEXT / SKIP ボタン (自動再生ステップ・フリーズ中は非表示) */}
+            {showButtons && (
               <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center gap-4">
                 <RoundMetalButton
                   label="NEXT"

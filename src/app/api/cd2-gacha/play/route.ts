@@ -5,11 +5,11 @@ import { getServiceSupabase } from '@/lib/supabase/service';
 import { buildGachaAssetPath } from '@/lib/gacha/assets';
 import type { Cd2Step } from '@/lib/cd2-gacha/types';
 
-// ─── 期待度★計算 ───────────────────────────────────────────
-// 4★ → 当たりの中の60%を示唆、5★ → 当たりの中の70%を示唆
-// 基準ハズレ率60%時のキャリブレーション済みウエイト
-const WIN_STAR_WEIGHTS  = [10, 10, 15, 30, 35]; // stars 1-5
-const LOSS_STAR_WEIGHTS = [30, 25, 22, 13, 10]; // stars 1-5
+// ─── 期待度★計算 ────────────────────────────────────────────
+// 仕様書: WIN時→★4/★5を使用可, LOSS時→★1〜★3のみ
+// (ただしどんでん返し初回表示はLOSSに見えるため★1〜3)
+const WIN_STAR_WEIGHTS  = [5, 10, 20, 30, 35]; // stars 1-5
+const LOSS_STAR_WEIGHTS = [25, 40, 35,  0,  0]; // stars 1-5 (★4/5は0)
 
 function pickWeighted(weights: number[]): number {
   const total = weights.reduce((a, b) => a + b, 0);
@@ -21,11 +21,12 @@ function pickWeighted(weights: number[]): number {
   return weights.length;
 }
 
-function computeExpectationStars(isWin: boolean): number {
-  return pickWeighted(isWin ? WIN_STAR_WEIGHTS : LOSS_STAR_WEIGHTS);
+// isInitiallyLoss: どんでん返しの初回表示はLOSS寄りの★にする
+function computeExpectationStars(isWin: boolean, isDonden: boolean): number {
+  return pickWeighted(isWin && !isDonden ? WIN_STAR_WEIGHTS : LOSS_STAR_WEIGHTS);
 }
 
-// ─── どんでん返し後の当たり位置選択 ─────────────────────────
+// ─── 決定番号選択 ──────────────────────────────────────────
 type DecisionPoint = 3 | 2 | 1 | 0;
 
 function pickDecisionPoint(): DecisionPoint {
@@ -36,17 +37,23 @@ function pickDecisionPoint(): DecisionPoint {
   return 0;
 }
 
-// ─── 3-0カウントダウン末尾のシーケンスを追加 ─────────────────
+// ─── 3-0 エンディングシーケンスを追加 ─────────────────────────
+// 仕様書: 決定番号より前の数字は「通過映像」(red_X.mp4)を使用。
+// 決定番号では直接 win/loss 映像を使用（通過映像は挟まない）。
+// 例: 2で当たり → red_3(通過) → red_2_win
+// 例: 3でハズレ → red_3_loss (通過なし)
 function appendEnding(seq: Cd2Step[], decisionAt: DecisionPoint, isWin: boolean): void {
   const nums: DecisionPoint[] = [3, 2, 1, 0];
   for (const n of nums) {
-    seq.push(`red_${n}` as Cd2Step);
-    if (n === decisionAt) {
+    if (n > decisionAt) {
+      // 通過映像（決定番号より前）
+      seq.push(`red_${n}` as Cd2Step);
+    } else {
+      // 決定番号: 直接 win または loss 映像
       if (isWin) {
         seq.push(`red_${n}_win` as Cd2Step);
       } else {
-        // red_1_win は存在するが red_1_loss は存在しない → red_loss を使用
-        seq.push(n === 1 ? 'red_loss' : (`red_${n}_loss` as Cd2Step));
+        seq.push(`red_${n}_loss` as Cd2Step); // red_1_loss はプレイヤー側で red_loss.mp4 にフォールバック
       }
       break;
     }
@@ -62,32 +69,40 @@ function buildSequence(
 ): Cd2Step[] {
   const seq: Cd2Step[] = [];
 
-  // スタンバイ + タイトル
+  // スタンバイ + タイトル (タイトルは自動再生・NEXTなし)
   seq.push('standby', 'title_red');
 
-  // 10→5 カウントダウン
+  // フリーズ: カウントダウン中のランダムな位置で発動
+  // jackpot映像 → 黒画面10秒の順で演出
+  if (isFreeze) {
+    const stopOptions: number[] = [1, 2, 3, 4, 5, 6]; // red_10〜red_5 の何番目まで見せるか
+    const stopAt = stopOptions[Math.floor(Math.random() * stopOptions.length)];
+    const numbers = [10, 9, 8, 7, 6, 5, 4];
+    for (let i = 0; i < stopAt; i++) {
+      seq.push(`red_${numbers[i]}` as Cd2Step);
+    }
+    seq.push('jackpot', 'freeze'); // jackpot自動再生 → フリーズ黒画面
+    return seq;
+  }
+
+  // 通常カウントダウン 10→5
   seq.push('red_10', 'red_9', 'red_8', 'red_7', 'red_6', 'red_5');
 
-  // パトライト差し込み (5と4の間)
+  // パトライト差し込み (5と4の間・自動再生・NEXTなし)
   if (isPatlite) seq.push('patlite');
 
   // 赤4
   seq.push('red_4');
 
-  // フリーズ (3-0を置き換える)
-  if (isFreeze) {
-    seq.push('freeze');
-    return seq;
-  }
-
-  // どんでん返し: ハズレ演出 → 逆転 → 10から再スタート → 当たり
+  // どんでん返し
+  // ハズレ映像 → patlite(自動) → donden(自動) → 10から再スタート → 必ず当たり
   if (isDonden) {
-    appendEnding(seq, 0, false); // 0まで行ってハズレ
-    seq.push('red_loss');        // 汎用ハズレ映像
-    seq.push('patlite', 'donden', 'jackpot');
-    // 2週目: 10→4 再度カウントダウン
+    const lossAt = pickDecisionPoint();
+    appendEnding(seq, lossAt, false);          // ハズレ演出
+    seq.push('patlite', 'donden');             // 逆転演出 (自動再生)
+    // 2週目: 10→4 (★オーバーレイなし)
     seq.push('red_10', 'red_9', 'red_8', 'red_7', 'red_6', 'red_5', 'red_4');
-    appendEnding(seq, pickDecisionPoint(), true);
+    appendEnding(seq, pickDecisionPoint(), true); // 必ず当たり
     return seq;
   }
 
@@ -135,7 +150,7 @@ export async function POST() {
     }
 
     const sequence = buildSequence(isWin, isDonden, isPatlite, isFreeze);
-    const expectationStars = computeExpectationStars(isWin);
+    const expectationStars = computeExpectationStars(isWin, isDonden);
 
     return NextResponse.json({
       success: true,
