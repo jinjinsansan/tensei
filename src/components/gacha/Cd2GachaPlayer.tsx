@@ -118,35 +118,45 @@ function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
 }
 
 // ─── フリーズオーバーレイ ─────────────────────────────────
+// エヴァンゲリオン風テキストスクロールオーバーレイ
 function FreezeOverlay() {
+  // 2行ずつ異なるテキスト・速度でスクロール（EVA風）
+  const rows = [
+    { text: "ボタンは操作できません　　　　ボタンは押すことができません　　　　ボタンは操作できません　　　　ボタンは押すことができません　　　　", delay: "0s",  dur: "22s" },
+    { text: "ボタンは押すことができません　　　　ボタンは操作できません　　　　ボタンは押すことができません　　　　ボタンは操作できません　　　　", delay: "11s", dur: "22s" },
+  ];
+
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-black">
-      {[0, 1].map((line) => (
-        <div
-          key={line}
-          className="w-full overflow-hidden py-3"
-          style={{ animationDelay: `${line * 0.5}s` }}
-        >
-          <p
-            className="whitespace-nowrap text-lg text-white"
-            style={{
-              fontFamily: "'Hiragino Mincho ProN', 'Yu Mincho', 'MS PMincho', serif",
-              animation: `cd2-scroll 4s linear infinite`,
-              animationDelay: `${line * 2}s`,
-              display: "inline-block",
-            }}
-          >
-            ボタンは操作できません&emsp;&emsp;&emsp;ボタンは押すことができません&emsp;&emsp;&emsp;
-            ボタンは操作できません&emsp;&emsp;&emsp;ボタンは押すことができません&emsp;&emsp;&emsp;
-          </p>
-        </div>
-      ))}
+    <div className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-10 overflow-hidden bg-black">
       <style>{`
-        @keyframes cd2-scroll {
+        @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap');
+        @keyframes eva-marquee {
           0%   { transform: translateX(100vw); }
-          100% { transform: translateX(-200%); }
+          100% { transform: translateX(-100%); }
+        }
+        .eva-freeze-text {
+          font-family: 'Dela Gothic One', 'Noto Sans JP', sans-serif;
+          color: #ffffff;
+          font-size: 1.4rem;
+          letter-spacing: 0.08em;
+          white-space: nowrap;
+          display: inline-block;
+          will-change: transform;
         }
       `}</style>
+      {rows.map((row, i) => (
+        <div key={i} className="w-full overflow-hidden">
+          <span
+            className="eva-freeze-text"
+            style={{
+              animation: `eva-marquee ${row.dur} linear infinite`,
+              animationDelay: row.delay,
+            }}
+          >
+            {row.text}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
