@@ -312,6 +312,15 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     return () => clearTimeout(t);
   }, [current?.isFreeze, videoKey]);
 
+  // ── videoを即時クリア (iOSのGPUレイヤーゴースト防止) ──────────
+  const clearVideoSrc = useCallback(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    v.src = "";       // src を空にすることでiOSのGPUキャッシュを即時破棄
+    v.load();         // バッファをクリア
+  }, []);
+
   // ── videoイベント ─────────────────────────────────────────
   const handleReady = useCallback(() => {
     if (lastReadyKeyRef.current === videoKey) return;
@@ -322,7 +331,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const handleEnded = useCallback(() => {
     lastReadyKeyRef.current = videoKey;
     if (current?.autoAdvance) {
-      // 自動再生ステップ: 映像終了後に自動で次へ
+      clearVideoSrc();  // ← 自動進行時も同様にGPUクリア
       allowUnmuteRef.current = true;
       const next = index + 1;
       if (next >= queue.length) { setShowResult(true); return; }
@@ -331,7 +340,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     } else {
       setVideoReady(true);
     }
-  }, [videoKey, current?.autoAdvance, index, queue.length]);
+  }, [videoKey, current?.autoAdvance, index, queue.length, clearVideoSrc]);
 
   const handleError = useCallback(() => { setVideoReady(true); }, []);
 
@@ -345,14 +354,13 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   // ── NEXT / SKIP ────────────────────────────────────────────
   const goNext = useCallback(() => {
     if (!queue.length) return;
+    clearVideoSrc();  // ← Reactの状態更新より先にDOMを直接クリア
     allowUnmuteRef.current = true;
-    const v = videoRef.current;
-    if (v) { v.muted = false; void v.play().catch(() => undefined); }
     const next = index + 1;
     if (next >= queue.length) { setShowResult(true); return; }
     setVideoReady(false);
     setIndex(next);
-  }, [index, queue.length]);
+  }, [index, queue.length, clearVideoSrc]);
 
   const handleSkip = useCallback(() => { setShowResult(true); }, []);
 
