@@ -4,11 +4,13 @@ import Link from "next/link";
 import { GachaStateProvider, GachaPendingBanner, GachaButton } from "@/components/gacha/GachaSection";
 import { BattleGachaButton } from "@/components/gacha/BattleGachaSection";
 import { NumbersGachaButton } from "@/components/gacha/NumbersGachaSection";
+import { Cd2GachaButton } from "@/components/gacha/Cd2GachaSection";
 import { RoundMetalButton } from "@/components/gacha/controls/round-metal-button";
 import { TicketBalanceCarousel } from "@/components/home/ticket-balance-carousel";
 import { getSessionWithSnapshot } from "@/lib/app/session";
 import { getServiceSupabase } from "@/lib/supabase/service";
 import { fetchBattleGachaSettings } from "@/lib/data/battle-gacha";
+import { fetchCd2Settings } from "@/lib/data/cd2-gacha";
 import type { TicketBalanceItem } from "@/lib/utils/tickets";
 
 const FALLBACK_TICKETS: TicketBalanceItem[] = [
@@ -42,15 +44,27 @@ async function getBattleEnabled(): Promise<boolean> {
   }
 }
 
+async function getCd2Enabled(): Promise<boolean> {
+  try {
+    const supabase = getServiceSupabase();
+    const settings = await fetchCd2Settings(supabase);
+    return settings.isEnabled;
+  } catch {
+    return false;
+  }
+}
+
 export default async function GachaPage() {
-  const [tickets, battleEnabled] = await Promise.all([
+  const [tickets, battleEnabled, cd2Enabled] = await Promise.all([
     getTicketBalancesSafe(),
     getBattleEnabled(),
+    getCd2Enabled(),
   ]);
 
   const showReincarnation = process.env.NEXT_PUBLIC_SHOW_REINCARNATION_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_REINCARNATION_GACHA !== '0';
   const showBattle = process.env.NEXT_PUBLIC_SHOW_BATTLE_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_BATTLE_GACHA !== '0';
   const showNumbers = process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_HARAKIRI_GACHA !== '0';
+  const showCd2 = process.env.NEXT_PUBLIC_SHOW_CD2_GACHA !== 'false' && process.env.NEXT_PUBLIC_SHOW_CD2_GACHA !== '0';
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-10 pb-10">
@@ -260,6 +274,75 @@ export default async function GachaPage() {
                 <div className="flex flex-1 items-center justify-center lg:justify-end">
                   <div className="w-full max-w-[150px]">
                     <NumbersGachaButton />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        )}
+        {/* カウントダウンチャレンジ２カード */}
+        {showCd2 && (
+          <article
+            className="relative overflow-hidden rounded-[36px] p-[1.5px] shadow-[0_0_60px_rgba(220,38,38,0.3),0_30px_80px_rgba(0,0,0,0.65)]"
+            style={{ background: 'linear-gradient(135deg, rgba(220,38,38,0.6) 0%, rgba(180,20,20,0.5) 45%, rgba(60,10,10,0.8) 100%)' }}
+          >
+            <div className="relative overflow-hidden rounded-[34px] bg-gradient-to-br from-[#1a0303] via-[#1c0505] to-[#0e0202] px-6 py-8 sm:px-8">
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute -left-12 -top-12 h-64 w-64 rounded-full bg-[#dc2626]/20 blur-3xl" />
+                <div className="absolute -right-10 top-6 h-48 w-48 rounded-full bg-[#ef4444]/15 blur-3xl" />
+                <div className="absolute bottom-2 left-1/2 h-40 w-72 -translate-x-1/2 rounded-full bg-[#fca5a5]/10 blur-3xl" />
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#ef4444]/60 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#dc2626]/30 to-transparent" />
+                <div className="absolute inset-0 rounded-[34px] border border-white/10" />
+              </div>
+
+              {!cd2Enabled && (
+                <div className="absolute -right-12 top-7 rotate-45 rounded-sm bg-gradient-to-r from-[#dc2626] to-[#b91c1c] px-10 py-1 text-[10px] font-bold tracking-[0.5em] text-white shadow-[0_10px_30px_rgba(220,38,38,0.35)]">
+                  準備中
+                </div>
+              )}
+
+              <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center">
+                <div className="flex flex-1 flex-col gap-5">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-[#ef4444]/50 bg-black/50 shadow-[0_0_26px_rgba(220,38,38,0.6),0_0_12px_rgba(220,38,38,0.4)]">
+                      <div className="flex h-full w-full items-center justify-center text-3xl">🔥</div>
+                    </div>
+                    <div>
+                      <span className="inline-flex items-center rounded-full border border-[#ef4444]/35 bg-[#ef4444]/10 px-3 py-1 text-[10px] uppercase tracking-[0.35em] text-[#fca5a5] shadow-[0_0_16px_rgba(220,38,38,0.4)]">
+                        GACHA
+                      </span>
+                      <h3 className="mt-2 font-display text-3xl text-white drop-shadow-[0_0_18px_rgba(220,38,38,0.5)]">
+                        カウントダウン<br />チャレンジ２
+                      </h3>
+                    </div>
+                  </div>
+                  <p className="text-sm leading-relaxed text-white/85">
+                    赤い炎のカウントダウンが10から始まる！当たりかハズレか、ラスト3・2・1・0の瞬間まで目が離せない。パトライト差し込みやフリーズ当たりでプレミアム演出も出現！
+                  </p>
+                  <div className="flex flex-wrap gap-3 text-xs">
+                    <span className="inline-flex items-center rounded-full border border-[#ef4444]/35 bg-[#ef4444]/12 px-4 py-1 text-[#fca5a5] shadow-[0_0_12px_rgba(220,38,38,0.4)]">
+                      10→0 カウントダウン
+                    </span>
+                    <span className="inline-flex items-center rounded-full border border-[#fca5a5]/35 bg-[#fca5a5]/12 px-4 py-1 text-[#fed7aa] shadow-[0_0_12px_rgba(252,165,165,0.4)]">
+                      どんでん返し収録
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-1 items-center justify-center lg:justify-end">
+                  <div className="w-full max-w-[150px]">
+                    {cd2Enabled ? (
+                      <Cd2GachaButton />
+                    ) : (
+                      <RoundMetalButton
+                        label={"カウントダウン\nチャレンジ２"}
+                        subLabel="START"
+                        disabled
+                        className="mx-auto"
+                        labelClassName="text-xs tracking-[0.05em]"
+                      />
+                    )}
                   </div>
                 </div>
               </div>

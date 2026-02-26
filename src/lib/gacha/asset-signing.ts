@@ -135,6 +135,7 @@ const ALLOWED_PREFIXES = [
   'numbers/',
   'harakiri/',
   'battle/',
+  'cd2/',
 ];
 
 function ensureAllowedPrefix(value: string): string {

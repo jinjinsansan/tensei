@@ -14,6 +14,8 @@ const links = [
   { href: '/admin/scenarios', label: 'シナリオ管理' },
   { href: '/admin/settings', label: 'RTP設定' },
   { href: '/admin/battle-gacha', label: 'バトルガチャ設定' },
+  { href: '/admin/numbers-gacha', label: 'カウントダウンチャレンジ設定' },
+  { href: '/admin/cd2-gacha', label: 'カウントダウンチャレンジ２設定' },
   { href: '/admin/presentation', label: '演出確率設定' },
   { href: '/admin/countdown-patterns', label: 'カウントダウンパターン' },
   { href: '/admin/newsletters', label: 'メルマガ配信' },
