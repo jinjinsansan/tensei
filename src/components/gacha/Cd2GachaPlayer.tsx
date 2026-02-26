@@ -281,6 +281,13 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
       .filter((src): src is string => Boolean(src));
   }, [index, queue, resolveAssetSrc]);
 
+  // ── fetch()でHTTPキャッシュに事前投入 (iOS Safari向け) ─────
+  useEffect(() => {
+    upcomingVideos.forEach((src) => {
+      fetch(src, { cache: "force-cache" }).catch(() => {});
+    });
+  }, [upcomingVideos]);
+
   // ── 再生 ──────────────────────────────────────────────────
   const syncPlayback = useCallback(() => {
     const v = videoRef.current;
@@ -413,7 +420,6 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
               >
                 <video
                   ref={videoRef}
-                  key={videoKey}
                   src={resolvedSrc ?? undefined}
                   className="block h-full w-full object-cover"
                   autoPlay
@@ -480,7 +486,8 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         }}
       >
         {upcomingVideos.map((src) => (
-          <video key={src} src={src} preload="auto" playsInline muted />
+          // autoPlay+muted で iOS Safari がデコードを実際に開始する
+          <video key={src} src={src} preload="auto" playsInline muted autoPlay />
         ))}
       </div>
     </div>
