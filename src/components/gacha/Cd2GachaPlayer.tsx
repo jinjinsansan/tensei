@@ -391,12 +391,23 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
                 <FreezeOverlay />
               </div>
             ) : (
-              <div className="relative h-full w-full bg-black">
+              <div
+                className="relative h-full w-full overflow-hidden"
+                style={{
+                  background: "#000",
+                  // コンテナ全体をGPUコンポジットレイヤーに乗せる
+                  // → iOS SafariでStarOverlay+videoの合成問題を防ぐ
+                  WebkitTransform: "translate3d(0,0,0)",
+                  transform: "translate3d(0,0,0)",
+                  // 動画ファイルやレンダリングの白枠を黒で上書きするinset shadow
+                  boxShadow: "inset 0 0 0 2px #000",
+                }}
+              >
                 <video
                   ref={videoRef}
                   key={videoKey}
                   src={resolvedSrc ?? undefined}
-                  className="h-full w-full object-cover"
+                  className="block h-full w-full object-cover"
                   autoPlay
                   muted
                   preload="auto"
@@ -406,12 +417,13 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
                   onLoadedData={handleReady}
                   onEnded={handleEnded}
                   onError={handleError}
-                  style={{ WebkitTransform: "translate3d(0,0,0)", transform: "translate3d(0,0,0)" }}
+                  style={{ background: "#000" }}
                 />
-                {/* ② iPhone映像切替時の前フレーム残像対策: 読込中は黒オーバーレイ */}
-                {!videoReady && (
-                  <div className="absolute inset-0 bg-black" />
-                )}
+                {/* 映像切替時の前フレーム残像対策: 読込中は黒オーバーレイ */}
+                <div
+                  className="pointer-events-none absolute inset-0 bg-black"
+                  style={{ opacity: videoReady ? 0 : 1 }}
+                />
                 {/* 期待度オーバーレイ */}
                 {showOverlay && expStars > 0 && (
                   <StarOverlay starCount={expStars} />
