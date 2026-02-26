@@ -45,9 +45,19 @@ function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
     const key = `${i}-${step}`;
 
     if (step === "standby") {
+      // ① 来世ガチャ・バトルガチャと共通のスタンバイ映像をランダム選択
+      const STANDBY_FILES = [
+        "blackstandby.mp4",
+        "bluestandby.mp4",
+        "rainbowstandby.mp4",
+        "redstandby.mp4",
+        "whitestandby.mp4",
+        "yellowstandby.mp4",
+      ];
+      const picked = STANDBY_FILES[Math.floor(Math.random() * STANDBY_FILES.length)];
       items.push({
         key,
-        src: `${standbyBase}/redstandby.mp4`,
+        src: `${standbyBase}/${picked}`,
         loop: true,
         step,
       });
@@ -381,7 +391,7 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
                 <FreezeOverlay />
               </div>
             ) : (
-              <div className="relative h-full w-full overflow-hidden rounded-[30px] bg-black shadow-[0_30px_100px_rgba(0,0,0,0.75)]">
+              <div className="relative h-full w-full bg-black">
                 <video
                   ref={videoRef}
                   key={videoKey}
@@ -396,7 +406,12 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
                   onLoadedData={handleReady}
                   onEnded={handleEnded}
                   onError={handleError}
+                  style={{ WebkitTransform: "translate3d(0,0,0)", transform: "translate3d(0,0,0)" }}
                 />
+                {/* ② iPhone映像切替時の前フレーム残像対策: 読込中は黒オーバーレイ */}
+                {!videoReady && (
+                  <div className="absolute inset-0 bg-black" />
+                )}
                 {/* 期待度オーバーレイ */}
                 {showOverlay && expStars > 0 && (
                   <StarOverlay starCount={expStars} />
