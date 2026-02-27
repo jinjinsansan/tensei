@@ -21,6 +21,18 @@ type VideoItem = {
   autoAdvance?: boolean; // true = 映像終了後に自動で次へ進む（NEXTボタン非表示）
 };
 
+// ─── 低速回線判定 ─────────────────────────────────────────
+function isSlowConnection(): boolean {
+  const nav = navigator as Navigator & {
+    connection?: { effectiveType?: string; downlink?: number };
+  };
+  const conn = nav.connection;
+  if (!conn) return false;
+  if (conn.effectiveType === "slow-2g" || conn.effectiveType === "2g") return true;
+  if (typeof conn.downlink === "number" && conn.downlink < 1.0) return true;
+  return false;
+}
+
 // ─── PlayState ────────────────────────────────────────────
 type PlayState =
   | { status: "loading" }
@@ -286,15 +298,20 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
     return () => { cancelled = true; };
   }, []);
 
-  // ── 署名済みURL解決 ───────────────────────────────────────
-  const allSources = useMemo(() => queue.map((v) => v.src).filter(Boolean), [queue]);
-  const { resolveAssetSrc } = useSignedAssetResolver(allSources);
+  // ── 署名済みURL解決 (近傍5本のみ署名・速度最適化) ─────────────
+  // 全動画を一括署名すると遅い回線で数十秒かかるため、現在位置±5本に絞る
+  const nearSources = useMemo(
+    () => queue.slice(index, Math.min(queue.length, index + 5)).map((v) => v.src).filter(Boolean),
+    [queue, index],
+  );
+  const { resolveAssetSrc } = useSignedAssetResolver(nearSources);
 
   const current     = queue[index] ?? null;
-  const resolvedSrc = useMemo(
-    () => (current?.src ? resolveAssetSrc(current.src) : null),
-    [current, resolveAssetSrc],
-  );
+  // 署名URL未確定の間は生URL(R2ワーカー経由)でフォールバック再生開始
+  const resolvedSrc = useMemo(() => {
+    if (!current?.src) return null;
+    return resolveAssetSrc(current.src) ?? current.src;
+  }, [current, resolveAssetSrc]);
   const videoKey = current ? `${index}-${current.key}` : "none";
 
   // ── 先読み (次3本) ────────────────────────────────────────
@@ -306,8 +323,10 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
       .filter((src): src is string => Boolean(src));
   }, [index, queue, resolveAssetSrc]);
 
-  // ── fetch()でHTTPキャッシュに事前投入 (iOS Safari向け) ─────
+  // ── fetch()でHTTPキャッシュに事前投入 (iOS Safari向け・低速回線は省略) ─────
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isSlowConnection()) return; // 低速回線は帯域を節約
     upcomingVideos.forEach((src) => {
       fetch(src, { cache: "force-cache" }).catch(() => {});
     });
@@ -376,12 +395,16 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
   const handleError = useCallback(() => { setVideoReady(true); }, []);
 
-  // 1.5秒フォールバック (autoAdvance ステップは除外)
+  // フォールバック: loop映像(スタンバイ)は長め・それ以外は3秒
+  // 低速回線ではフォールバックしない（スピナーで待機）
   useEffect(() => {
     if (videoReady || current?.isFreeze || current?.autoAdvance) return undefined;
-    const t = setTimeout(() => setVideoReady(true), 1500);
+    if (typeof window !== "undefined" && isSlowConnection()) return undefined;
+    const isLoop = Boolean(current?.loop);
+    const delay = isLoop ? 4000 : 3000;
+    const t = setTimeout(() => setVideoReady(true), delay);
     return () => clearTimeout(t);
-  }, [videoReady, videoKey, current?.isFreeze, current?.autoAdvance]);
+  }, [videoReady, videoKey, current?.isFreeze, current?.autoAdvance, current?.loop]);
 
   // ── NEXT / SKIP ────────────────────────────────────────────
   const goNext = useCallback(() => {
@@ -410,7 +433,10 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
 
         {/* ローディング */}
         {playState.status === "loading" && (
-          <div className="h-full bg-black" />
+          <div className="flex h-full flex-col items-center justify-center gap-4 bg-black">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/20 border-t-red-500" />
+            <p className="text-xs tracking-widest text-white/40">LOADING...</p>
+          </div>
         )}
 
         {/* エラー */}
@@ -457,11 +483,13 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
                   onError={handleError}
                   style={{ background: "#000" }}
                 />
-                {/* 映像切替時の前フレーム残像対策: 読込中は黒オーバーレイ */}
-                <div
-                  className="pointer-events-none absolute inset-0 bg-black"
-                  style={{ opacity: videoReady ? 0 : 1 }}
-                />
+                {/* 映像読込中: スピナー付きオーバーレイ（低速回線でも黒画面にならない） */}
+                {!videoReady && (
+                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-red-500" />
+                    <p className="text-[10px] tracking-widest text-white/30">LOADING...</p>
+                  </div>
+                )}
                 {/* 期待度オーバーレイ */}
                 {showOverlay && expStars > 0 && (
                   <StarOverlay starCount={expStars} />
@@ -495,25 +523,26 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
         )}
       </div>
 
-      {/* 先読み (iPhone タイムラグ対策) */}
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          top: -2,
-          left: -2,
-          width: 1,
-          height: 1,
-          opacity: 0,
-          pointerEvents: "none",
-          overflow: "hidden",
-        }}
-      >
-        {upcomingVideos.map((src) => (
-          // autoPlay+muted で iOS Safari がデコードを実際に開始する
-          <video key={src} src={src} preload="auto" playsInline muted autoPlay />
-        ))}
-      </div>
+      {/* 先読み (iPhone タイムラグ対策・低速回線は省略) */}
+      {typeof window !== "undefined" && !isSlowConnection() && (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed",
+            top: -2,
+            left: -2,
+            width: 1,
+            height: 1,
+            opacity: 0,
+            pointerEvents: "none",
+            overflow: "hidden",
+          }}
+        >
+          {upcomingVideos.map((src) => (
+            <video key={src} src={src} preload="auto" playsInline muted autoPlay />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
