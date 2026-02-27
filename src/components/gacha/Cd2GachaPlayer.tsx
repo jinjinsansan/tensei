@@ -37,7 +37,7 @@ type PlayState =
     };
 
 // バージョン: 動画ファイル更新時にここを上げてブラウザキャッシュを破棄
-const VIDEO_VERSION = "2";
+const VIDEO_VERSION = "3";
 
 // ─── キュー構築 ───────────────────────────────────────────
 function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {

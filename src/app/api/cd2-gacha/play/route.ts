@@ -46,8 +46,7 @@ function appendEnding(seq: Cd2Step[], decisionAt: DecisionPoint, isWin: boolean)
   const nums: DecisionPoint[] = [3, 2, 1, 0];
   for (const n of nums) {
     if (n > decisionAt) {
-      // red_3 は通過映像として使わない（削除済み）
-      if (n === 3) continue;
+      // 通過映像（決定番号より前）
       seq.push(`red_${n}` as Cd2Step);
     } else {
       // 決定番号: 直接 win または loss 映像
