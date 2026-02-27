@@ -36,6 +36,9 @@ type PlayState =
       expectationStars: number;
     };
 
+// バージョン: 動画ファイル更新時にここを上げてブラウザキャッシュを破棄
+const VIDEO_VERSION = "2";
+
 // ─── キュー構築 ───────────────────────────────────────────
 function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
   const standbyBase = buildCommonAssetPath("standby");
@@ -71,7 +74,7 @@ function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
 
     if (step === "title_red") {
       // タイトルは自動再生（NEXTボタンなし）
-      items.push({ key, src: `${basePath}/title_red.mp4`, step, showOverlay: true, autoAdvance: true });
+      items.push({ key, src: `${basePath}/title_red.mp4?v=${VIDEO_VERSION}`, step, showOverlay: true, autoAdvance: true });
       return;
     }
 
@@ -107,7 +110,7 @@ function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
     if (entry) {
       items.push({
         key,
-        src: `${basePath}/${entry.file}`,
+        src: `${basePath}/${entry.file}?v=${VIDEO_VERSION}`,
         step,
         autoAdvance: entry.auto ?? false,
       });
@@ -118,45 +121,57 @@ function buildQueue(sequence: Cd2Step[], basePath: string): VideoItem[] {
 }
 
 // ─── フリーズオーバーレイ ─────────────────────────────────
-// エヴァンゲリオン風テキストスクロールオーバーレイ
+// カードシャッフルアニメーション（10秒間ループ）
+const FREEZE_CARD_SRCS = Array.from(
+  { length: 11 },
+  (_, i) => `/cd2/freeze-cards/cd_red_anime_${i}.webp`,
+);
+
 function FreezeOverlay() {
-  // 2行ずつ異なるテキスト・速度でスクロール（EVA風）
-  const rows = [
-    { text: "ボタンは操作できません　　　　ボタンは押すことができません　　　　ボタンは操作できません　　　　ボタンは押すことができません　　　　", delay: "0s",  dur: "22s" },
-    { text: "ボタンは押すことができません　　　　ボタンは操作できません　　　　ボタンは押すことができません　　　　ボタンは操作できません　　　　", delay: "11s", dur: "22s" },
-  ];
+  const [cardIdx, setCardIdx] = useState(0);
+  const [loaded, setLoaded] = useState<boolean[]>(Array(11).fill(false));
+
+  // 全画像をプリロード
+  useEffect(() => {
+    FREEZE_CARD_SRCS.forEach((src, i) => {
+      const img = new window.Image();
+      img.onload = () =>
+        setLoaded((prev) => {
+          const next = [...prev];
+          next[i] = true;
+          return next;
+        });
+      img.src = src;
+    });
+  }, []);
+
+  // 全画像ロード後にシャッフル開始
+  const allLoaded = loaded.every(Boolean);
+  useEffect(() => {
+    if (!allLoaded) return undefined;
+    const interval = setInterval(() => {
+      setCardIdx((prev) => (prev + 1) % FREEZE_CARD_SRCS.length);
+    }, 130); // ~130ms per frame ≈ 7.7fps
+    return () => clearInterval(interval);
+  }, [allLoaded]);
 
   return (
-    <div className="pointer-events-none absolute inset-0 flex flex-col justify-center gap-10 overflow-hidden bg-black">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&display=swap');
-        @keyframes eva-marquee {
-          0%   { transform: translateX(100vw); }
-          100% { transform: translateX(-100%); }
-        }
-        .eva-freeze-text {
-          font-family: 'Dela Gothic One', 'Noto Sans JP', sans-serif;
-          color: #ffffff;
-          font-size: 1.4rem;
-          letter-spacing: 0.08em;
-          white-space: nowrap;
-          display: inline-block;
-          will-change: transform;
-        }
-      `}</style>
-      {rows.map((row, i) => (
-        <div key={i} className="w-full overflow-hidden">
-          <span
-            className="eva-freeze-text"
-            style={{
-              animation: `eva-marquee ${row.dur} linear infinite`,
-              animationDelay: row.delay,
-            }}
-          >
-            {row.text}
-          </span>
+    <div className="absolute inset-0 overflow-hidden bg-black">
+      {!allLoaded && (
+        <div className="flex h-full items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
         </div>
-      ))}
+      )}
+      {allLoaded &&
+        FREEZE_CARD_SRCS.map((src, i) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ opacity: i === cardIdx ? 1 : 0 }}
+          />
+        ))}
     </div>
   );
 }
@@ -420,18 +435,17 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
                 className="relative h-full w-full overflow-hidden"
                 style={{
                   background: "#000",
-                  // コンテナ全体をGPUコンポジットレイヤーに乗せる
-                  // → iOS SafariでStarOverlay+videoの合成問題を防ぐ
                   WebkitTransform: "translate3d(0,0,0)",
                   transform: "translate3d(0,0,0)",
-                  // 動画ファイルやレンダリングの白枠を黒で上書きするinset shadow
-                  boxShadow: "inset 0 0 0 2px #000",
+                  boxShadow: "inset 0 0 0 4px #000",
                 }}
               >
+                {/* 常時黒背景: src="" クリア中に body 背景が透けるのを防ぐ */}
+                <div className="absolute inset-0 bg-black" />
                 <video
                   ref={videoRef}
                   src={resolvedSrc ?? undefined}
-                  className="block h-full w-full object-cover"
+                  className="absolute inset-0 block h-full w-full object-cover"
                   autoPlay
                   muted
                   preload="auto"
