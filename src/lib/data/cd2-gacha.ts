@@ -48,6 +48,11 @@ export async function upsertCd2Settings(
   if (updates.patliteRate !== undefined) patch.patlite_rate = updates.patliteRate;
   if (updates.freezeRate !== undefined) patch.freeze_rate = updates.freezeRate;
 
-  await (client.from('cd2_gacha_settings' as never) as ReturnType<typeof client.from>)
+  const { error } = await (client.from('cd2_gacha_settings' as never) as ReturnType<typeof client.from>)
     .upsert(patch as never, { onConflict: 'id' } as never);
+
+  if (error) {
+    console.error('[cd2-gacha] upsertCd2Settings failed:', error);
+    throw new Error(`設定の保存に失敗しました: ${error.message}`);
+  }
 }

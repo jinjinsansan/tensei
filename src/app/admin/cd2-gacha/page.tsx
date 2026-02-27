@@ -19,13 +19,18 @@ async function updateCd2Settings(formData: FormData) {
   const patliteRate = clamp(Number(formData.get('patliteRate') ?? 5),   0, 100, 5);
   const freezeRate  = clamp(Number(formData.get('freezeRate')  ?? 2),   0, 100, 2);
 
-  await upsertCd2Settings(supabase, {
-    isEnabled,
-    lossRate,
-    dondenRate,
-    patliteRate,
-    freezeRate,
-  });
+  try {
+    await upsertCd2Settings(supabase, {
+      isEnabled,
+      lossRate,
+      dondenRate,
+      patliteRate,
+      freezeRate,
+    });
+  } catch (err) {
+    console.error('[admin/cd2-gacha] save failed:', err);
+    return redirect('/admin/cd2-gacha?error=1');
+  }
 
   revalidatePath('/admin/cd2-gacha');
   return redirect('/admin/cd2-gacha?saved=true');
