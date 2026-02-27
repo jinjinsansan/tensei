@@ -291,10 +291,24 @@ function ActivePlayer({ onClose }: { onClose?: () => void }) {
   const { resolveAssetSrc } = useSignedAssetResolver(allSources);
 
   const current     = queue[index] ?? null;
-  const resolvedSrc = useMemo(
-    () => (current?.src ? resolveAssetSrc(current.src) : null),
-    [current, resolveAssetSrc],
-  );
+
+  // 署名URL確定前でも動画を即時再生するため、未確定の場合は生URLにフォールバック。
+  // "sticky" ref: 一度確定したURLは署名完了後の再描画でも変えない（src変化→iOS再生ボタン防止）
+  const stickyUrlRef = useRef<{ forIndex: number; src: string } | null>(null);
+  const resolvedSrc = useMemo(() => {
+    if (!current?.src) {
+      stickyUrlRef.current = null;
+      return null;
+    }
+    // 同じ index のURLが既に確定済みならそのまま使う（signed URL が後から来ても reload しない）
+    if (stickyUrlRef.current?.forIndex === index) {
+      return stickyUrlRef.current.src;
+    }
+    // 署名URL優先、なければ生URL（R2 worker は公開アクセス可）
+    const url = resolveAssetSrc(current.src) ?? current.src;
+    stickyUrlRef.current = { forIndex: index, src: url };
+    return url;
+  }, [current, index, resolveAssetSrc]);
   const videoKey = current ? `${index}-${current.key}` : "none";
 
   // ── 先読み (次3本) ────────────────────────────────────────
